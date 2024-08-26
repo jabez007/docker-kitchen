@@ -23,9 +23,7 @@ inputs:
   debug:
     type: boolean
     default: false
-  
-outputs:
-    
+
 runs:
   using: composite
   steps:
@@ -35,10 +33,12 @@ runs:
     - name: See which repo we just cloned
       if: ${{ inputs.debug }}
       run: ls -lha
+      shell: bash
 
     - name: Get short commit hash
       id: git_commit
       run: echo "short_hash=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+      shell: bash
 
     - name: Download artifacts
       if: ${{ inputs.artifact-name != '' }}
@@ -50,6 +50,7 @@ runs:
     - name: See which artifacts we just downloaded
       if: ${{ inputs.artifact-name != '' && inputs.debug }}
       run: ls ${{ inputs.artifact-path }} -lha
+      shell: bash
 
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v2
@@ -95,3 +96,4 @@ runs:
 
     - name: Post cleanup
       run: docker image prune -f
+      shell: bash
