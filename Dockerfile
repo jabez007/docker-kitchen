@@ -12,13 +12,15 @@ RUN apt-get update && apt-get install -y \
   bash \
   curl \
   jq \
-  yq \
-  && rm -rf /var/lib/apt/lists/*
+  yq
 
 # Install dependency for AWS CLI on arm64
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
-    apt-get update && apt-get install -y libc6-compat && rm -rf /var/lib/apt/lists/*; \
+    apt-get install -y libc6:arm64; \
   fi
+
+# Clean up apt-get afterwards
+RUN rm -rf /var/lib/apt/lists/*
 
 # Install kubectl
 RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/${TARGETARCH}/kubectl" \
