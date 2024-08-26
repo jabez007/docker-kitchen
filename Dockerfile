@@ -6,6 +6,12 @@ FROM --platform=$BUILDPLATFORM debian:stable-slim
 # Set target architecture variable
 ARG TARGETARCH
 
+#  Enable the arm64 architecture
+RUN if [ "$TARGETARCH" = "arm64" ]; then \
+    dpkg --add-architecture arm64; \
+  fi
+
+
 # Install dependencies
 RUN apt-get update && apt-get install -y \
   unzip \
