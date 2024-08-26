@@ -1,7 +1,7 @@
+FROM --platform=$BUILDPLATFORM debian:stable-slim
+
 ARG AWS_REGION
 ARG EKS_CLUSTER
-
-FROM --platform=$BUILDPLATFORM debian:stable-slim
 
 # Set target architecture variable
 ARG TARGETARCH

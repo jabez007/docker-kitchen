@@ -73,7 +73,7 @@ jobs:
           push: true
           # GITHUB_REPOSITORY = The owner and repository name. For example, octocat/Hello-World.
           # ghcr.io prefix makes sure we are pushing to GHCR
-          tags: ghcr.io/${{ github.repository }}:${{ github.event.inputs.tag || steps.git_commit.outputs.short_hash }} # octocat/Hello-World:ffac537
+          tags: ghcr.io/${{ github.repository }}:${{ inputs.tag || steps.git_commit.outputs.short_hash }} # octocat/Hello-World:ffac537
 
       - name: Build and export Docker image
         if: ${{ ! inputs.push }}
@@ -81,7 +81,7 @@ jobs:
         with:
           build-args: ${{ inputs.build-args }}
           context: .
-          tags: ${{ github.repository }}:${{ github.event.inputs.tag || steps.git_commit.outputs.short_hash }}
+          tags: ${{ github.repository }}:${{ inputs.tag || steps.git_commit.outputs.short_hash }}
           outputs: type=docker,dest=/tmp/${{ github.event.repository.name }}.tar
 
       - name: Upload image artifacts
