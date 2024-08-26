@@ -13,7 +13,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: jabez007/aws-kubectl/.github/shared/build_and_push.yml@master
+      - uses: jabez007/aws-kubectl/.github/shared/docker@master
         with:
           tag: ${{ vars.AWS_REGION }}_${{ vars.EKS_CLUSTER }}
           build-args: |

@@ -17,7 +17,7 @@ jobs:
       contents: read
       packages: write # required if push is true
     steps:
-      - uses: jabez007/aws-kubectl/.github/shared/build_and_push.yml@master
+      - uses: jabez007/aws-kubectl/.github/shared/docker@master
         with:
           push: true
           tag: ${{ vars.AWS_REGION }}_${{ vars.EKS_CLUSTER }}
