@@ -22,7 +22,9 @@ RUN apt-get update && apt-get install -y \
 
 # Install dependency for AWS CLI on arm64
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
-    apt-get install -y libc6:arm64; \
+    apt-get install -y \
+      libc6:arm64 \
+      zlib1g; \
   fi
 
 # Clean up apt-get afterwards
