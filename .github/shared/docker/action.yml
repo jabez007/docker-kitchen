@@ -72,7 +72,8 @@ runs:
         # GITHUB_REPOSITORY = The owner and repository name. For example, octocat/Hello-World.
         # ghcr.io prefix makes sure we are pushing to GHCR
         tags: ghcr.io/${{ github.repository }}:${{ inputs.tag || steps.git_commit.outputs.short_hash }} # octocat/Hello-World:ffac537
-        github-token: ${{ env.GITHUB_TOKEN }}
+      env: 
+        GITHUB_TOKEN: ${{ env.GITHUB_TOKEN }}
 
     - name: Build and export Docker image
       if: ${{ inputs.push != 'true' }}
