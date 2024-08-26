@@ -13,11 +13,20 @@ jobs:
     permissions:
       contents: read
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: See which repo we just cloned
+        if: ${{ vars.pipeline_debug == 'true' }}
+        run: ls -lha
+        shell: bash
+
       - uses: jabez007/aws-kubectl/.github/shared/docker@master
         with:
           tag: ${{ vars.AWS_REGION }}_${{ vars.EKS_CLUSTER }}
           build-args: |
             AWS_REGION=${{ vars.AWS_REGION }}
             EKS_CLUSTER=${{ vars.EKS_CLUSTER }}
+          debug: ${{ vars.pipeline_debug }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
