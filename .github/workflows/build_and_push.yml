@@ -1,0 +1,23 @@
+name: Run Shared Build and Push Workflow
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'Dockerfile'
+      - '*.sh'
+
+jobs:
+  build_and_push:
+    permissions:
+      contents: read
+      packages: write # required if push is true
+    uses: jabez007/aws-kubectl/.github/workflows/shared.build_and_push.yml@master
+    with:
+      push: true
+      build-args: |
+        AWS_REGION=${{ vars.AWS_REGION }}
+        EKS_CLUSTER=${{ vars.EKS_CLUSTER }}
+    secrets: inherit
