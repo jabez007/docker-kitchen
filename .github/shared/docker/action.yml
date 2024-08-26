@@ -20,6 +20,9 @@ inputs:
   push:
     type: boolean
     default: false
+  debug:
+    type: boolean
+    default: false
   
 outputs:
     
@@ -30,7 +33,7 @@ runs:
       uses: actions/checkout@v2
 
     - name: See which repo we just cloned
-      if: ${{ vars.PIPELINE_DEBUG == 'true' }}
+      if: ${{ inputs.debug }}
       run: ls -lha
 
     - name: Get short commit hash
@@ -45,7 +48,7 @@ runs:
         path: ${{ inputs.artifact-path }}
 
     - name: See which artifacts we just downloaded
-      if: ${{ inputs.artifact-name != '' && vars.PIPELINE_DEBUG == 'true' }}
+      if: ${{ inputs.artifact-name != '' && inputs.debug }}
       run: ls ${{ inputs.artifact-path }} -lha
 
     - name: Set up QEMU
