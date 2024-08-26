@@ -24,7 +24,7 @@ RUN apt-get update && apt-get install -y \
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
     apt-get install -y \
       libc6:arm64 \
-      zlib1g; \
+      zlib1g:arm64; \
   fi
 
 # Clean up apt-get afterwards
