@@ -8,12 +8,16 @@ on:
 
 jobs:
   build:
+    runs-on: ubuntu-latest
+    environment: foobar
     permissions:
       contents: read
-    uses: jabez007/aws-kubectl/.github/actions/shared.build_and_push.yml@master
-    with:
-      tag: ${{ vars.AWS_REGION }}_${{ vars.EKS_CLUSTER }}
-      build-args: |
-        AWS_REGION=${{ vars.AWS_REGION }}
-        EKS_CLUSTER=${{ vars.EKS_CLUSTER }}
-    secrets: inherit
+    steps:
+      - uses: jabez007/aws-kubectl/.github/shared/build_and_push.yml@master
+        with:
+          tag: ${{ vars.AWS_REGION }}_${{ vars.EKS_CLUSTER }}
+          build-args: |
+            AWS_REGION=${{ vars.AWS_REGION }}
+            EKS_CLUSTER=${{ vars.EKS_CLUSTER }}
+        #env:
+          #GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
