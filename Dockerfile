@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y \
 
 # Install dependency for AWS CLI on arm64
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
-    apt-get update && apt-get install -y libc6-compat &&  rm -rf /var/lib/apt/lists/* \
+    apt-get update && apt-get install -y libc6-compat && rm -rf /var/lib/apt/lists/*; \
   fi
 
 # Install kubectl
