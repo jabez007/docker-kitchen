@@ -11,14 +11,18 @@ on:
 
 jobs:
   build_and_push:
+    runs-on: ubuntu-latest
+    environment: foobar
     permissions:
       contents: read
       packages: write # required if push is true
-    uses: jabez007/aws-kubectl/.github/workflows/shared.build_and_push.yml@master
-    with:
-      push: true
-      tag: ${{ vars.AWS_REGION }}_${{ vars.EKS_CLUSTER }}
-      build-args: |
-        AWS_REGION=${{ vars.AWS_REGION }}
-        EKS_CLUSTER=${{ vars.EKS_CLUSTER }}
-    secrets: inherit
+    steps:
+      - uses: jabez007/aws-kubectl/.github/shared/build_and_push.yml@master
+        with:
+          push: true
+          tag: ${{ vars.AWS_REGION }}_${{ vars.EKS_CLUSTER }}
+          build-args: |
+            AWS_REGION=${{ vars.AWS_REGION }}
+            EKS_CLUSTER=${{ vars.EKS_CLUSTER }}
+        #env:
+          #GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

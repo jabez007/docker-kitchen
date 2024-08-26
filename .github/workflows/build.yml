@@ -10,7 +10,7 @@ jobs:
   build:
     permissions:
       contents: read
-    uses: jabez007/aws-kubectl/.github/workflows/shared.build_and_push.yml@master
+    uses: jabez007/aws-kubectl/.github/actions/shared.build_and_push.yml@master
     with:
       tag: ${{ vars.AWS_REGION }}_${{ vars.EKS_CLUSTER }}
       build-args: |
