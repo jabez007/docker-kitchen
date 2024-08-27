@@ -59,11 +59,8 @@ COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 # Make the entrypoint script executable
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# Set the entrypoint to the script
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
-
 # Set the working directory
 WORKDIR /home/root
 
-# Set bash as the default shell
-CMD ["/bin/bash"]
+# Run the  script and then start a shell
+CMD ["/bin/bash", "-c", "/usr/local/bin/entrypoint.sh && exec /bin/bash"]
