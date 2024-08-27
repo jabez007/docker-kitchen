@@ -83,7 +83,7 @@ runs:
         outputs: type=docker,dest=/tmp/${{ github.event.repository.name }}.tar
 
     - name: Upload image artifacts
-      if: ${{ inputs.push != true }}
+      if: ${{ inputs.push != 'true' }}
       uses: actions/upload-artifact@v2
       with:
         name: ${{ steps.git_commit.outputs.short_hash }}
