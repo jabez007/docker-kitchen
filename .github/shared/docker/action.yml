@@ -86,7 +86,7 @@ runs:
       if: ${{ inputs.push != 'true' }}
       uses: actions/upload-artifact@v2
       with:
-        name: ${{ steps.git_commit.outputs.short_hash }}
+        name: ${{ inputs.tag || steps.git_commit.outputs.short_hash }}
         path: /tmp/${{ github.event.repository.name }}.tar
 
     - name: Post cleanup
