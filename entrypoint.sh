@@ -25,4 +25,22 @@ else
   echo "'eks' profile not found. Running 'aws configure sso'."
   export AWS_SSO_SESSION_NAME="eks"
   aws configure sso
+
+  # Get the newly configured profile name
+  profiles=$(aws configure list-profiles)
+  for profile in $profiles; do
+    sso_session=$(aws configure get sso_session --profile $profile)
+    if [ "$sso_session" == "eks" ]; then
+      profile_name=$profile
+      break
+    fi
+  done
 fi
+
+# Update kubeconfig
+echo "Updating kubeconfig."
+aws eks update-kubeconfig --profile $profile_name --region $AWS_REGION --name $EKS_CLUSTER
+
+# Add alias to .bashrc
+echo "Adding alias to .bashrc."
+echo "alias update-kubeconfig='aws eks update-kubeconfig --profile $profile_name --region \$AWS_REGION --name \$EKS_CLUSTER'" >> /root/.bashrc

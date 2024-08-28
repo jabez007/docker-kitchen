@@ -50,8 +50,16 @@ RUN if [ "$TARGETARCH" = "arm64" ]; then \
 # Verify aws cli install
 RUN aws --version
 
-# Add aliases to .bashrc
-RUN echo "alias update-kubeconfig='aws eks update-kubeconfig --region ${AWS_REGION} --name ${EKS_CLUSTER}'" >> /root/.bashrc
+# Set environment variables for alias
+ENV AWS_REGION=${AWS_REGION}
+ENV EKS_CLUSTER=${EKS_CLUSTER}
+
+# Copy Amazon's certificate into the container
+# This can be used to also allow the container to work in corporate networks with outbound SSL inspection
+COPY Amazon_Root_CA_1.pem /root/Amazon_Root_CA_1.pem
+
+# Tell AWS CLI to use it
+ENV AWS_CA_BUNDLE=/root/Amazon_Root_CA_1.pem
 
 # Copy the entrypoint script into the container
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh

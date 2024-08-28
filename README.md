@@ -52,9 +52,8 @@ SSO registration scopes [sso:account:access]: <accept default>
 <select your account>
 CLI default client Region [None]: <from AWS access portal>
 CLI default output format [None]: text
-CLI profile name []: default
+CLI profile name []: <can accept default>
 ```
-
 
 ### Using the Kubeconfig Alias
 

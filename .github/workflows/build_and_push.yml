@@ -8,6 +8,7 @@ on:
     paths:
       - 'Dockerfile'
       - '*.sh'
+      - '*.pem'
 
 jobs:
   build_and_push:
