@@ -42,6 +42,20 @@ docker run -it --rm -v ~/.aws:/root/.aws aws-kubectl
 docker run -it --rm -v ${env:USERPROFILE}\.aws:/root/.aws aws-kubectl
 ```
 
+### First run
+
+```bash
+SSO session name (Recommended): eks
+SSO start URL [None]: <from AWS access portal>
+SSO region [None]: <from AWS access portal>
+SSO registration scopes [sso:account:access]: <accept default>
+<select your account>
+CLI default client Region [None]: <from AWS access portal>
+CLI default output format [None]: text
+CLI profile name []: default
+```
+
+
 ### Using the Kubeconfig Alias
 
 Once the container is running, you can use the configured alias to update your kubeconfig:
