@@ -3,8 +3,8 @@ description: Builds a Docker image and either pushes to GHCR or uploads a tarbal
 
 inputs:
   artifact-name:
-    description: ''
     required: false
+    description: ''
   artifact-path:
     description: ''
     default: .
