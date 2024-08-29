@@ -14,6 +14,9 @@ inputs:
   build-args:
     required: false
     description: ''
+  context:
+    description: ''
+    default: .
   tag:
     required: false
     description: ''
@@ -67,7 +70,7 @@ runs:
       with:
         platforms: ${{ inputs.platforms }}
         build-args: ${{ inputs.build-args }}
-        context: .
+        context: ${{ inputs.context }}
         push: true
         # GITHUB_REPOSITORY = The owner and repository name. For example, octocat/Hello-World.
         # ghcr.io prefix makes sure we are pushing to GHCR
@@ -78,7 +81,7 @@ runs:
       uses: docker/build-push-action@v4
       with:
         build-args: ${{ inputs.build-args }}
-        context: .
+        context: ${{ inputs.context }}
         tags: ${{ github.repository }}:${{ inputs.tag || steps.git_commit.outputs.short_hash }}
         outputs: type=docker,dest=/tmp/${{ github.event.repository.name }}.tar
 
