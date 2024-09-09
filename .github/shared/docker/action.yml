@@ -38,6 +38,28 @@ runs:
       run: echo "short_hash=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
       shell: bash
 
+    - name: Image tag(s)
+      id: image_tags
+      run: |
+        IFS=',' read -ra image_tags <<< "${{ inputs.tag || steps.git_commit.outputs.short_hash }}"
+        first_tag="${image_tags[0]}"
+        echo "tag_for_export=$first_tag" >> "$GITHUB_OUTPUT"
+        output=""
+        for image_tag in "${image_tags[@]}"; do
+          trimmed_image_tag=$(echo "$image_tag" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+          output+="ghcr.io/${{ github.repository }}:$trimmed_image_tag,"
+        done
+        output=$(echo "$output" | sed 's/,$//')
+        echo "tags_for_registry=$output" >> "$GITHUB_OUTPUT"
+      shell: bash
+
+    - name: Check our image tags
+      if: ${{ inputs.debug == 'true' }}
+      run: |
+        echo "tags_for_registry: ${{ steps.image_tags.outputs.tags_for_registry }}"
+        echo "tag_for_export: ${{ steps.image_tags.outputs.tag_for_export }}"
+      shell: bash
+    
     - name: Download artifacts
       if: ${{ inputs.artifact-name != '' }}
       uses: actions/download-artifact@v2
@@ -74,7 +96,7 @@ runs:
         push: true
         # GITHUB_REPOSITORY = The owner and repository name. For example, octocat/Hello-World.
         # ghcr.io prefix makes sure we are pushing to GHCR
-        tags: ghcr.io/${{ github.repository }}:${{ inputs.tag || steps.git_commit.outputs.short_hash }} # octocat/Hello-World:ffac537
+        tags: ${{ steps.image_tags.outputs.tags_for_registry }} # octocat/Hello-World:ffac537
 
     - name: Build and export Docker image
       if: ${{ inputs.push != 'true' }}
@@ -82,14 +104,14 @@ runs:
       with:
         build-args: ${{ inputs.build-args }}
         context: ${{ inputs.context }}
-        tags: ${{ github.repository }}:${{ inputs.tag || steps.git_commit.outputs.short_hash }}
+        tags: ${{ github.repository }}:${{ steps.image_tags.outputs.tag_for_export }}
         outputs: type=docker,dest=/tmp/${{ github.event.repository.name }}.tar
 
     - name: Upload image artifacts
       if: ${{ inputs.push != 'true' }}
       uses: actions/upload-artifact@v2
       with:
-        name: ${{ inputs.tag || steps.git_commit.outputs.short_hash }}
+        name: ${{ steps.image_tags.outputs.tag_for_export }}
         path: /tmp/${{ github.event.repository.name }}.tar
 
     - name: Post cleanup
