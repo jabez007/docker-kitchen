@@ -37,10 +37,14 @@ else
   done
 fi
 
+# Add alias to .bashrc
+echo "Adding sso-login alias to .bashrc."
+echo "alias sso-login='aws sso login --profile $profile_name'" >> /root/.bashrc
+
 # Update kubeconfig
 echo "Updating kubeconfig."
 aws eks update-kubeconfig --profile $profile_name --region $AWS_REGION --name $EKS_CLUSTER
 
 # Add alias to .bashrc
-echo "Adding alias to .bashrc."
+echo "Adding update-kubeconfig alias to .bashrc."
 echo "alias update-kubeconfig='aws eks update-kubeconfig --profile $profile_name --region \$AWS_REGION --name \$EKS_CLUSTER'" >> /root/.bashrc
