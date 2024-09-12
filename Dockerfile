@@ -11,9 +11,9 @@ RUN if [ "$TARGETARCH" = "arm64" ]; then \
     dpkg --add-architecture arm64; \
   fi
 
-
 # Install dependencies
 RUN apt-get update && apt-get install -y \
+  watch \
   unzip \
   bash \
   curl \
