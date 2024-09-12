@@ -62,7 +62,7 @@ runs:
     
     - name: Download artifacts
       if: ${{ inputs.artifact-name != '' }}
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v4
       with:
         name: ${{ inputs.artifact-name }}
         path: ${{ inputs.artifact-path }}
@@ -109,7 +109,7 @@ runs:
 
     - name: Upload image artifacts
       if: ${{ inputs.push != 'true' }}
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ steps.image_tags.outputs.tag_for_export }}
         path: /tmp/${{ github.event.repository.name }}.tar
