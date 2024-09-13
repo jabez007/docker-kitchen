@@ -14,6 +14,7 @@ jobs:
         with:
           source_string: ", dev , tst , prd"
           target_delimiter: ", ghcr.io/foo-bar:"
+          debug: true
 
       - name: Check delimited-string for Docker tags
         run: |
