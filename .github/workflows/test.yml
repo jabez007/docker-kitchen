@@ -13,7 +13,7 @@ jobs:
         uses: jabez007/aws-kubectl/.github/shared/script/delimited-string@master
         with:
           source_string: ", dev , tst , prd"
-          target_delimiter: " ghcr.io/foo-bar:"
+          target_delimiter: ", ghcr.io/foo-bar:"
 
       - name: Check delimited-string for Docker tags
         run: |
