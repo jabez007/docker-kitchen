@@ -18,9 +18,7 @@ jobs:
 
       - name: Check delimited-string for Docker tags
         run: |
-          echo "${{ steps.docker-tags.outputs.target_string }}"
-
-          expected="ghcr.io/foo-bar:dev, ghcr.io/foo-bar:tst, ghcr.io/foo-bar:prd"
+          expected=", ghcr.io/foo-bar:dev, ghcr.io/foo-bar:tst, ghcr.io/foo-bar:prd"
           if [ "${{ steps.docker-tags.outputs.target_string }}" != "$expected" ]; then
             echo "${{ steps.docker-tags.outputs.target_string }} does not match $expected"
             exit 1
