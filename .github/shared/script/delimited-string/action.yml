@@ -1,0 +1,41 @@
+name: String Re-delimiter
+description: Generates a delimited string from the passed in delimited string
+
+inputs:
+  source_string:
+    description: ''
+  source_delimiter:
+    description: ''
+    default: ','
+  target_delimiter:
+    description: ''
+  debug:
+    description: ''
+    default: 'false'
+
+outputs:
+  target_string:
+    description: ''
+    value: ${{ steps.transform_string.outputs.transformed_string }}
+
+runs:
+  using: composite
+  steps:
+    - name: Transform string
+      id: transform_string
+      run: |
+        IFS=${{ inputs.source_delimiter }} read -ra source_string <<< "${{ inputs.source_string }}"
+        output=""
+        for source_element in "${source_string[@]}"; do
+          trimmed_source_element=$(echo "$source_element" | sed 's|^[[:space:]]*||;s|[[:space:]]*$||'  | sed -e 's|[&|$]|\\&|g')
+          output+="$trimmed_source_element${{ inputs.target_delimiter }}"
+        done
+        output=$(echo "$output" | sed 's|${{ inputs.target_delimiter }}$||')
+        echo "transformed_string=$output" >> "$GITHUB_OUTPUT"
+      shell: bash
+
+    - name: Check our generated string
+      if: ${{ inputs.debug == 'true' }}
+      run: |
+        echo "Transformed string: ${{ steps.transform_string.outputs.transformed_string }}"
+      shell: bash
