@@ -19,3 +19,6 @@ jobs:
       - name: Check delimited-string for Docker tags
         run: |
           echo "${{ steps.docker-tags.outputs.target_string }}"
+          if [ "${{ steps.docker-tags.outputs.target_string }}" != "ghcr.io/foo-bar:dev, ghcr.io/foo-bar:tst, ghcr.io/foo-bar:prd" ]; then
+            exit 1
+          fi
