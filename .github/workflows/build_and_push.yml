@@ -1,4 +1,4 @@
-name: Run Shared Build and Push Workflow
+name: Run Shared Build and Push Workflow for aws-kubectl
 
 on:
   push:
@@ -6,12 +6,12 @@ on:
       - main
       - master
     paths:
-      - 'Dockerfile'
-      - '*.sh'
-      - '*.pem'
+      - "aws-kubectl/Dockerfile"
+      - "aws-kubectl/*.sh"
+      - "aws-kubectl/*.pem"
 
 jobs:
-  build_and_push:
+  build_and_push_to_ghcr:
     runs-on: ubuntu-latest
     environment: foobar
     permissions:
@@ -23,16 +23,19 @@ jobs:
 
       - name: See which repo we just cloned
         if: ${{ vars.pipeline_debug == 'true' }}
-        run: ls -lha
+        run: ls -alh
         shell: bash
 
-      - uses: jabez007/aws-kubectl/.github/shared/docker@master
+      - name: Build and push to GHCR
+        uses: jabez007/docker-kitchen/.github/shared/ghcr@master
         with:
-          push: true
+          context: ./aws-kubectl
+          image-name: jabez007/aws-kubectl
           tag: ${{ vars.AWS_REGION }}_${{ vars.EKS_CLUSTER }}
           build-args: |
             AWS_REGION=${{ vars.AWS_REGION }}
             EKS_CLUSTER=${{ vars.EKS_CLUSTER }}
+          push: true
           debug: ${{ vars.pipeline_debug }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
