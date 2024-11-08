@@ -1,5 +1,5 @@
-name: Build and Push Docker Image to DockerHub
-description: Builds a Docker image and either pushes to DockerHub or uploads a tarball artifact
+name: Build and Push Docker Image to GHCR
+description: Builds a Docker image and either pushes to GHCR or uploads a tarball artifact
 
 inputs:
   artifact-name:
@@ -54,7 +54,7 @@ runs:
       uses: jabez007/docker-kitchen/.github/shared/script/delimited-string@master
       with:
         source_string: ", ${{ inputs.tag || steps.git_commit.outputs.short_hash }}"
-        target_delimiter: ", docker.io/${{ steps.image_name.outputs.name_of_image }}:"
+        target_delimiter: ", ghcr.io/${{ steps.image_name.outputs.name_of_image }}:"
         debug: true
 
     - name: Image tag(s)
@@ -92,13 +92,13 @@ runs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
 
-    - name: Log in to Docker Container Registry
+    - name: Log in to GitHub Container Registry
       if: ${{ inputs.push == 'true' }}
       uses: docker/login-action@v2
       with:
-        registry: docker.io
-        username: ${{ env.DOCKER_USERNAME }}
-        password: ${{ env.DOCKER_PASSWORD }}
+        registry: ghcr.io
+        username: ${{ github.actor }} # The name of the person or app that initiated the workflow. For example, octocat.
+        password: ${{ env.GITHUB_TOKEN }} # automatically provided by GitHub Actions, so you don't need to create it manually.
 
     - name: Build and push Docker image
       if: ${{ inputs.push == 'true' }}
@@ -108,7 +108,9 @@ runs:
         build-args: ${{ inputs.build-args }}
         context: ${{ inputs.context }}
         push: true
-        tags: ${{ steps.image_tags.outputs.tags_for_registry }}
+        # GITHUB_REPOSITORY = The owner and repository name. For example, octocat/Hello-World.
+        # ghcr.io prefix makes sure we are pushing to GHCR
+        tags: ${{ steps.image_tags.outputs.tags_for_registry }} # octocat/Hello-World:ffac537
 
     - name: Build and export Docker image
       if: ${{ inputs.push != 'true' }}

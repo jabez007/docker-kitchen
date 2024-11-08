@@ -61,6 +61,15 @@ COPY Amazon_Root_CA_1.pem /root/Amazon_Root_CA_1.pem
 # Tell AWS CLI to use it
 ENV AWS_CA_BUNDLE=/root/Amazon_Root_CA_1.pem
 
+# Copy in helper script for JSON formatted log files
+COPY json_ppc.sh /usr/local/bin/json_ppc.sh
+
+# Make the helper script executable
+RUN chmod +x /usr/local/bin/json_ppc.sh
+
+# Add alias for help script
+RUN echo "alias jsonppc='/usr/local/bin/json_ppc.sh'" >> /root/.bashrc
+
 # Copy the entrypoint script into the container
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 
