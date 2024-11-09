@@ -1,0 +1,29 @@
+name: Run Shared Build Workflow for astro-nvim
+
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+    paths:
+      - "astro-nvim/Dockerfile"
+      - "astro-nvim/*.sh"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: See which repo we just cloned
+        if: ${{ vars.pipeline_debug == 'true' }}
+        run: ls -alh
+        shell: bash
+
+      - uses: jabez007/docker-kitchen/.github/shared/docker@master
+        with:
+          context: ./astro-nvim
+          image-name: jabez07/astro-nvim
+          tag: latest
+          debug: ${{ vars.pipeline_debug }}
