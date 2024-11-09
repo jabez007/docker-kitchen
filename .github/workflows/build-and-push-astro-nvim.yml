@@ -32,3 +32,28 @@ jobs:
         env:
           DOCKER_USERNAME: ${{ vars.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_TOKEN }}
+
+  build_and_push_to_ghcr:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write # required if push is true
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: See which repo we just cloned
+        if: ${{ vars.pipeline_debug == 'true' }}
+        run: ls -alh
+        shell: bash
+
+      - name: Build and push to GHCR
+        uses: jabez007/docker-kitchen/.github/shared/ghcr@master
+        with:
+          context: ./astro-nvim
+          image-name: jabez007/astro-nvim
+          tag: latest
+          push: true
+          debug: ${{ vars.pipeline_debug }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

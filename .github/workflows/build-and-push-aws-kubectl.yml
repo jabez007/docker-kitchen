@@ -39,3 +39,30 @@ jobs:
           debug: ${{ vars.pipeline_debug }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build_and_push_to_docker:
+    runs-on: ubuntu-latest
+    environment: foobar
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: See which repo we just cloned
+        if: ${{ vars.pipeline_debug == 'true' }}
+        run: ls -alh
+        shell: bash
+
+      - name: Build and push to DockerHub
+        uses: jabez007/docker-kitchen/.github/shared/docker@master
+        with:
+          context: ./aws-kubectl
+          image-name: ${{ vars.DOCKER_USERNAME }}/aws-kubectl
+          tag: ${{ vars.AWS_REGION }}_${{ vars.EKS_CLUSTER }}
+          build-args: |
+            AWS_REGION=${{ vars.AWS_REGION }}
+            EKS_CLUSTER=${{ vars.EKS_CLUSTER }}
+          push: true
+          debug: ${{ vars.pipeline_debug }}
+        env:
+          DOCKER_USERNAME: ${{ vars.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_TOKEN }}
