@@ -81,4 +81,3 @@ WORKDIR /home/root
 
 # Run the  script and then start a shell
 CMD ["/bin/bash", "-c", "/usr/local/bin/entrypoint.sh && exec /bin/bash"]
-

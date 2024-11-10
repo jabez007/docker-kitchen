@@ -74,6 +74,12 @@ runs:
         echo "tag_for_export: ${{ steps.image_tags.outputs.tag_for_export }}"
       shell: bash
 
+    - name: Docker meta
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ steps.image_name.outputs.name_of_image }}
+
     - name: Download artifacts
       if: ${{ inputs.artifact-name != '' }}
       uses: actions/download-artifact@v4
@@ -111,6 +117,7 @@ runs:
         # GITHUB_REPOSITORY = The owner and repository name. For example, octocat/Hello-World.
         # ghcr.io prefix makes sure we are pushing to GHCR
         tags: ${{ steps.image_tags.outputs.tags_for_registry }} # octocat/Hello-World:ffac537
+        labels: ${{ steps.meta.outputs.labels }}
 
     - name: Build and export Docker image
       if: ${{ inputs.push != 'true' }}

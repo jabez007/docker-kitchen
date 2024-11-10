@@ -71,4 +71,3 @@ ENTRYPOINT ["nvim"]
 
 # Open present working directory
 CMD ["."]
-
