@@ -66,7 +66,9 @@ RUN git clone --depth 1 https://github.com/jabez007/AstroNvim-config.git ~/.conf
 # Install Lazy and plugins in a headless way
 RUN nvim --headless -c "Lazy! sync" -c "qa!"
 
-# Start
+# Start nvim
 ENTRYPOINT ["nvim"]
+
+# Open present working directory
 CMD ["."]
 
