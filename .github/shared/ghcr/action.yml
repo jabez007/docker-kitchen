@@ -23,6 +23,9 @@ inputs:
   tag:
     required: false
     description: ""
+  description:
+    required: false
+    description: ""
   push:
     description: ""
     default: "false"
@@ -79,6 +82,9 @@ runs:
       uses: docker/metadata-action@v5
       with:
         images: ${{ steps.image_name.outputs.name_of_image }}
+        labels: |
+          org.opencontainers.image.title=${{ steps.image_name.outputs.name_of_image }}
+          org.opencontainers.image.description=${{ inputs.description || github.event.repository.description }}
 
     - name: Download artifacts
       if: ${{ inputs.artifact-name != '' }}
@@ -118,6 +124,7 @@ runs:
         # ghcr.io prefix makes sure we are pushing to GHCR
         tags: ${{ steps.image_tags.outputs.tags_for_registry }} # octocat/Hello-World:ffac537
         labels: ${{ steps.meta.outputs.labels }}
+        annotations: ${{ steps.meta.outputs.annotations }}
 
     - name: Build and export Docker image
       if: ${{ inputs.push != 'true' }}

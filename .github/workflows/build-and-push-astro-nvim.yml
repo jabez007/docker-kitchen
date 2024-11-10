@@ -8,6 +8,7 @@ on:
     paths:
       - "astro-nvim/Dockerfile"
       - "astro-nvim/*.sh"
+  workflow_dispatch:
 
 jobs:
   build_and_push_to_docker:
