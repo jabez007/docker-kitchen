@@ -32,6 +32,7 @@ jobs:
         with:
           context: ./aws-kubectl
           image-name: jabez007/aws-kubectl
+          description: A portable installation of aws-cli and kubectl configured for SSO and with a collection of helper scripts
           tag: ${{ vars.AWS_REGION }}_${{ vars.EKS_CLUSTER }}
           build-args: |
             AWS_REGION=${{ vars.AWS_REGION }}
@@ -58,6 +59,7 @@ jobs:
         with:
           context: ./aws-kubectl
           image-name: ${{ vars.DOCKER_USERNAME }}/aws-kubectl
+          description: A portable installation of aws-cli and kubectl configured for SSO and with a collection of helper scripts
           tag: ${{ vars.AWS_REGION }}_${{ vars.EKS_CLUSTER }}
           build-args: |
             AWS_REGION=${{ vars.AWS_REGION }}
