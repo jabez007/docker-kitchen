@@ -19,7 +19,7 @@ jobs:
       packages: write # required if push is true
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: See which repo we just cloned
         if: ${{ vars.pipeline_debug == 'true' }}
@@ -46,7 +46,7 @@ jobs:
     environment: foobar
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: See which repo we just cloned
         if: ${{ vars.pipeline_debug == 'true' }}
