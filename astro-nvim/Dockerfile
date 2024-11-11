@@ -12,7 +12,7 @@ RUN if [ "$TARGETARCH" = "arm64" ]; then \
 
 # Install AstroNvim recommended dependencies
 RUN apt-get update && \
-  #apt-get upgrade -y && \
+  apt-get upgrade -y && \
   apt-get install -y \
   bash \
   curl \
@@ -63,8 +63,11 @@ WORKDIR /home/${DEVUSER_NAME}
 RUN git clone --depth 1 https://github.com/jabez007/AstroNvim-config.git ~/.config/nvim && \
   rm -rf ~/.config/nvim/.git
 
-# Install Lazy and plugins in a headless way
+# Pre-install Lazy and plugins
 RUN nvim --headless -c "Lazy! sync" -c "qa!"
+
+# Pre-install Mason tools
+RUN nvim --headless -c "MasonUpdate" -c "MasonInstallAll" -c "qa!"
 
 # Start nvim
 ENTRYPOINT ["nvim"]
