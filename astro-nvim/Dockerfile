@@ -23,7 +23,7 @@ RUN apt-get update && \
   #lazygit \
   #bottom \
   python3 \
-  golang \
+  #golang \
   #neovim \
   ripgrep \
   unzip \
@@ -31,6 +31,12 @@ RUN apt-get update && \
 
 # Set the SHELL to bash with pipefail option
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+# Install the latest Go version
+RUN curl -fsSL "https://go.dev/VERSION?m=text" | \
+    xargs -I {} curl -fsSL "https://go.dev/dl/{}.linux-$(dpkg --print-architecture).tar.gz" -o go.tar.gz && \
+    tar -C /usr/local/bin -xzf go.tar.gz && \
+    rm go.tar.gz
 
 # Install LazyGit
 RUN curl -L $(curl -s https://api.github.com/repos/jesseduffield/lazygit/releases/latest | \
@@ -54,6 +60,10 @@ RUN curl -LO https://github.com/neovim/neovim/releases/download/stable/nvim-linu
   rm nvim-linux64.tar.gz && \
   ln -s /opt/nvim-linux64/bin/nvim /usr/local/bin/nvim
 
+# Copy the entrypoint script into the container
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
 # Create a non-root user
 RUN useradd -ms /bin/bash ${DEVUSER_NAME}
 
@@ -62,6 +72,9 @@ USER ${DEVUSER_NAME}
 
 # Set the working directory
 WORKDIR /home/${DEVUSER_NAME}
+
+# Install Deno
+RUN curl -fsSL https://deno.land/install.sh | sh
 
 # Install NVM
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
@@ -80,10 +93,25 @@ RUN git clone --depth 1 https://github.com/jabez007/AstroNvim-config.git ~/.conf
 RUN nvim --headless -c "Lazy! sync" -c "qa!"
 
 # Pre-install Mason tools
-RUN nvim --headless -c "MasonUpdate" -c "MasonInstallAll" -c "qa!"
+# Run Mason commands with explicit plugin loading
+RUN nvim --headless +"\
+  MasonInstall \
+  css-lsp \
+  deno \
+  eslint-lsp \
+  html-lsp \
+  json-lsp \
+  js-debug-adapter \
+  prettierd \
+  vtsls \
+  vue-language-server \
+  " +q
+
+# Set shell for ToggleTerm
+ENV SHELL="/bin/bash"
 
 # Start nvim
-ENTRYPOINT ["/bin/bash", "-i", "-c", "nvim"]
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
 # Open present working directory
 CMD ["."]
