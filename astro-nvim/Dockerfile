@@ -18,15 +18,19 @@ RUN apt-get update && \
   curl \
   git \
   lua5.1 \
-  nodejs \ 
-  npm \
+  #nodejs \ 
+  #npm \
   #lazygit \
   #bottom \
   python3 \
   golang \
   #neovim \
   ripgrep \
+  unzip \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Set the SHELL to bash with pipefail option
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Install LazyGit
 RUN curl -L $(curl -s https://api.github.com/repos/jesseduffield/lazygit/releases/latest | \
@@ -45,7 +49,7 @@ RUN curl -L $(curl -s https://api.github.com/repos/ClementTsang/bottom/releases/
 
 # Download and install the latest Neovim .tar.gz package
 RUN curl -LO https://github.com/neovim/neovim/releases/download/stable/nvim-linux64.tar.gz && \
-  rm -rf /opt/nvim && \
+  rm -rf /opt/nvim* && \
   tar -C /opt -xzf nvim-linux64.tar.gz && \
   rm nvim-linux64.tar.gz && \
   ln -s /opt/nvim-linux64/bin/nvim /usr/local/bin/nvim
@@ -59,6 +63,15 @@ USER ${DEVUSER_NAME}
 # Set the working directory
 WORKDIR /home/${DEVUSER_NAME}
 
+# Install NVM
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+
+# Set the SHELL to interactive bash to use nvm
+SHELL ["/bin/bash", "-i", "-c"]
+
+# Install latest LTS version of Node.js
+RUN nvm install --lts
+
 # Clone AstroNvim config
 RUN git clone --depth 1 https://github.com/jabez007/AstroNvim-config.git ~/.config/nvim && \
   rm -rf ~/.config/nvim/.git
@@ -70,7 +83,7 @@ RUN nvim --headless -c "Lazy! sync" -c "qa!"
 RUN nvim --headless -c "MasonUpdate" -c "MasonInstallAll" -c "qa!"
 
 # Start nvim
-ENTRYPOINT ["nvim"]
+ENTRYPOINT ["/bin/bash", "-i", "-c", "nvim"]
 
 # Open present working directory
 CMD ["."]
