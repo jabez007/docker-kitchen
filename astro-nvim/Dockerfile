@@ -17,7 +17,6 @@ RUN apt-get update && \
   apt-get upgrade -y && \
   apt-get install -y --no-install-recommends \
   bash \
-  build-essential \
   curl \
   git \
   lua5.1 \
@@ -30,6 +29,10 @@ RUN apt-get update && \
   #neovim \
   ripgrep \
   unzip \
+  build-essential \
+  ca-certificates \
+  libssl-dev \
+  libffi-dev \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Set the SHELL to bash with pipefail option
