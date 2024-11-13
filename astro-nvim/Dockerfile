@@ -14,7 +14,7 @@ RUN if [ "$TARGETARCH" = "arm64" ]; then \
 
 # Install AstroNvim recommended dependencies
 RUN apt-get update && \
-  apt-get upgrade -y && \
+  # apt-get upgrade -y && \
   apt-get install -y --no-install-recommends \
   bash \
   curl \
@@ -33,6 +33,7 @@ RUN apt-get update && \
   ca-certificates \
   libssl-dev \
   libffi-dev \
+  openssh-client \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Set the SHELL to bash with pipefail option
