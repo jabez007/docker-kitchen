@@ -15,6 +15,7 @@ RUN apt-get update && \
   apt-get upgrade -y && \
   apt-get install -y \
   bash \
+  build-essential \
   curl \
   git \
   lua5.1 \
