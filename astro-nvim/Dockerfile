@@ -100,8 +100,13 @@ RUN nvim --headless -c "Lazy! sync" -c "qa!"
 RUN nvim --headless +"\
   MasonInstall \
   css-lsp \
+  delve \
   deno \
   eslint-lsp \
+  goimports \
+  gomodifytags \
+  gopls \
+  gotests \
   html-lsp \
   json-lsp \
   js-debug-adapter \
