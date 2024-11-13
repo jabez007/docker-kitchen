@@ -33,10 +33,12 @@ RUN apt-get update && \
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Install the latest Go version
-RUN curl -fsSL "https://go.dev/VERSION?m=text" | \
-    xargs -I {} curl -fsSL "https://go.dev/dl/{}.linux-$(dpkg --print-architecture).tar.gz" -o go.tar.gz && \
-    tar -C /usr/local/bin -xzf go.tar.gz && \
-    rm go.tar.gz
+RUN curl -L "https://go.dev/dl/$(curl -fsSL "https://go.dev/VERSION?m=text" | grep "^go").linux-$(dpkg --print-architecture).tar.gz" -o go.tar.gz && \
+  rm -rf /usr/local/go && \
+  tar -C /usr/local -xzf go.tar.gz && \
+  rm go.tar.gz
+
+ENV PATH="$PATH:/usr/local/go/bin"
 
 # Install LazyGit
 RUN curl -L $(curl -s https://api.github.com/repos/jesseduffield/lazygit/releases/latest | \
