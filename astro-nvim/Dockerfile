@@ -108,6 +108,8 @@ RUN nvim --headless +"\
   gopls \
   gotests \
   html-lsp \
+  iferr \
+  impl \
   json-lsp \
   js-debug-adapter \
   prettierd \
