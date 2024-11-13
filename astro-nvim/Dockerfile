@@ -1,9 +1,11 @@
 FROM --platform=$BUILDPLATFORM debian:stable-slim
 
-ARG DEVUSER_NAME=dev
-
 # Set target architecture variable
 ARG TARGETARCH
+
+# Create a non-root user
+ARG DEVUSER_NAME=dev
+RUN useradd -ms /bin/bash ${DEVUSER_NAME}
 
 #  Enable the arm64 architecture
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
@@ -13,7 +15,7 @@ RUN if [ "$TARGETARCH" = "arm64" ]; then \
 # Install AstroNvim recommended dependencies
 RUN apt-get update && \
   apt-get upgrade -y && \
-  apt-get install -y \
+  apt-get install -y --no-install-recommends \
   bash \
   build-essential \
   curl \
@@ -38,7 +40,6 @@ RUN curl -L "https://go.dev/dl/$(curl -fsSL "https://go.dev/VERSION?m=text" | gr
   rm -rf /usr/local/go && \
   tar -C /usr/local -xzf go.tar.gz && \
   rm go.tar.gz
-
 ENV PATH="$PATH:/usr/local/go/bin"
 
 # Install LazyGit
@@ -67,13 +68,8 @@ RUN curl -LO https://github.com/neovim/neovim/releases/download/stable/nvim-linu
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# Create a non-root user
-RUN useradd -ms /bin/bash ${DEVUSER_NAME}
-
 # Switch to non-root user
 USER ${DEVUSER_NAME}
-
-# Set the working directory
 WORKDIR /home/${DEVUSER_NAME}
 
 # Install Deno
