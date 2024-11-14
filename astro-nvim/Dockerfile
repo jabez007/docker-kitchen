@@ -3,6 +3,9 @@ FROM --platform=$BUILDPLATFORM debian:stable-slim
 # Set target architecture variable
 ARG TARGETARCH
 
+# Define a build argument to indicate the Docker build context
+ARG DOCKER_BUILD=true
+
 # Create a non-root user
 ARG DEVUSER_NAME=dev
 RUN useradd -ms /bin/bash ${DEVUSER_NAME}
