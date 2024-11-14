@@ -123,5 +123,3 @@ ENV SHELL="/bin/bash"
 # Start nvim
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
-# Open present working directory
-CMD ["."]
