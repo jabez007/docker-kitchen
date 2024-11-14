@@ -77,7 +77,7 @@ USER ${DEVUSER_NAME}
 WORKDIR /home/${DEVUSER_NAME}
 
 # Install Deno
-RUN curl -fsSL https://deno.land/install.sh | sh
+RUN curl -SL https://deno.land/install.sh | sh
 
 # Install NVM
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
