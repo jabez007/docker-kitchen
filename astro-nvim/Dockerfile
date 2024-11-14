@@ -76,6 +76,9 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 USER ${DEVUSER_NAME}
 WORKDIR /home/${DEVUSER_NAME}
 
+# Install Deno
+RUN curl -SL https://deno.land/install.sh | sh -s -- -y
+
 # Install NVM
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
 
@@ -84,9 +87,6 @@ SHELL ["/bin/bash", "-i", "-c"]
 
 # Install latest LTS version of Node.js
 RUN nvm install --lts
-
-# Install Deno
-RUN curl -SL https://deno.land/install.sh | sh
 
 # Clone AstroNvim config
 RUN git clone --depth 1 https://github.com/jabez007/AstroNvim-config.git ~/.config/nvim && \
