@@ -89,7 +89,7 @@ SHELL ["/bin/bash", "-i", "-c"]
 RUN nvm install --lts
 
 # Install Deno
-RUN curl -SL https://deno.land/install.sh | sh -s -- -y
+RUN curl -SL https://raw.githubusercontent.com/jabez007/deno_install/refs/heads/fix-docker/install.sh | sh -s -- -y
 
 # Clone AstroNvim config
 RUN git clone --depth 1 https://github.com/jabez007/AstroNvim-config.git ~/.config/nvim && \
