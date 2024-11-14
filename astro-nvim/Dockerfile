@@ -25,6 +25,7 @@ RUN apt-get update && \
   #lazygit \
   #bottom \
   python3 \
+  python-is-python3 \
   #golang \
   #neovim \
   ripgrep \
@@ -50,9 +51,8 @@ ENV PATH="$PATH:/usr/local/go/bin"
 RUN curl -L $(curl -s https://api.github.com/repos/jesseduffield/lazygit/releases/latest | \
   grep "browser_download_url.*lazygit.*$(uname -s).*$(uname -m).*tar.gz" | \
   cut -d : -f 2,3 | tr -d \" | tail -n 1) -o lazygit.tar.gz && \
-  tar -xzf lazygit.tar.gz && \
-  mv lazygit /usr/local/bin/ && \
-  rm -rf lazygit* lazygit.tar.gz
+  tar -C /usr/local/bin -xzf lazygit.tar.gz && \
+  rm lazygit.tar.gz
 
 # Install Bottom
 RUN curl -L $(curl -s https://api.github.com/repos/ClementTsang/bottom/releases/latest | \
