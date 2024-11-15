@@ -2,7 +2,7 @@
 
 # Run nvim with passed arguments or open the current directory by default
 if [ "$#" -eq 0 ]; then
-  nvim
+  exec nvim
 else
-  nvim "$@"
+  exec nvim "$@"
 fi
