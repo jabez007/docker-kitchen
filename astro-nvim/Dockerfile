@@ -124,5 +124,5 @@ RUN nvim --headless +"\
   " +q
 
 # Start nvim
-ENTRYPOINT ["/bin/bash", "-i", "-c", "/usr/local/bin/entrypoint.sh"]
+ENTRYPOINT ["/bin/bash", "-i", "/usr/local/bin/entrypoint.sh"]
 
