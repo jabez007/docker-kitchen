@@ -11,14 +11,7 @@ Additionally, the image configures an alias in the `.bashrc` to update the kubec
 - Automatic SSO configuration at startup
 - Alias for updating kubeconfig with AWS region and EKS cluster
 
-## Build Arguments
-
-The Docker image build requires the following arguments:
-
-- `AWS_REGION`: The AWS region where your EKS cluster is located.
-- `EKS_CLUSTER`: The name of your EKS cluster.
-
-### Build the Docker Image
+## Build the Docker Image
 
 To build the Docker image with the required arguments, run:
 
@@ -26,7 +19,14 @@ To build the Docker image with the required arguments, run:
 docker build --build-arg AWS_REGION=<your-region> --build-arg EKS_CLUSTER=<your-cluster-name> -t aws-kubectl .
 ```
 
-### Running the Container
+### Build Arguments
+
+The Docker image build requires the following arguments:
+
+- `AWS_REGION`: The AWS region where your EKS cluster is located.
+- `EKS_CLUSTER`: The name of your EKS cluster.
+
+## Running the Container
 
 To run the container, ensure your local `.aws` directory is mounted to the container's `/root/.aws` directory. This allows the container to access your AWS configurations and credentials, including SSO profiles.
 
@@ -64,6 +64,14 @@ update-kubeconfig
 ```
 
 This command automatically updates the kubeconfig with the AWS region and EKS cluster name specified during the build.
+
+### Using the JSON Pretty-Print Colorizer
+
+There is a bash alias for a script that can read JSON formatted logs to colorize and pretty-print them
+
+```bash
+kubectl logs -l app=my-k8s-app -f | jsonppc
+```
 
 ### Notes
 
