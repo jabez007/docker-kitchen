@@ -3,9 +3,6 @@ FROM --platform=$BUILDPLATFORM debian:stable-slim
 # Set target architecture variable
 ARG TARGETARCH
 
-# Define a build argument to indicate the Docker build context
-ARG DOCKER_BUILD=true
-
 # Create a non-root user
 ARG DEVUSER_NAME=dev
 RUN useradd -ms /bin/bash ${DEVUSER_NAME}
@@ -83,7 +80,7 @@ WORKDIR /home/${DEVUSER_NAME}
 ENV SHELL="/bin/bash"
 
 # Install Deno
-RUN curl -SL https://raw.githubusercontent.com/jabez007/deno_install/refs/heads/fix-docker/install.sh | sh
+RUN curl -SL https://raw.githubusercontent.com/jabez007/deno_install/refs/heads/fix-docker/install.sh | sh -s -- -y
 
 # Install NVM
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
