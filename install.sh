@@ -9,6 +9,9 @@ set -euo pipefail
 TMUX_SESSION="default"
 FISH_CONFIG="$HOME/.config/fish/config.fish"
 BASHRC="$HOME/.bashrc"
+TMUX_CONF="$HOME/.tmux.conf"
+TPM_DIR="$HOME/.tmux/plugins/tpm"
+TMUX_RESURRECT="tmux-plugins/tmux-resurrect"
 
 # Function to install dependencies
 install_dependencies() {
@@ -25,6 +28,35 @@ install_dependencies() {
         printf "Unsupported package manager. Install tmux and fish manually.\n" >&2
         return 1
     fi
+}
+
+# Function to install tmux-resurrect via TPM
+install_tmux_resurrect() {
+    printf "Installing tmux-resurrect...\n"
+
+    # Install TPM if not already installed
+    if [[ ! -d "$TPM_DIR" ]]; then
+        printf "Cloning TPM (Tmux Plugin Manager)...\n"
+        git clone https://github.com/tmux-plugins/tpm "$TPM_DIR"
+    fi
+
+    # Add tmux-resurrect to .tmux.conf if not already present
+    if ! grep -q "set -g @plugin \"$TMUX_RESURRECT\"" "$TMUX_CONF" 2>/dev/null; then
+        {
+            printf "\n# Tmux Plugin Manager and tmux-resurrect\n"
+            printf "set -g @plugin 'tmux-plugins/tpm'\n"
+            printf "set -g @plugin 'tmux-plugins/tmux-sensible'\n"
+            printf "set -g @plugin '%s'\n\n" "$TMUX_RESURRECT"
+            printf "# Initialize TPM (Tmux Plugin Manager)\n"
+            printf "run '~/.tmux/plugins/tpm/tpm'\n"
+        } >>"$TMUX_CONF"
+        printf "Added tmux-resurrect to .tmux.conf.\n"
+    else
+        printf "tmux-resurrect already configured in .tmux.conf.\n"
+    fi
+
+    printf "Reloading tmux environment to install plugins...\n"
+    tmux source "$TMUX_CONF" || printf "tmux is not running. Plugins will be installed on the next tmux start.\n"
 }
 
 # Function to configure fish to auto-attach to a tmux session
@@ -46,7 +78,7 @@ configure_fish() {
             printf "        end\n"
             printf "    end\n"
             printf "end\n"
-        } >> "$FISH_CONFIG"
+        } >>"$FISH_CONFIG"
         printf "Fish configuration updated.\n"
     else
         printf "Fish configuration already set up for tmux.\n"
@@ -66,7 +98,7 @@ update_bashrc() {
             printf "        exec fish\n"
             printf "    fi\n"
             printf "fi\n"
-        } >> "$BASHRC"
+        } >>"$BASHRC"
         printf ".bashrc updated to launch fish.\n"
     else
         printf ".bashrc already configured to launch fish.\n"
@@ -75,6 +107,7 @@ update_bashrc() {
 
 main() {
     install_dependencies
+    install_tmux_resurrect
     configure_fish
     update_bashrc
     printf "Installation and configuration complete. Restart your terminal to start using fish with tmux.\n"
