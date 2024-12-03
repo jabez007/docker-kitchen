@@ -76,11 +76,16 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 USER ${DEVUSER_NAME}
 WORKDIR /home/${DEVUSER_NAME}
 
+# Make sure lazygit config exists
+RUN mkdir -p /home/${DEVUSER_NAME}/.config/lazygit && \
+  touch /home/${DEVUSER_NAME}/.config/lazygit/config.yml
+
 # Set shell for ToggleTerm and Deno installer
 ENV SHELL="/bin/bash"
 
 # Install Deno
-RUN curl -SL https://raw.githubusercontent.com/jabez007/deno_install/refs/heads/fix-docker/install.sh | sh -s -- -y
+#RUN curl -SL https://raw.githubusercontent.com/jabez007/deno_install/refs/heads/fix-docker/install.sh | sh -s -- -y
+RUN curl -SL https://deno.land/install.sh | sh -s -- -y
 
 # Install NVM
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
