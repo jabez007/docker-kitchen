@@ -133,7 +133,11 @@ install_neovim() {
     rm -rf /opt/nvim*
     tar -C /opt -xzf nvim-linux64.tar.gz
     rm nvim-linux64.tar.gz
-    ln -s /opt/nvim-linux64/bin/nvim /usr/local/bin/nvim
+    # Create or update the symbolic link
+    if [[ -L /usr/local/bin/nvim ]]; then
+        printf "Symbolic link '/usr/local/bin/nvim' already exists. Overwriting...\n"
+    fi
+    ln -sf /opt/nvim-linux64/bin/nvim /usr/local/bin/nvim
 }
 
 main() {
