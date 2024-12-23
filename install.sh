@@ -17,13 +17,13 @@ TMUX_RESURRECT="tmux-plugins/tmux-resurrect"
 install_dependencies() {
     printf "Installing tmux and fish...\n"
     if command -v apt >/dev/null 2>&1; then
-        sudo apt update && sudo apt install -y tmux fish
+        sudo apt update && sudo apt install -y tmux fish git
     elif command -v dnf >/dev/null 2>&1; then
-        sudo dnf install -y tmux fish
+        sudo dnf install -y tmux fish git
     elif command -v yum >/dev/null 2>&1; then
-        sudo yum install -y tmux fish
+        sudo yum install -y tmux fish git
     elif command -v brew >/dev/null 2>&1; then
-        brew install tmux fish
+        brew install tmux fish git
     else
         printf "Unsupported package manager. Install tmux and fish manually.\n" >&2
         return 1
