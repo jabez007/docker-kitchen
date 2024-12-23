@@ -3,12 +3,17 @@
 set -euo pipefail
 
 debug=false
+system_wide=false
 
 # Parse command-line options
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --debug|-d)
             debug=true
+            shift
+            ;;
+        --system-wide|-s)
+            system_wide=true
             shift
             ;;
         *)
@@ -32,13 +37,31 @@ trim() {
 # Function to persist PATH changes
 persist_path_update() {
     local path_entry="$1"
-    local shell_config="${HOME}/.bashrc"
+    local shell_config
 
-    # Detect Zsh and use .zshrc if applicable
-    if [[ -n "${ZSH_VERSION-}" ]]; then
-        shell_config="${HOME}/.zshrc"
+    if $system_wide; then
+        # Use system-wide configuration files
+        if [[ -n "${ZSH_VERSION-}" ]]; then
+            shell_config="/etc/zsh/zshrc"
+        else
+            shell_config="/etc/bash.bashrc"
+        fi
+    else
+        # Use user-specific configuration files
+        if [[ -n "${SUDO_USER-}" ]]; then
+            shell_config="/home/$SUDO_USER/.bashrc"
+            if [[ -n "${ZSH_VERSION-}" ]]; then
+                shell_config="/home/$SUDO_USER/.zshrc"
+            fi
+        else
+            shell_config="${HOME}/.bashrc"
+            if [[ -n "${ZSH_VERSION-}" ]]; then
+                shell_config="${HOME}/.zshrc"
+            fi
+        fi
     fi
 
+    # Append the PATH update if not already present
     if ! grep -qxF "export PATH=\"\$PATH:${path_entry}\"" "$shell_config"; then
         printf "\n# Add Go to PATH\nexport PATH=\"\$PATH:${path_entry}\"\n" >> "$shell_config"
         printf "Updated PATH in %s\n" "$shell_config"
@@ -56,13 +79,13 @@ install_go() {
     tar -C /usr/local -xzf go.tar.gz
     rm go.tar.gz
 
-    # Set location for go executable
+    # Set location of go executable
     local go_bin="/usr/local/go/bin"
 
     # Update PATH for the current session
     export PATH="$PATH:$go_bin"
 
-    # Persist PATH for future sessions
+    # Persist PATH
     persist_path_update "$go_bin"
 }
 
