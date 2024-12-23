@@ -2,26 +2,68 @@
 
 set -euo pipefail
 
-# Enable command tracing for debugging
-set -x
+debug=false
+
+# Parse command-line options
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --debug|-d)
+            debug=true
+            shift
+            ;;
+        *)
+            printf "Unknown option: %s\n" "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+# Enable debugging if --debug or -d is passed
+if $debug; then
+    set -x
+fi
+
+# Helper function to trim leading and trailing whitespace
+trim() {
+    local input="$1"
+    printf "%s" "$input" | awk '{$1=$1};1'
+}
+
+# Function to persist PATH changes
+persist_path_update() {
+    local path_entry="$1"
+    local shell_config="${HOME}/.bashrc"
+
+    # Detect Zsh and use .zshrc if applicable
+    if [[ -n "${ZSH_VERSION-}" ]]; then
+        shell_config="${HOME}/.zshrc"
+    fi
+
+    if ! grep -qxF "export PATH=\"\$PATH:${path_entry}\"" "$shell_config"; then
+        printf "\n# Add Go to PATH\nexport PATH=\"\$PATH:${path_entry}\"\n" >> "$shell_config"
+        printf "Updated PATH in %s\n" "$shell_config"
+    fi
+}
 
 install_go() {
     local go_url
     go_url=$(curl -fsSL "https://go.dev/VERSION?m=text" | grep "^go" | \
         awk -v arch="$(dpkg --print-architecture)" '{printf "https://go.dev/dl/%s.linux-%s.tar.gz", $1, arch}')
+    go_url=$(trim "$go_url")
     printf "Resolved Go URL: %s\n" "$go_url"
     curl -L "$go_url" -o go.tar.gz
     rm -rf /usr/local/go
     tar -C /usr/local -xzf go.tar.gz
     rm go.tar.gz
 
-    # Update PATH for current session
-    export PATH="$PATH:/usr/local/go/bin"
+    # Set location for go executable
+    local go_bin="/usr/local/go/bin"
 
-    # Persist PATH modification
-    if ! grep -q "/usr/local/go/bin" ~/.bashrc; then
-        printf '\n# Add Go to PATH\nexport PATH="$PATH:/usr/local/go/bin"\n' >> ~/.bashrc
-    fi
+    # Update PATH for the current session
+    export PATH="$PATH:$go_bin"
+
+    # Persist PATH for future sessions
+    persist_path_update "$go_bin"
 }
 
 install_lazygit() {
@@ -30,6 +72,7 @@ install_lazygit() {
     lazygit_url=$(curl -s https://api.github.com/repos/jesseduffield/lazygit/releases/latest | \
         grep "browser_download_url.*lazygit.*$(uname -s).*$(uname -m).*tar.gz" | \
         cut -d : -f 2,3 | tr -d \" | tail -n 1)
+    lazygit_url=$(trim "$lazygit_url")
 
     if [[ -z "$lazygit_url" ]]; then
         printf "Error: LazyGit download URL could not be resolved.\n" >&2
@@ -48,6 +91,7 @@ install_bottom() {
     bottom_url=$(curl -s https://api.github.com/repos/ClementTsang/bottom/releases/latest | \
         grep "browser_download_url.*bottom.*$(dpkg --print-architecture).*deb" | \
         cut -d : -f 2,3 | tr -d \" | tail -n 1)
+    bottom_url=$(trim "$bottom_url")
 
     if [[ -z "$bottom_url" ]]; then
         printf "Error: Bottom download URL could not be resolved.\n" >&2
