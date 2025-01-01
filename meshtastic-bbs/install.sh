@@ -7,7 +7,7 @@
 # -p for Python CLI installation
 
 # Global variables
-MESHTASTIC_VERSION="2.5.15.79da236"  # Update this to the desired Meshtastic version
+MESHTASTIC_VERSION="2.5.15.79da236" # Update this to the desired Meshtastic version
 MESHTASTIC_DEB="meshtasticd_${MESHTASTIC_VERSION}_arm64.deb"
 MESHTASTIC_URL="https://github.com/meshtastic/firmware/releases/download/v${MESHTASTIC_VERSION}/${MESHTASTIC_DEB}"
 CONFIG_FILE="/etc/meshtasticd/config.yaml"
@@ -35,18 +35,18 @@ check_tools() {
 parse_arguments() {
     while getopts "wp" opt; do
         case $opt in
-            w)
-                INCLUDE_WEB_SERVER=true
-                ;;
-            p)
-                INCLUDE_PYTHON_CLI=true
-                ;;
-            *)
-                printf "Usage: %s [-w] [-p]\n" "$0"
-                printf "  -w  Include web server dependencies and configuration\n"
-                printf "  -p  Install Python CLI for Meshtastic\n"
-                exit 1
-                ;;
+        w)
+            INCLUDE_WEB_SERVER=true
+            ;;
+        p)
+            INCLUDE_PYTHON_CLI=true
+            ;;
+        *)
+            printf "Usage: %s [-w] [-p]\n" "$0"
+            printf "  -w  Include web server dependencies and configuration\n"
+            printf "  -p  Install Python CLI for Meshtastic\n"
+            exit 1
+            ;;
         esac
     done
 }
