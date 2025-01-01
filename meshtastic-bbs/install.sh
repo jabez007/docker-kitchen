@@ -112,8 +112,8 @@ main() {
     check_root
     parse_arguments "$@"
     install_dependencies
-    install_meshtasticd
     enable_interfaces
+    install_meshtasticd
     configure_meshtasticd
     restart_service
     printf "Meshtastic setup completed successfully.\n"
