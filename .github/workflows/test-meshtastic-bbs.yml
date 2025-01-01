@@ -38,7 +38,8 @@ jobs:
             && apt-get clean && rm -rf /var/lib/apt/lists/*
 
           # Make sure the directory for raspi-config exists
-          RUN mkdir -p /boot/firmware
+          RUN mkdir -p /boot/firmware && \
+            touch /boot/firmware/config.txt
 
           # Copy the setup script into the container
           COPY install.sh /usr/local/bin/install.sh
