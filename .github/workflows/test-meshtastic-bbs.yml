@@ -24,7 +24,7 @@ jobs:
         run: |
           cat << 'EOF' > ./meshtastic-bbs/Dockerfile.test
           # Use a lightweight ARM64 base image suitable for Raspberry Pi
-          FROM arm64v8/debian:bullseye-slim
+          FROM dtcooper/raspberrypi-os:bookworm
 
           # Set environment variables
           ENV DEBIAN_FRONTEND=noninteractive

@@ -156,4 +156,5 @@ main() {
     printf "  sudo nano %s\n" "$CONFIG_FILE"
     printf "Refer to: https://meshtastic.org/docs/hardware/devices/linux-native-hardware\n"
 }
+
 main "$@"
