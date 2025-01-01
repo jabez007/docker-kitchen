@@ -65,4 +65,4 @@ jobs:
 
       - name: Build Docker Image for ARM64
         run: |
-          docker buildx build --platform linux/arm64 -t meshtastic-setup:arm64 -f Dockerfile.test ./meshtastic-bbs
+          docker buildx build --platform linux/arm64 -t meshtastic-setup:arm64 -f ./meshtastic-bbs/Dockerfile.test ./meshtastic-bbs
