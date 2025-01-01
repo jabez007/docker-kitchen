@@ -1,0 +1,68 @@
+name: Test install script for meshtastic-bbs
+
+on:
+  push:
+    branches-ignore:
+      - main
+      - master
+    paths:
+      - "meshtastic-bbs/install.sh"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: See which repo we just cloned
+        if: ${{ vars.pipeline_debug == 'true' }}
+        run: ls -alh
+        shell: bash
+
+      - name: Generate test Dockerfile
+        run: |
+          cat << 'EOF' > ./meshtastic-bbs/Dockerfile.test
+          # Use a lightweight ARM64 base image suitable for Raspberry Pi
+          FROM arm64v8/debian:bullseye-slim
+
+          # Set environment variables
+          ENV DEBIAN_FRONTEND=noninteractive
+
+          # Update the system and install required tools and dependencies
+          RUN apt-get update && \
+            apt-get install -y --no-install-recommends \
+            wget \
+            sed \
+            raspi-config \
+            && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+          # Copy the setup script into the container
+          COPY install.sh /usr/local/bin/install.sh
+
+          # Make the script executable
+          RUN chmod +x /usr/local/bin/install.sh
+
+          # Execute the setup script
+          RUN /usr/local/bin/install.sh -p
+
+          CMD ["tail", "-f", "meshtastic_setup.log"]
+          EOF
+        shell: bash
+
+      - name: Inspect generated Dockerfile
+        run: |
+          cat ./meshtastic-bbs/Dockerfile.test
+        shell: bash
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker Image for ARM64
+        run: |
+          docker buildx build --platform linux/arm64 -t meshtastic-setup:arm64 -f Dockerfile.test ./meshtastic-bbs
