@@ -2,7 +2,9 @@
 
 # Meshtastic Setup Script for Raspberry Pi
 # This script installs and configures Meshtastic on a Raspberry Pi with a compatible LoRa HAT.
-# Web server support is optional and can be included using the -w flag.
+# Web server support and Python CLI installation are optional and can be included using flags:
+# -w for web server support
+# -p for Python CLI installation
 
 # Global variables
 MESHTASTIC_VERSION="2.5.15.79da236"  # Update this to the desired Meshtastic version
@@ -10,6 +12,7 @@ MESHTASTIC_DEB="meshtasticd_${MESHTASTIC_VERSION}_arm64.deb"
 MESHTASTIC_URL="https://github.com/meshtastic/firmware/releases/download/v${MESHTASTIC_VERSION}/${MESHTASTIC_DEB}"
 CONFIG_FILE="/etc/meshtasticd/config.yaml"
 INCLUDE_WEB_SERVER=false
+INCLUDE_PYTHON_CLI=false
 
 # Function to check if the script is run as root
 check_root() {
@@ -19,16 +22,29 @@ check_root() {
     fi
 }
 
+check_tools() {
+    for tool in wget sed; do
+        if ! command -v "$tool" &>/dev/null; then
+            printf "Required tool '%s' is not installed. Please install it and re-run the script.\n" "$tool" >&2
+            exit 1
+        fi
+    done
+}
+
 # Function to parse script arguments
 parse_arguments() {
-    while getopts "w" opt; do
+    while getopts "wp" opt; do
         case $opt in
             w)
                 INCLUDE_WEB_SERVER=true
                 ;;
+            p)
+                INCLUDE_PYTHON_CLI=true
+                ;;
             *)
-                printf "Usage: $0 [-w]\n"
+                printf "Usage: %s [-w] [-p]\n" "$0"
                 printf "  -w  Include web server dependencies and configuration\n"
+                printf "  -p  Install Python CLI for Meshtastic\n"
                 exit 1
                 ;;
         esac
@@ -51,6 +67,10 @@ install_dependencies() {
             libulfius-dev \
             liborcania-dev
     fi
+
+    if $INCLUDE_PYTHON_CLI; then
+        apt install -y python3-pip pipx
+    fi
 }
 
 # Function to download and install Meshtasticd
@@ -64,40 +84,48 @@ install_meshtasticd() {
     fi
 }
 
+# Function to install Meshtastic Python CLI
+install_python_cli() {
+    if ! pip install meshtastic; then
+        printf "Failed to install Meshtastic Python CLI using pip. Attempting install using pipx.\n" >&2
+
+        if ! pipx install meshtastic; then
+            printf "Failed to install Meshtastic Python CLI using pipx. Exiting.\n" >&2
+            exit 1
+        fi
+
+        # Ensure ~/.local/bin is in PATH
+        pipx ensurepath
+    fi
+}
+
 # Function to enable SPI and I2C interfaces
 enable_interfaces() {
     raspi-config nonint set_config_var dtparam=spi on /boot/firmware/config.txt
+
+    if ! grep -q '^\s*dtparam=spi=on' /boot/firmware/config.txt; then
+        printf "Failed to enable SPI. Please check /boot/firmware/config.txt manually.\n" >&2
+        exit 1
+    fi
+
     raspi-config nonint set_config_var dtparam=i2c_arm on /boot/firmware/config.txt
+
+    if ! grep -q '^\s*dtparam=i2c_arm=on' /boot/firmware/config.txt; then
+        printf "Failed to enable I2C. Please check /boot/firmware/config.txt manually.\n" >&2
+        exit 1
+    fi
 
     # Ensure dtoverlay=spi0-0cs is set in /boot/firmware/config.txt without altering dtoverlay=vc4-kms-v3d or dtparam=uart0
     sed -i -e '/^\s*#\?\s*dtoverlay\s*=\s*vc4-kms-v3d/! s/^\s*#\?\s*(dtoverlay|dtparam\s*=\s*uart0)\s*=.*/dtoverlay=spi0-0cs/' /boot/firmware/config.txt
 
+    # Insert dtoverlay=spi0-0cs after dtparam=spi=on if not already present
     if ! grep -q '^\s*dtoverlay=spi0-0cs' /boot/firmware/config.txt; then
         sed -i '/^\s*dtparam=spi=on/a dtoverlay=spi0-0cs' /boot/firmware/config.txt
     fi
-}
 
-# Function to configure Meshtasticd
-configure_meshtasticd() {
-    if [[ -f "$CONFIG_FILE" ]]; then
-        cp "$CONFIG_FILE" "${CONFIG_FILE}.bak"
-        sed -i '/^#\?Lora:/,/^$/ s/^#//' "$CONFIG_FILE"
-        sed -i 's/^  Module:.*/  Module: sx1262/' "$CONFIG_FILE"
-        sed -i 's/^  DIO2_AS_RF_SWITCH:.*/  DIO2_AS_RF_SWITCH: true/' "$CONFIG_FILE"
-        sed -i 's/^  CS:.*/  CS: 21/' "$CONFIG_FILE"
-        sed -i 's/^  IRQ:.*/  IRQ: 16/' "$CONFIG_FILE"
-        sed -i 's/^  Busy:.*/  Busy: 20/' "$CONFIG_FILE"
-        sed -i 's/^  Reset:.*/  Reset: 18/' "$CONFIG_FILE"
-    else
-        printf "Configuration file not found at %s. Exiting.\n" "$CONFIG_FILE" >&2
+    if ! grep -q '^\s*dtoverlay=spi0-0cs' /boot/firmware/config.txt; then
+        printf "Failed to set dtoverlay=spi0-0cs. Please check /boot/firmware/config.txt manually.\n" >&2
         exit 1
-    fi
-
-    if $INCLUDE_WEB_SERVER; then
-        sed -i '/^#\?WebServer:/,/^$/ s/^#//' "$CONFIG_FILE"
-        sed -i 's/^  Enabled:.*/  Enabled: true/' "$CONFIG_FILE"
-        sed -i 's/^  BindAddress:.*/  BindAddress: 0.0.0.0/' "$CONFIG_FILE"
-        sed -i 's/^  Port:.*/  Port: 8080/' "$CONFIG_FILE"
     fi
 }
 
@@ -109,15 +137,24 @@ restart_service() {
 
 # Main function
 main() {
+    exec > >(tee -i meshtastic_setup.log)
+    exec 2>&1
+
     check_root
+    check_tools
     parse_arguments "$@"
     install_dependencies
     enable_interfaces
     install_meshtasticd
-    configure_meshtasticd
+    if $INCLUDE_PYTHON_CLI; then
+        install_python_cli
+    fi
     restart_service
+
     printf "Meshtastic setup completed successfully.\n"
+    printf "To configure your LoRa module, edit the file:\n"
+    printf "  sudo nano %s\n" "$CONFIG_FILE"
+    printf "Refer to: https://meshtastic.org/docs/hardware/devices/linux-native-hardware\n"
 }
 
-# Execute main function
 main "$@"
