@@ -69,8 +69,11 @@ enable_interfaces() {
     raspi-config nonint set_config_var dtparam=spi on /boot/firmware/config.txt
     raspi-config nonint set_config_var dtparam=i2c_arm on /boot/firmware/config.txt
 
+    # Ensure dtoverlay=spi0-0cs is set in /boot/firmware/config.txt without altering dtoverlay=vc4-kms-v3d or dtparam=uart0
+    sed -i -e '/^\s*#\?\s*dtoverlay\s*=\s*vc4-kms-v3d/! s/^\s*#\?\s*(dtoverlay|dtparam\s*=\s*uart0)\s*=.*/dtoverlay=spi0-0cs/' /boot/firmware/config.txt
+
     if ! grep -q '^\s*dtoverlay=spi0-0cs' /boot/firmware/config.txt; then
-        printf "dtoverlay=spi0-0cs\n" >> /boot/firmware/config.txt
+        sed -i '/^\s*dtparam=spi=on/a dtoverlay=spi0-0cs' /boot/firmware/config.txt
     fi
 }
 
