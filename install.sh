@@ -13,6 +13,36 @@ TMUX_CONF="$HOME/.tmux.conf"
 TPM_DIR="$HOME/.tmux/plugins/tpm"
 TMUX_RESURRECT="tmux-plugins/tmux-resurrect"
 
+# Flags for Docker installation
+INSTALL_DOCKER=""
+
+# Function to parse arguments
+parse_args() {
+    for arg in "$@"; do
+        case "$arg" in
+            --install-docker)
+                INSTALL_DOCKER=true
+                ;;
+            --skip-docker)
+                INSTALL_DOCKER=false
+                ;;
+            --help|-h)
+                printf "Usage: %s [OPTIONS]\n\n" "$(basename "$0")"
+                printf "Options:\n"
+                printf "  --install-docker    Install Docker without prompting\n"
+                printf "  --skip-docker       Skip Docker installation without prompting\n"
+                printf "  -h, --help          Display this help message\n"
+                exit 0
+                ;;
+            *)
+                printf "Unknown option: %s\n" "$arg" >&2
+                printf "Use --help for usage information.\n"
+                exit 1
+                ;;
+        esac
+    done
+}
+
 # Function to install dependencies
 install_dependencies() {
     printf "Installing tmux and fish...\n"
@@ -28,6 +58,91 @@ install_dependencies() {
         printf "Unsupported package manager. Install tmux and fish manually.\n" >&2
         return 1
     fi
+}
+
+# Function to install Docker for Ubuntu or Fedora with post-installation steps
+install_docker() {
+    printf "Installing Docker...\n"
+
+    # Check if Docker is already installed
+    if command -v docker >/dev/null 2>&1; then
+        printf "Docker is already installed. Skipping installation.\n"
+        return
+    fi
+
+    # Detect the operating system and run the corresponding steps
+    if command -v apt >/dev/null 2>&1; then
+        printf "Detected Ubuntu-based system. Installing Docker...\n"
+
+        # Ubuntu installation steps
+        sudo apt update
+        sudo apt install -y ca-certificates curl gnupg
+        sudo install -m 0755 -d /etc/apt/keyrings
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+        sudo chmod a+r /etc/apt/keyrings/docker.gpg
+        echo \
+          "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+          $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+        sudo apt update
+        sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+        printf "Docker installation complete on Ubuntu.\n"
+
+    elif command -v dnf >/dev/null 2>&1; then
+        printf "Detected Fedora-based system. Installing Docker...\n"
+
+        # Fedora installation steps
+        sudo dnf -y install dnf-plugins-core
+        sudo dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
+        sudo dnf -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+        sudo systemctl start docker
+        sudo systemctl enable docker
+
+        printf "Docker installation complete on Fedora.\n"
+
+    elif command -v yum >/dev/null 2>&1; then
+        printf "Detected RPM-based system. Installing Docker...\n"
+
+        # RPM installation steps
+        sudo yum install -y yum-utils
+        sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+        sudo yum install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+        sudo systemctl start docker
+        sudo systemctl enable docker
+
+        printf "Docker installation complete on RPM.\n"
+
+    elif command -v brew >/dev/null 2>&1; then
+        printf "Detected Homebrew package manager. Installing Docker...\n"
+
+        brew install --cask docker
+
+        printf "Docker installation complete thru Homebrew.\n"
+
+    else
+        printf "Unsupported operating system. Please install Docker manually.\n" >&2
+        return 1
+    fi
+
+    # Post-installation steps
+    printf "Performing Docker post-installation steps...\n"
+
+    # Create the docker group if it doesn't exist
+    if ! getent group docker >/dev/null; then
+        sudo groupadd docker
+        printf "Docker group created.\n"
+    else
+        printf "Docker group already exists.\n"
+    fi
+
+    # Add the current user to the docker group
+    sudo usermod -aG docker "$USER"
+    printf "Added user '%s' to the 'docker' group.\n" "$USER"
+
+    # Notify the user about restarting the session
+    printf "\nTo apply the changes, restart your terminal session or run:\n"
+    printf "  exec sg docker -c \"$(basename "$SHELL")\"\n"
+    printf "\nDocker installation and configuration complete.\n"
 }
 
 # Function to install tmux-resurrect via TPM
@@ -106,10 +221,29 @@ update_bashrc() {
 }
 
 main() {
+    parse_args "$@"
     install_dependencies
     install_tmux_resurrect
     configure_fish
     update_bashrc
+
+    # Prompt if no flag is provided
+    if [[ -z "$INSTALL_DOCKER" ]]; then
+        read -p "Do you want to install Docker? (y/n): " install_docker_choice
+        if [[ "$install_docker_choice" =~ ^[Yy]$ ]]; then
+            INSTALL_DOCKER=true
+        else
+            INSTALL_DOCKER=false
+        fi
+    fi
+
+    # Install Docker if requested
+    if [[ "$INSTALL_DOCKER" == true ]]; then
+        install_docker
+    else
+        printf "Skipping Docker installation.\n"
+    fi
+
     printf "Installation and configuration complete. Restart your terminal to start using fish with tmux.\n"
 }
 
