@@ -8,18 +8,18 @@ system_wide=false
 # Parse command-line options
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --debug|-d)
-            debug=true
-            shift
-            ;;
-        --system-wide|-s)
-            system_wide=true
-            shift
-            ;;
-        *)
-            printf "Unknown option: %s\n" "$1" >&2
-            exit 1
-            ;;
+    --debug | -d)
+        debug=true
+        shift
+        ;;
+    --system-wide | -s)
+        system_wide=true
+        shift
+        ;;
+    *)
+        printf "Unknown option: %s\n" "$1" >&2
+        exit 1
+        ;;
     esac
 done
 
@@ -27,6 +27,23 @@ done
 if $debug; then
     set -x
 fi
+
+# Function to install dependencies
+install_dependencies() {
+    apt-get update && apt-get install -y --no-install-recommends \
+        bash \
+        curl \
+        git \
+        lua5.1 \
+        python3 \
+        ripgrep \
+        unzip \
+        build-essential \
+        ca-certificates \
+        libssl-dev \
+        libffi-dev \
+        openssh-client
+}
 
 # Helper function to trim leading and trailing whitespace
 trim() {
@@ -63,14 +80,14 @@ persist_path_update() {
 
     # Append the PATH update if not already present
     if ! grep -qxF "export PATH=\"\$PATH:${path_entry}\"" "$shell_config"; then
-        printf "\n# Add Go to PATH\nexport PATH=\"\$PATH:${path_entry}\"\n" >> "$shell_config"
+        printf "\n# Add Go to PATH\nexport PATH=\"\$PATH:${path_entry}\"\n" >>"$shell_config"
         printf "Updated PATH in %s\n" "$shell_config"
     fi
 }
 
 install_go() {
     local go_url
-    go_url=$(curl -fsSL "https://go.dev/VERSION?m=text" | grep "^go" | \
+    go_url=$(curl -fsSL "https://go.dev/VERSION?m=text" | grep "^go" |
         awk -v arch="$(dpkg --print-architecture)" '{printf "https://go.dev/dl/%s.linux-%s.tar.gz", $1, arch}')
     go_url=$(trim "$go_url")
     printf "Resolved Go URL: %s\n" "$go_url"
@@ -92,8 +109,8 @@ install_go() {
 install_lazygit() {
     local lazygit_url
     printf "Fetching LazyGit latest release information...\n"
-    lazygit_url=$(curl -s https://api.github.com/repos/jesseduffield/lazygit/releases/latest | \
-        grep "browser_download_url.*lazygit.*$(uname -s).*$(uname -m).*tar.gz" | \
+    lazygit_url=$(curl -s https://api.github.com/repos/jesseduffield/lazygit/releases/latest |
+        grep "browser_download_url.*lazygit.*$(uname -s).*$(uname -m).*tar.gz" |
         cut -d : -f 2,3 | tr -d \" | tail -n 1)
     lazygit_url=$(trim "$lazygit_url")
 
@@ -111,8 +128,8 @@ install_lazygit() {
 install_bottom() {
     local bottom_url
     printf "Fetching Bottom latest release information...\n"
-    bottom_url=$(curl -s https://api.github.com/repos/ClementTsang/bottom/releases/latest | \
-        grep "browser_download_url.*bottom.*$(dpkg --print-architecture).*deb" | \
+    bottom_url=$(curl -s https://api.github.com/repos/ClementTsang/bottom/releases/latest |
+        grep "browser_download_url.*bottom.*$(dpkg --print-architecture).*deb" |
         cut -d : -f 2,3 | tr -d \" | tail -n 1)
     bottom_url=$(trim "$bottom_url")
 
@@ -141,17 +158,35 @@ install_neovim() {
 }
 
 main() {
+    printf "Installing dependencies...\n"
+    install_dependencies || {
+        printf "Failed to install dependencies.\n" >&2
+        exit 1
+    }
+
     printf "Installing Go...\n"
-    install_go || { printf "Failed to install Go.\n" >&2; exit 1; }
+    install_go || {
+        printf "Failed to install Go.\n" >&2
+        exit 1
+    }
 
     printf "Installing LazyGit...\n"
-    install_lazygit || { printf "Failed to install LazyGit.\n" >&2; exit 1; }
+    install_lazygit || {
+        printf "Failed to install LazyGit.\n" >&2
+        exit 1
+    }
 
     printf "Installing Bottom...\n"
-    install_bottom || { printf "Failed to install Bottom.\n" >&2; exit 1; }
+    install_bottom || {
+        printf "Failed to install Bottom.\n" >&2
+        exit 1
+    }
 
     printf "Installing Neovim...\n"
-    install_neovim || { printf "Failed to install Neovim.\n" >&2; exit 1; }
+    install_neovim || {
+        printf "Failed to install Neovim.\n" >&2
+        exit 1
+    }
 
     printf "All tools installed successfully.\n"
 }
