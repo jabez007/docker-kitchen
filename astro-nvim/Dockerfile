@@ -12,61 +12,14 @@ RUN if [ "$TARGETARCH" = "arm64" ]; then \
   dpkg --add-architecture arm64; \
   fi
 
-# Install AstroNvim recommended dependencies
-RUN apt-get update && \
-  # apt-get upgrade -y && \
-  apt-get install -y --no-install-recommends \
-  bash \
-  curl \
-  git \
-  lua5.1 \
-  #nodejs \ 
-  #npm \
-  #lazygit \
-  #bottom \
-  python3 \
-  python-is-python3 \
-  #golang \
-  #neovim \
-  ripgrep \
-  unzip \
-  build-essential \
-  ca-certificates \
-  libssl-dev \
-  libffi-dev \
-  openssh-client \
-  && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Set the SHELL to bash with pipefail option
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-# Install the latest Go version
-RUN curl -L "https://go.dev/dl/$(curl -fsSL "https://go.dev/VERSION?m=text" | grep "^go").linux-$(dpkg --print-architecture).tar.gz" -o go.tar.gz && \
-  rm -rf /usr/local/go && \
-  tar -C /usr/local -xzf go.tar.gz && \
-  rm go.tar.gz
-ENV PATH="$PATH:/usr/local/go/bin"
-
-# Install LazyGit
-RUN curl -L $(curl -s https://api.github.com/repos/jesseduffield/lazygit/releases/latest | \
-  grep "browser_download_url.*lazygit.*$(uname -s).*$(uname -m).*tar.gz" | \
-  cut -d : -f 2,3 | tr -d \" | tail -n 1) -o lazygit.tar.gz && \
-  tar -C /usr/local/bin -xzf lazygit.tar.gz && \
-  rm lazygit.tar.gz
-
-# Install Bottom
-RUN curl -L $(curl -s https://api.github.com/repos/ClementTsang/bottom/releases/latest | \
-  grep "browser_download_url.*bottom.*$(dpkg --print-architecture).*deb" | \
-  cut -d : -f 2,3 | tr -d \" | tail -n 1) -o bottom.deb && \
-  dpkg -i bottom.deb && \
-  rm bottom.deb
-
-# Download and install the latest Neovim .tar.gz package
-RUN curl -LO https://github.com/neovim/neovim/releases/download/stable/nvim-linux64.tar.gz && \
-  rm -rf /opt/nvim* && \
-  tar -C /opt -xzf nvim-linux64.tar.gz && \
-  rm nvim-linux64.tar.gz && \
-  ln -s /opt/nvim-linux64/bin/nvim /usr/local/bin/nvim
+# Install AstroNvim recommended dependencies
+COPY install.sh /root/install.sh
+RUN chmod +x /root/install.sh && \
+  install.sh && \
+  apt-get clean && rm -rf /var/lib/apt/lists/* && \
+  rm /root/install.sh
 
 # Copy the entrypoint script into the container
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
