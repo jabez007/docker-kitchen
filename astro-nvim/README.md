@@ -41,6 +41,21 @@ These arguments can be passed during the build process using the --build-arg fla
 
 ## Usage
 
+### Bash scripts
+
+If you wish to install this on your machine rather than run it as a Docker container
+you just need to run the two bash scripts.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/jabez007/docker-kitchen/master/astro-nvim/install.sh | sudo bash
+```
+
+and
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/jabez007/docker-kitchen/master/astro-nvim/setup.sh | bash
+```
+
 ### Build the Docker image
 
 with a specific non-root user
