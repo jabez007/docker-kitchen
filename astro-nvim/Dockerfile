@@ -37,10 +37,10 @@ RUN mkdir -p /home/${DEVUSER_NAME}/.config/lazygit && \
 ENV SHELL="/bin/bash"
 
 # Set up user utilities
-COPY setup.sh /home/${DEVUSER}/setup.sh
-RUN chmod +x /home/${DEVUSER}/setup.sh && \
-  /home/${DEVUSER}/setup.sh && \
-  rm /home/${DEVUSER}/setup.sh
+COPY setup.sh /home/${DEVUSER_NAME}/setup.sh
+RUN chmod +x /home/${DEVUSER_NAME}/setup.sh && \
+  /home/${DEVUSER_NAME}/setup.sh && \
+  rm /home/${DEVUSER_NAME}/setup.sh
 
 # Set the SHELL to interactive bash
 SHELL ["/bin/bash", "-i", "-c"]
