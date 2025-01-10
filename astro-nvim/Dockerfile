@@ -17,7 +17,7 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 # Install AstroNvim recommended dependencies
 COPY install.sh /root/install.sh
 RUN chmod +x /root/install.sh && \
-  install.sh && \
+  /root/install.sh && \
   apt-get clean && rm -rf /var/lib/apt/lists/* && \
   rm /root/install.sh
 
