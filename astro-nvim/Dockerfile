@@ -36,22 +36,14 @@ RUN mkdir -p /home/${DEVUSER_NAME}/.config/lazygit && \
 # Set shell for ToggleTerm and Deno installer
 ENV SHELL="/bin/bash"
 
-# Install Deno
-#RUN curl -SL https://raw.githubusercontent.com/jabez007/deno_install/refs/heads/fix-docker/install.sh | sh -s -- -y
-RUN curl -SL https://deno.land/install.sh | sh -s -- -y
+# Set up user utilities
+COPY setup.sh /home/${DEVUSER}/setup.sh
+RUN chmod +x /home/${DEVUSER}/setup.sh && \
+  /home/${DEVUSER}/setup.sh && \
+  rm /home/${DEVUSER}/setup.sh
 
-# Install NVM
-RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
-
-# Set the SHELL to interactive bash to use nvm
+# Set the SHELL to interactive bash
 SHELL ["/bin/bash", "-i", "-c"]
-
-# Install latest LTS version of Node.js
-RUN nvm install --lts
-
-# Clone AstroNvim config
-RUN git clone --depth 1 https://github.com/jabez007/AstroNvim-config.git ~/.config/nvim && \
-  rm -rf ~/.config/nvim/.git
 
 # Pre-install Lazy and plugins
 RUN nvim --headless -c "Lazy! sync" -c "qa!"
