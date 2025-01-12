@@ -35,7 +35,8 @@ install_dependencies() {
         curl \
         git \
         lua5.1 \
-        python3 \
+        python3=3.11.2 \
+        python3.11-venv \
         ripgrep \
         unzip \
         build-essential \
