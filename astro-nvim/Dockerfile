@@ -52,7 +52,9 @@ RUN nvim --headless -c "Lazy! sync" -c "qa!"
 # Run Mason commands with explicit plugin loading
 RUN nvim --headless +"\
   MasonInstall \
+  basedpyright \
   css-lsp \
+  debugpy \
   delve \
   deno \
   eslint-lsp \
@@ -63,6 +65,7 @@ RUN nvim --headless +"\
   html-lsp \
   iferr \
   impl \
+  isort \
   json-lsp \
   js-debug-adapter \
   prettierd \
