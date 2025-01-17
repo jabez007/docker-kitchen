@@ -1,9 +1,10 @@
 # /etc/systemd/system
 [Unit]
 Description=Dockerized Meshtastic version of TC²-BBS
-After=multi-user.target
 BindsTo=docker.service
 After=docker.service
+Requires=meshtasticd.service
+After=meshtasticd.service
 
 [Service]
 Type=simple
