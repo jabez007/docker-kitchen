@@ -42,6 +42,7 @@ This project sets up a Meshtastic-based bulletin board system (BBS) on a Raspber
    Meshtasticd
 
    ```bash
+   mv /etc/meshtasticd/config.yaml /etc/meshtasticd/config.yaml.bak
    cp ./meshtasticd_config.yaml /etc/meshtasticd/config.yaml
    ```
 
