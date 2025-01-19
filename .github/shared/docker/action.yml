@@ -10,7 +10,7 @@ inputs:
     default: .
   platforms:
     description: ""
-    default: linux/amd64,linux/arm64
+    default: linux/amd64,linux/arm64,linux/arm64/v8
   build-args:
     required: false
     description: ""
