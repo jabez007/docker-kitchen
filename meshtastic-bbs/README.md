@@ -58,6 +58,10 @@ and a service file managing the dockerized BBS with `systemd`.
    cp ./fortunes.txt /etc/TC2-BBS-mesh/config/fortunes.txt
    ```
 
+   You can update the `hostname` in config.ini
+   to be the IP address of your Raspberry Pi
+   if the sockets library is throwing a connection error.
+
    systemd
 
    ```bash
