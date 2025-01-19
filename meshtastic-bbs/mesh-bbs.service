@@ -1,0 +1,22 @@
+# /etc/systemd/system
+[Unit]
+Description=Dockerized Meshtastic version of TC²-BBS
+BindsTo=docker.service
+After=docker.service
+Requires=meshtasticd.service
+After=meshtasticd.service
+
+[Service]
+Type=simple
+TimeoutStartSec=0
+Restart=on-failure
+RestartSec=20
+WorkingDirectory=/etc/TC2-BBS-mesh
+ExecStartPre=-/usr/bin/docker kill %n
+ExecStartPre=-/usr/bin/docker rm %n
+ExecStartPre=/usr/bin/docker pull jabez07/meshtastic-bbs:latest
+ExecStart=/usr/bin/docker run --name %n jabez07/meshtastic-bbs:latest
+ExecStop=/usr/bin/docker stop %n
+
+[Install]
+WantedBy=multi-user.target

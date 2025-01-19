@@ -1,0 +1,14 @@
+config:
+  device:
+    disableTripleClick: true
+    nodeInfoBroadcastSecs: 10800
+    role: CLIENT_MUTE
+  lora:
+    hopLimit: 3
+    region: US
+    sx126xRxBoostedGain: true
+    txEnabled: true
+    txPower: 30
+    usePreset: true
+owner: Meshtastic BBS
+owner_short: "\u2709"

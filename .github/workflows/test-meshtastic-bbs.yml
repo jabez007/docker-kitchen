@@ -24,7 +24,7 @@ jobs:
         run: |
           cat << 'EOF' > ./meshtastic-bbs/Dockerfile.test
           # Use a lightweight ARM64 base image suitable for Raspberry Pi
-          FROM arm64v8/debian:bullseye-slim
+          FROM dtcooper/raspberrypi-os:bookworm
 
           # Set environment variables
           ENV DEBIAN_FRONTEND=noninteractive
@@ -36,6 +36,10 @@ jobs:
             sed \
             raspi-config \
             && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+          # Make sure the directory for raspi-config exists
+          RUN mkdir -p /boot/firmware && \
+            touch /boot/firmware/config.txt
 
           # Copy the setup script into the container
           COPY install.sh /usr/local/bin/install.sh
@@ -65,4 +69,4 @@ jobs:
 
       - name: Build Docker Image for ARM64
         run: |
-          docker buildx build --platform linux/arm64 -t meshtastic-setup:arm64 -f Dockerfile.test ./meshtastic-bbs
+          docker buildx build --platform linux/arm64 -t meshtastic-setup:arm64 -f ./meshtastic-bbs/Dockerfile.test ./meshtastic-bbs

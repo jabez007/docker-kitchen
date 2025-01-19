@@ -1,0 +1,29 @@
+name: Run Shared Build Workflow for meshtastic-bbs
+
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+    paths:
+      - "meshtastic-bbs/Dockerfile"
+      - "meshtastic-bbs/*.sh"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: See which repo we just cloned
+        if: ${{ vars.pipeline_debug == 'true' }}
+        run: ls -alh
+        shell: bash
+
+      - uses: jabez007/docker-kitchen/.github/shared/docker@master
+        with:
+          context: ./meshtastic-bbs
+          image-name: jabez07/meshtastic-bbs
+          tag: latest
+          debug: ${{ vars.pipeline_debug }}
