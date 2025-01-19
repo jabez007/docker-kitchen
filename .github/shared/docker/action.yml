@@ -106,6 +106,8 @@ runs:
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
+      with:
+        platforms: ${{ inputs.platforms }}
 
     - name: Log in to Docker Container Registry
       if: ${{ inputs.push == 'true' }}
