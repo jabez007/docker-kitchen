@@ -1,13 +1,16 @@
 # Meshtastic BBS
 
-This project sets up a Meshtastic-based bulletin board system (BBS) on a Raspberry Pi with a LoRa hat. It includes tools for configuring `meshtasticd`, setting up a Docker container for the TC2-BBS-mesh system, and managing the system with `systemd`.
+This project sets up a Meshtastic-based bulletin board system (BBS) on a Raspberry Pi with a LoRa hat.
+It includes example configurations for `meshtasticd` and the BBS,
+the Dockerfile for the container that will be running the TC2-BBS-mesh,
+and a service file managing the dockerized BBS with `systemd`.
 
 ## Features
 
 - Automates the installation of meshtasticd with an included `install.sh` script.
 - Provides configurations for `meshtasticd`, the LoRa radio, and the BBS.
 - Deploys the BBS in a Docker container.
-- Includes a secure `systemd` service for automatic management.
+- Includes a `systemd` service for automatic management.
 
 ## Prerequisites
 
@@ -39,7 +42,7 @@ This project sets up a Meshtastic-based bulletin board system (BBS) on a Raspber
 
 3. Copy config:
 
-   Meshtasticd
+   meshtasticd
 
    ```bash
    mv /etc/meshtasticd/config.yaml /etc/meshtasticd/config.yaml.bak
@@ -53,28 +56,68 @@ This project sets up a Meshtastic-based bulletin board system (BBS) on a Raspber
    cp ./bbs_config.ini /etc/TC2-BBS-mesh/config/config.ini
    ```
 
-4. Build and start the Docker container:
+   systemd
 
    ```bash
-   docker build -t meshtastic-bbs .
-   docker run --name meshtastic-bbs meshtastic-bbs
+   cp ./mesh-bbs.service /etc/systemd/system/mesh-bbs.service
    ```
+
+4. Configure Meshtastic:
+
+   The meshtasticd config in the previous step
+   basically just tells the Raspberry Pi how to interface with your specific LoRa hat.
+   Now we have to configure the Meshtastic software
+   same as if we had just turned on a WisBlock4361 for the first time.
+   Luckily, this can be done using the phone app
+   if your Raspberry Pi is connected to your network (ethernet or wifi).
+   You just need to find the IP address of your Raspberry Pi
+   (if you aren't already SSHed in to your Raspberry Pi).
+
+   ```bash
+   ip address show eth0 | awk '/inet (\S*)/ {print $2}' | grep -oP "(\d+\.){3}\d+"
+   ```
+
+   or
+
+   ```bash
+   ip address show wlan0 | awk '/inet (\S*)/ {print $2}' | grep -oP "(\d+\.){3}\d+"
+   ```
+
+   If you are feeling venturous
+   and want to use the command line to configure Meshtastic,
+   the install script has an option to include the Python CLI.
+   Then using the Python CLI you would run commands such as:
+
+   To set the region
+
+   ```bash
+   meshtastic --set lora.region=US
+   ```
+
+   To set the radio's name
+
+   ```bash
+   meshtastic --set-owner "Meshtastic BBS"
+   meshtastic --set-owner-short "\u2709"
+   ```
+
+   [Python CLI reference](https://meshtastic.org/docs/software/python/cli/)
 
 5. Enable the systemd service:
    ```bash
-   sudo systemctl enable meshtastic-bbs.service
-   sudo systemctl start meshtastic-bbs.service
+   sudo systemctl enable mesh-bbs.service
+   sudo systemctl start mesh-bbs.service
    ```
 
 ## Troubleshooting
 
 - Check Docker logs:
   ```bash
-  docker logs meshtastic-bbs
+  docker logs mesh-bbs
   ```
 - Verify `systemd` status:
   ```bash
-  systemctl status meshtastic-bbs.service
+  systemctl status mesh-bbs.service
   ```
 
 ## Acknowledgments
