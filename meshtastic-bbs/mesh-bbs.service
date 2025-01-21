@@ -15,7 +15,7 @@ WorkingDirectory=/etc/TC2-BBS-mesh
 ExecStartPre=-/usr/bin/docker kill %n
 ExecStartPre=-/usr/bin/docker rm %n
 ExecStartPre=/usr/bin/docker pull jabez07/meshtastic-bbs:latest
-ExecStart=/usr/bin/docker run --name %n -v ./config:/home/mesh/bbs/config jabez07/meshtastic-bbs:latest
+ExecStart=/usr/bin/docker run --name %n --network=host --volume ./config:/home/mesh/bbs/config jabez07/meshtastic-bbs:latest
 ExecStop=/usr/bin/docker stop %n
 
 [Install]
