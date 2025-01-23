@@ -35,8 +35,7 @@ install_dependencies() {
         curl \
         git \
         lua5.1 \
-        python3=3.11.2-1+b1 \
-        python3.11-venv \
+        python3 \
         ripgrep \
         unzip \
         build-essential \
@@ -44,6 +43,13 @@ install_dependencies() {
         libssl-dev \
         libffi-dev \
         openssh-client
+
+    local python_version
+    python_version=$(python3 --version 2>/dev/null | awk '{print $2}' | cut -d. -f1,2)
+    local venv_to_install
+    venv_to_install="python${python_version}-venv"
+    apt-get install -y --no-install-recommends \
+        "$venv_to_install"
 }
 
 # Helper function to trim leading and trailing whitespace
