@@ -30,6 +30,7 @@ jobs:
           context: ./aws-kubectl
           image-name: jabez007/aws-kubectl
           tag: ${{ vars.AWS_REGION }}_${{ vars.EKS_CLUSTER }}
+          platforms: linux/amd64,linux/arm64
           build-args: |
             AWS_REGION=${{ vars.AWS_REGION }}
             EKS_CLUSTER=${{ vars.EKS_CLUSTER }}
