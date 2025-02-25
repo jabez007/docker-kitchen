@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM debian:stable-slim
+FROM debian:stable-slim
 
 ARG AWS_REGION
 ARG EKS_CLUSTER
@@ -17,6 +17,7 @@ RUN apt-get update && apt-get install -y \
   unzip \
   bash \
   curl \
+  less \
   jq \
   yq
 
