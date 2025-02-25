@@ -9,6 +9,7 @@ on:
       - "aws-kubectl/Dockerfile"
       - "aws-kubectl/*.sh"
       - "aws-kubectl/*.pem"
+  workflow_dispatch:
 
 jobs:
   build_and_push_to_ghcr:
