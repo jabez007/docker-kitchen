@@ -18,6 +18,7 @@ RUN apt-get update && apt-get install -y \
   bash \
   curl \
   less \
+  nano \
   jq \
   yq
 
@@ -37,6 +38,9 @@ RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/s
 
 # Verify kubectl install
 RUN kubectl version --client
+
+# Set default editor for kubectl
+ENV KUBE_EDITOR=nano
 
 # Install aws cli
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
