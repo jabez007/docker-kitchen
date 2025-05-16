@@ -12,6 +12,8 @@ BASHRC="$HOME/.bashrc"
 TMUX_CONF="$HOME/.tmux.conf"
 TPM_DIR="$HOME/.tmux/plugins/tpm"
 TMUX_RESURRECT="tmux-plugins/tmux-resurrect"
+STARSHIP_CONFIG_DIR="$HOME/.config/starship"
+STARSHIP_CONFIG_FILE="$STARSHIP_CONFIG_DIR/starship.toml"
 
 # Flag for Docker installation
 INSTALL_DOCKER=""
@@ -34,10 +36,10 @@ parse_args() {
             --help|-h)
                 printf "Usage: %s [OPTIONS]\n\n" "$(basename "$0")"
                 printf "Options:\n"
-                printf "  --install-docker    Install Docker without prompting\n"
-                printf "  --skip-docker       Skip Docker installation without prompting\n"
-                printf "  --starship-preset=NAME     Apply specific Starship preset (default: gruvbox-rainbow)\n"
-                printf "  -h, --help          Display this help message\n"
+                printf "  --install-docker          Install Docker without prompting\n"
+                printf "  --skip-docker             Skip Docker installation without prompting\n"
+                printf "  --starship-preset=NAME    Apply specific Starship preset (default: gruvbox-rainbow)\n"
+                printf "  -h, --help                Display this help message\n"
                 exit 0
                 ;;
             *)
