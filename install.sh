@@ -13,8 +13,10 @@ TMUX_CONF="$HOME/.tmux.conf"
 TPM_DIR="$HOME/.tmux/plugins/tpm"
 TMUX_RESURRECT="tmux-plugins/tmux-resurrect"
 
-# Flags for Docker installation
+# Flag for Docker installation
 INSTALL_DOCKER=""
+# 
+STARSHIP_PRESET="gruvbox-rainbow"
 
 # Function to parse arguments
 parse_args() {
@@ -26,11 +28,15 @@ parse_args() {
             --skip-docker)
                 INSTALL_DOCKER=false
                 ;;
+            --starship-preset=*)
+                STARSHIP_PRESET="${arg#*=}"
+                ;;
             --help|-h)
                 printf "Usage: %s [OPTIONS]\n\n" "$(basename "$0")"
                 printf "Options:\n"
                 printf "  --install-docker    Install Docker without prompting\n"
                 printf "  --skip-docker       Skip Docker installation without prompting\n"
+                printf "  --starship-preset=NAME     Apply specific Starship preset (default: gruvbox-rainbow)\n"
                 printf "  -h, --help          Display this help message\n"
                 exit 0
                 ;;
@@ -200,6 +206,39 @@ configure_fish() {
     fi
 }
 
+install_starship() {
+    printf "Installing Starship prompt...\n"
+    if ! command -v starship >/dev/null 2>&1; then
+        curl -fsSL https://starship.rs/install.sh | bash -s -- -y || {
+            printf "Failed to install Starship.\n" >&2
+            return 1
+        }
+    fi
+
+    if ! grep -q 'starship init fish' "$FISH_CONFIG" 2>/dev/null; then
+        printf "\nstarship init fish | source\n" >> "$FISH_CONFIG"
+    fi
+
+    if ! grep -q 'starship init bash' "$BASHRC" 2>/dev/null; then
+        {
+            printf "\n# Initialize Starship for Bash\n"
+            printf 'eval "$(starship init bash)"\n'
+        } >> "$BASHRC"
+    fi
+
+    mkdir -p "$STARSHIP_CONFIG_DIR"
+
+    if ! starship preset "$STARSHIP_PRESET" -o "$STARSHIP_CONFIG_FILE"; then
+        printf "Failed to apply preset '%s'. Falling back to gruvbox-rainbow.\n" "$STARSHIP_PRESET" >&2
+        if ! starship preset gruvbox-rainbow -o "$STARSHIP_CONFIG_FILE"; then
+            printf "Failed to apply default preset. Please configure Starship manually.\n" >&2
+            return 1
+        fi
+    fi
+
+    printf "Starship installed with preset: %s\n" "$STARSHIP_PRESET"
+}
+
 # Function to update .bashrc to launch fish
 update_bashrc() {
     printf "Updating .bashrc to launch fish...\n"
@@ -225,6 +264,7 @@ main() {
     install_dependencies
     install_tmux_resurrect
     configure_fish
+    install_starship
     update_bashrc
 
     # Prompt if no flag is provided
@@ -244,7 +284,7 @@ main() {
         printf "Skipping Docker installation.\n"
     fi
 
-    printf "Installation and configuration complete. Restart your terminal to start using fish with tmux.\n"
+    printf "Installation and configuration complete. Restart your terminal to start using fish, tmux, and Starship.\n"
 }
 
 main "$@"
