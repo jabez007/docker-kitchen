@@ -44,7 +44,7 @@ RUN apt-get update && \
     # find \
     grep \
     sed \
-    awk \
+    # awk \
     # wc \
     curl \
     wget \
