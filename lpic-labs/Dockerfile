@@ -61,7 +61,8 @@ RUN apt-get update && \
     samba \
     squashfs-tools \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+              /var/cache/apt/archives/*
 
 # Create a non-root user for practice
 RUN useradd -m -s /bin/bash student && \
