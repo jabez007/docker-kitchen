@@ -1,11 +1,14 @@
 # Start with a base Linux distribution (Ubuntu LTS is a good choice)
 FROM ubuntu:24.04
 
+ARG STUDENT_PASSWORD=student
+
 # Avoid prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Update package lists and install essential tools for LPIC-1
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && \
+  apt-get install -y --no-install-recommends \
     sudo \
     vim \
     nano \
@@ -38,11 +41,11 @@ RUN apt-get update && apt-get install -y \
     xz-utils \
     zip \
     unzip \
-    find \
+    # find \
     grep \
     sed \
     awk \
-    wc \
+    # wc \
     curl \
     wget \
     git \
@@ -62,13 +65,14 @@ RUN apt-get update && apt-get install -y \
 
 # Create a non-root user for practice
 RUN useradd -m -s /bin/bash student && \
-    echo "student:student" | chpasswd && \
+    echo "student:${STUDENT_PASSWORD}" | chpasswd && \
     adduser student sudo && \
     echo "student ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/student
 
 # Set up SSH for remote access practice
-RUN mkdir -p /var/run/sshd
-RUN echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config
+RUN mkdir -p /var/run/sshd && \
+    echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config
+EXPOSE 22
 
 # Set working directory
 WORKDIR /home/student
