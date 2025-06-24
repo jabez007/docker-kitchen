@@ -12,7 +12,7 @@ BASHRC="$HOME/.bashrc"
 TMUX_CONF="$HOME/.tmux.conf"
 TPM_DIR="$HOME/.tmux/plugins/tpm"
 TMUX_RESURRECT="tmux-plugins/tmux-resurrect"
-STARSHIP_CONFIG_DIR="$HOME/.config/starship"
+STARSHIP_CONFIG_DIR="$HOME/.config"
 STARSHIP_CONFIG_FILE="$STARSHIP_CONFIG_DIR/starship.toml"
 
 # Flag for Docker installation
@@ -211,7 +211,7 @@ configure_fish() {
 install_starship() {
     printf "Installing Starship prompt...\n"
     if ! command -v starship >/dev/null 2>&1; then
-        curl -fsSL https://starship.rs/install.sh | bash -s -- -y || {
+        curl -fsSL https://starship.rs/install.sh | sh -s -- -y || {
             printf "Failed to install Starship.\n" >&2
             return 1
         }
