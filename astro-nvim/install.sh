@@ -152,7 +152,15 @@ install_bottom() {
 }
 
 install_neovim() {
-    local nvim_tarball="nvim-linux-x86_64"
+    local arch
+    arch=$(dpkg --print-architecture)
+    local nvim_tarball
+    
+    if [[ "$arch" == "arm64" ]]; then
+        nvim_tarball="nvim-linux-arm64"
+    else
+        nvim_tarball="nvim-linux-x86_64"
+    fi
     
     printf "Fetching Neovim latest stable release...\n"
     curl -LO "https://github.com/neovim/neovim/releases/download/stable/${nvim_tarball}.tar.gz"
