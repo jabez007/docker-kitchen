@@ -152,16 +152,26 @@ install_bottom() {
 }
 
 install_neovim() {
+    local arch
+    arch=$(dpkg --print-architecture)
+    local nvim_tarball
+
+    if [[ "$arch" == "arm64" ]]; then
+        nvim_tarball="nvim-linux-arm64"
+    else
+        nvim_tarball="nvim-linux-x86_64"
+    fi
+
     printf "Fetching Neovim latest stable release...\n"
-    curl -LO https://github.com/neovim/neovim/releases/download/stable/nvim-linux64.tar.gz
+    curl -LO "https://github.com/neovim/neovim/releases/download/stable/${nvim_tarball}.tar.gz"
     rm -rf /opt/nvim*
-    tar -C /opt -xzf nvim-linux64.tar.gz
-    rm nvim-linux64.tar.gz
+    tar -C /opt -xzf "${nvim_tarball}.tar.gz"
+    rm "${nvim_tarball}.tar.gz"
     # Create or update the symbolic link
     if [[ -L /usr/local/bin/nvim ]]; then
         printf "Symbolic link '/usr/local/bin/nvim' already exists. Overwriting...\n"
     fi
-    ln -sf /opt/nvim-linux64/bin/nvim /usr/local/bin/nvim
+    ln -sf "/opt/${nvim_tarball}/bin/nvim" /usr/local/bin/nvim
 }
 
 main() {
