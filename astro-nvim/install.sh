@@ -93,6 +93,11 @@ persist_path_update() {
 }
 
 install_go() {
+    if command -v go >/dev/null 2>&1; then
+        printf "Go is already installed. Skipping installation.\n"
+        return 0
+    fi
+
     local go_url
     go_url=$(curl -fsSL "https://go.dev/VERSION?m=text" | grep "^go" |
         awk -v arch="$(dpkg --print-architecture)" '{printf "https://go.dev/dl/%s.linux-%s.tar.gz", $1, arch}')
@@ -114,6 +119,11 @@ install_go() {
 }
 
 install_lazygit() {
+    if command -v lazygit >/dev/null 2>&1; then
+        printf "LazyGit is already installed. Skipping installation.\n"
+        return 0
+    fi
+
     local lazygit_url
     printf "Fetching LazyGit latest release information...\n"
     lazygit_url=$(curl -s https://api.github.com/repos/jesseduffield/lazygit/releases/latest |
@@ -128,11 +138,16 @@ install_lazygit() {
 
     printf "Resolved LazyGit URL: %s\n" "$lazygit_url"
     curl -L "$lazygit_url" -o lazygit.tar.gz
-    tar -C /usr/local/bin -xzf lazygit.tar.gz
+    tar -C /usr/local/bin -xzf lazygit.tar.gz lazygit
     rm lazygit.tar.gz
 }
 
 install_bottom() {
+    if command -v btm >/dev/null 2>&1; then
+        printf "Bottom is already installed. Skipping installation.\n"
+        return 0
+    fi
+
     local bottom_url
     printf "Fetching Bottom latest release information...\n"
     bottom_url=$(curl -s https://api.github.com/repos/ClementTsang/bottom/releases/latest |
@@ -152,6 +167,11 @@ install_bottom() {
 }
 
 install_neovim() {
+    if command -v nvim >/dev/null 2>&1; then
+        printf "Neovim is already installed. Skipping installation.\n"
+        return 0
+    fi
+
     local arch
     arch=$(dpkg --print-architecture)
     local nvim_tarball

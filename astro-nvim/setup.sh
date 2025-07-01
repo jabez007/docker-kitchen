@@ -5,12 +5,17 @@ set -euo pipefail
 # Global variables
 ASTRONVIM_REPO="https://github.com/jabez007/AstroNvim-config.git"
 debug=false
+keep_git=false
 
 # Parse command-line options
 while [[ $# -gt 0 ]]; do
   case "$1" in
   --debug | -d)
     debug=true
+    shift
+    ;;
+  --keep-git)
+    keep_git=true
     shift
     ;;
   *)
@@ -27,6 +32,11 @@ fi
 
 # Function to install Deno
 install_deno() {
+  if command -v deno >/dev/null 2>&1; then
+    printf "Deno is already installed. Skipping installation.\n"
+    return 0
+  fi
+
   printf "Installing Deno...\n"
 
   if ! curl -SL https://deno.land/install.sh | sh -s -- -y; then
@@ -39,6 +49,14 @@ install_deno() {
 
 # Function to install NVM
 install_nvm() {
+  if [ -s "$HOME/.nvm/nvm.sh" ]; then
+    printf "NVM is already installed. Skipping installation.\n"
+    export NVM_DIR="$HOME/.nvm"
+    # shellcheck disable=SC1091
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    return 0
+  fi
+
   local nvm_version
 
   printf "Fetching latest version of NVM.\n"
@@ -129,7 +147,9 @@ clone_astronvim_config() {
       printf "Error: Cloning AstroNvim configuration failed.\n" >&2
       return 1
     fi
-    rm -rf "${config_dir}/.git"
+    if [ "$keep_git" = false ]; then
+      rm -rf "${config_dir}/.git"
+    fi
     printf "AstroNvim config cloned successfully.\n"
   fi
 }
