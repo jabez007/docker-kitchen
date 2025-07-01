@@ -26,9 +26,11 @@ Instead of using a traditional VM, this environment provides a lightweight, repr
 git clone https://github.com/jabez007/docker-kitchen.git
 cd docker-kitchen/lpic-labs
 
-# Build the Docker image
-docker build -t lpic1-practice .
+# Build the Docker image with a secure password for the student user
+docker build --build-arg STUDENT_PASSWORD=your_secure_password -t lpic1-practice .
 ```
+
+**Important**: Replace `your_secure_password` with a strong password of your choice. This password will be used for the `student` user account.
 
 ### Running the Container
 
@@ -74,7 +76,7 @@ docker start -i lpic1
 ### User Account
 
 - Username: `student`
-- Password: `student`
+- Password: The password you specified during the build process with `--build-arg STUDENT_PASSWORD=your_password`
 - Sudo access: Yes (passwordless)
 
 ### Installed Packages
