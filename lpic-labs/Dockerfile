@@ -70,7 +70,7 @@ RUN apt-get update && \
 # Create a non-root user for practice
 # Use a more secure method to set the password that doesn't expose it in layer history
 RUN useradd -m -s /bin/bash student && \
-    echo "student:${STUDENT_PASSWORD}" | chpasswd && \
+    printf '%s\n' "student:${STUDENT_PASSWORD}" | chpasswd && \
     adduser student sudo && \
     echo "student ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/student && \
     unset STUDENT_PASSWORD
