@@ -19,7 +19,7 @@ RUN apt-get update && apt-get upgrade -y \
   unzip \
   build-essential \
   python3 \
-  python3-pip \
+  #python3-pip \
   python3-dev \
   pipx \
   iw \
