@@ -84,52 +84,8 @@ RUN cd /opt/wordlists && \
   wget https://github.com/brannondorsey/naive-hashcat/releases/download/data/rockyou.txt && \
   wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Passwords/WiFi-WPA/probable-v2-wpa-top4800.txt
 
-# Create useful scripts directory
-COPY <<EOF /opt/scripts/setup-monitor.sh
-#!/bin/bash
-# Script to set up monitor mode
-if [ \$# -eq 0 ]; then
-    echo "Usage: \$0 <interface>"
-    echo "Available interfaces:"
-    iw dev | grep Interface | cut -d' ' -f2
-    exit 1
-fi
-
-INTERFACE=\$1
-echo "Setting up monitor mode on \$INTERFACE"
-airmon-ng check kill
-airmon-ng start \$INTERFACE
-echo "Monitor mode setup complete"
-EOF
-
-COPY <<EOF /opt/scripts/quick-scan.sh
-#!/bin/bash
-# Quick WiFi network scan
-if [ \$# -eq 0 ]; then
-    echo "Usage: \$0 <monitor_interface>"
-    exit 1
-fi
-
-INTERFACE=\$1
-echo "Starting quick scan on \$INTERFACE"
-echo "Press Ctrl+C to stop scanning"
-airodump-ng \$INTERFACE
-EOF
-
-COPY <<EOF /opt/scripts/wifite-quick.sh
-#!/bin/bash
-# Quick wifite attack
-if [ \$# -eq 0 ]; then
-    echo "Usage: \$0 <interface>"
-    exit 1
-fi
-
-INTERFACE=\$1
-echo "Starting wifite on \$INTERFACE"
-wifite --interface \$INTERFACE --crack --dict /opt/wordlists/rockyou.txt
-EOF
-
-# Make scripts executable
+# Copy scripts and make them executable
+COPY scripts/ /opt/scripts/
 RUN chmod +x /opt/scripts/*.sh
 
 # Set up aliases for convenience
