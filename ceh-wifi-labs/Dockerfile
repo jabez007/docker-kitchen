@@ -51,7 +51,7 @@ RUN apt-get update && apt-get upgrade -y \
   && apt-get install -y \
   wifite \
   tshark \
-  pyrit \
+  #pyrit \
   cowpatty \
   # Install additional WiFi security tools
   && apt-get install -y \
