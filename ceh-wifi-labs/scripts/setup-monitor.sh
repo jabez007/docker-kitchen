@@ -22,7 +22,7 @@ airmon-ng check kill
 airmon-ng start "$INTERFACE"
 
 # Restart NetworkManager to restore network functionality
-echo "Restarting NetworkManager to restore network functionality..."
-systemctl restart NetworkManager
+# echo "Restarting NetworkManager to restore network functionality..."
+# systemctl restart NetworkManager
 
 echo "Monitor mode setup complete"
