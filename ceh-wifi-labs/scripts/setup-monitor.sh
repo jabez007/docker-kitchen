@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 # Script to set up monitor mode
 if [ $# -eq 0 ]; then
     echo "Usage: $0 <interface>"
