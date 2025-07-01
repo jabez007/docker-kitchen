@@ -1,0 +1,32 @@
+name: Run Shared Build Workflow for lpic-labs
+
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+    paths:
+      - "lpic-labs/Dockerfile"
+      - "lpic-labs/*.sh"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: lpic
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: See which repo we just cloned
+        if: ${{ vars.pipeline_debug == 'true' }}
+        run: ls -alh
+        shell: bash
+
+      - uses: jabez007/docker-kitchen/.github/shared/docker@master
+        with:
+          context: ./lpic-labs
+          build-args: |
+            STUDENT_PASSWORD=${{ secrets.STUDENT_PASSWORD }}
+          image-name: jabez07/lpic-labs
+          tag: latest
+          debug: ${{ vars.pipeline_debug }}
