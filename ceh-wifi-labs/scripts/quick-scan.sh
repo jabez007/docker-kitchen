@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 # Quick WiFi network scan
 if [ $# -eq 0 ]; then
     echo "Usage: $0 <monitor_interface>"
