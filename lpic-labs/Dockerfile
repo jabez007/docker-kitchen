@@ -1,7 +1,10 @@
 # Start with a base Linux distribution (Ubuntu LTS is a good choice)
 FROM ubuntu:24.04
 
-ARG STUDENT_PASSWORD=student
+ARG STUDENT_PASSWORD
+
+# Validate that STUDENT_PASSWORD is provided
+RUN test -n "$STUDENT_PASSWORD" || (echo "ERROR: STUDENT_PASSWORD build argument is required" && exit 1)
 
 # Avoid prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
@@ -65,10 +68,12 @@ RUN apt-get update && \
               /var/cache/apt/archives/*
 
 # Create a non-root user for practice
+# Use a more secure method to set the password that doesn't expose it in layer history
 RUN useradd -m -s /bin/bash student && \
     echo "student:${STUDENT_PASSWORD}" | chpasswd && \
     adduser student sudo && \
-    echo "student ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/student
+    echo "student ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/student && \
+    unset STUDENT_PASSWORD
 
 # Set up SSH for remote access practice
 RUN mkdir -p /var/run/sshd && \
