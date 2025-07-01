@@ -6,10 +6,9 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV TERM=xterm-256color
 
 # Update package lists and install base tools
-RUN apt-get update && apt-get upgrade -y
-
-# Install core system utilities
-RUN apt-get install -y \
+RUN apt-get update && apt-get upgrade -y \
+  # Install core system utilities
+  && apt-get install -y \
   curl \
   wget \
   git \
@@ -29,10 +28,9 @@ RUN apt-get install -y \
   dnsutils \
   tcpdump \
   usbutils \
-  pciutils
-
-# Install aircrack-ng suite and related tools
-RUN apt-get install -y \
+  pciutils \ 
+  # Install aircrack-ng suite and related tools
+  && apt-get install -y \
   aircrack-ng \
   airgraph-ng \
   airgeddon \
@@ -48,17 +46,15 @@ RUN apt-get install -y \
   john \
   john-data \
   crunch \
-  wordlists
-
-# Install wifite and dependencies
-RUN apt-get install -y \
+  wordlists \
+  # Install wifite and dependencies
+  && apt-get install -y \
   wifite \
   tshark \
   pyrit \
-  cowpatty
-
-# Install additional WiFi security tools
-RUN apt-get install -y \
+  cowpatty \
+  # Install additional WiFi security tools
+  && apt-get install -y \
   kismet \
   kismet-plugins \
   fern-wifi-cracker \
@@ -67,7 +63,9 @@ RUN apt-get install -y \
   ettercap-text-only \
   mdk3 \
   mdk4 \
-  wireshark-common
+  wireshark-common \
+  # 
+  && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install Python packages for WiFi security
 RUN pip3 install --no-cache-dir \
