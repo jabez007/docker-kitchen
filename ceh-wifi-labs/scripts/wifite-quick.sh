@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 # Quick wifite attack
 if [ $# -eq 0 ]; then
     echo "Usage: $0 <interface>"
