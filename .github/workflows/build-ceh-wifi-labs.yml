@@ -1,4 +1,4 @@
-name: Run Shared Build Workflow for lpic-labs
+name: Run Shared Build Workflow for ceh-wifi-labs
 
 on:
   pull_request:
@@ -6,13 +6,12 @@ on:
       - main
       - master
     paths:
-      - "lpic-labs/Dockerfile"
-      - "lpic-labs/*.sh"
+      - "ceh-wifi-labs/Dockerfile"
+      - "ceh-wifi-labs/*.sh"
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    environment: lpic
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -24,9 +23,7 @@ jobs:
 
       - uses: jabez007/docker-kitchen/.github/shared/docker@master
         with:
-          context: ./lpic-labs
-          build-args: |
-            STUDENT_PASSWORD=${{ secrets.STUDENT_PASSWORD }}
-          image-name: ${{ vars.DOCKER_USERNAME }}/lpic-labs
+          context: ./ceh-wifi-labs
+          image-name: ${{ vars.DOCKER_USERNAME }}/ceh-wifi-labs
           tag: latest
           debug: ${{ vars.pipeline_debug }}
