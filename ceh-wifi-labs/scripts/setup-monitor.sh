@@ -10,5 +10,5 @@ fi
 INTERFACE=$1
 echo "Setting up monitor mode on $INTERFACE"
 airmon-ng check kill
-airmon-ng start $INTERFACE
+airmon-ng start "$INTERFACE"
 echo "Monitor mode setup complete"

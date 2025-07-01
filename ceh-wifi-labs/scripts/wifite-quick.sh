@@ -7,4 +7,4 @@ fi
 
 INTERFACE=$1
 echo "Starting wifite on $INTERFACE"
-wifite --interface $INTERFACE --crack --dict /opt/wordlists/rockyou.txt
+wifite --interface "$INTERFACE" --crack --dict /opt/wordlists/rockyou.txt

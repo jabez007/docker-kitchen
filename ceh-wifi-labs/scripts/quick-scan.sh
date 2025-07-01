@@ -8,4 +8,4 @@ fi
 INTERFACE=$1
 echo "Starting quick scan on $INTERFACE"
 echo "Press Ctrl+C to stop scanning"
-airodump-ng $INTERFACE
+airodump-ng "$INTERFACE"
