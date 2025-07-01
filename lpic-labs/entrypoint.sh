@@ -3,14 +3,14 @@
 # LPIC-1 Lab Environment Startup Script
 # This script starts essential services and keeps the container running
 
-set -e
+set -euo pipefail
 
 echo "Starting LPIC-1 Lab Environment..."
 
 # Start SSH daemon for remote access practice
 if [ -f /usr/sbin/sshd ]; then
     echo "Starting SSH daemon..."
-    sudo /usr/sbin/sshd -D &
+    sudo /usr/sbin/sshd -D
 fi
 
 # Start rsyslog for logging practice
@@ -44,10 +44,8 @@ echo "Available services: SSH, rsyslog, cron, Apache2, MariaDB"
 # Keep the container running by tailing a log file or sleeping
 # This allows users to attach while keeping services active
 if [ -f /var/log/syslog ]; then
-    tail -f /var/log/syslog
+    exec tail -F /var/log/syslog
 else
     # Fallback: just keep the container alive
-    while true; do
-        sleep 3600
-    done
+    exec sleep infinity
 fi
