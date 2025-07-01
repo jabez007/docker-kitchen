@@ -1,5 +1,6 @@
 #!/bin/bash
 set -euo pipefail
+IFS=$'\n\t'
 
 # Check if running as root
 if [ "$EUID" -ne 0 ]; then
@@ -9,14 +10,14 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 # Check if wifite is available and executable
-if ! command -v wifite &> /dev/null; then
+if ! command -v wifite &>/dev/null; then
     echo "Error: wifite is not installed or not in PATH"
     echo "Please install wifite: apt-get install wifite"
     exit 1
 fi
 
 # Check if wordlist file exists
-WORDLIST="/opt/wordlists/rockyou.txt"
+readonly WORDLIST="/opt/wordlists/rockyou.txt"
 if [ ! -f "$WORDLIST" ]; then
     echo "Error: Wordlist file not found: $WORDLIST"
     echo "Please ensure the wordlist is downloaded or specify a different wordlist"
@@ -24,11 +25,12 @@ if [ ! -f "$WORDLIST" ]; then
 fi
 
 # Quick wifite attack
-if [ $# -eq 0 ]; then
-    echo "Usage: $0 <interface>"
+if [ $# -lt 1 ]; then
+    echo "Usage: $0 <interface> [wifite-options]"
     exit 1
 fi
 
 INTERFACE=$1
+shift
 echo "Starting wifite on $INTERFACE"
-wifite --interface "$INTERFACE" --crack --dict "$WORDLIST"
+wifite --interface "$INTERFACE" --crack --dict "$WORDLIST" "$@"
