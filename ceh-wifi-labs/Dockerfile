@@ -6,7 +6,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV TERM=xterm-256color
 
 # Update package lists and install base tools
-RUN apt-get update && apt-get upgrade -y \
+RUN apt-get update\
   # Install core system utilities
   && apt-get install -y \
   curl \
@@ -29,7 +29,7 @@ RUN apt-get update && apt-get upgrade -y \
   dnsutils \
   tcpdump \
   usbutils \
-  pciutils \ 
+  pciutils \
   # Install aircrack-ng suite and related tools
   && apt-get install -y \
   aircrack-ng \
