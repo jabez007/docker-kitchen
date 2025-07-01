@@ -13,6 +13,7 @@ on:
 jobs:
   build_and_push_to_docker:
     runs-on: ubuntu-latest
+    environment: lpic
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -26,6 +27,8 @@ jobs:
         uses: jabez007/docker-kitchen/.github/shared/docker@master
         with:
           context: ./lpic-labs
+          build-args: |
+            STUDENT_PASSWORD=${{ secrets.STUDENT_PASSWORD }}
           image-name: ${{ vars.DOCKER_USERNAME }}/lpic-labs
           description: A Docker image alternative to VMs for LPIC-1 practice
           tag: latest
@@ -37,6 +40,7 @@ jobs:
 
   build_and_push_to_ghcr:
     runs-on: ubuntu-latest
+    environment: lpic
     permissions:
       contents: read
       packages: write # required if push is true
@@ -53,6 +57,8 @@ jobs:
         uses: jabez007/docker-kitchen/.github/shared/ghcr@master
         with:
           context: ./lpic-labs
+          build-args: |
+            STUDENT_PASSWORD=${{ secrets.STUDENT_PASSWORD }}
           image-name: jabez007/lpic-labs
           description: A Docker image alternative to VMs for LPIC-1 practice
           tag: latest
