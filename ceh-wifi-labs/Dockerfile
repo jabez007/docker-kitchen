@@ -21,6 +21,7 @@ RUN apt-get update && apt-get upgrade -y \
   python3 \
   python3-pip \
   python3-dev \
+  pipx \
   iw \
   wireless-tools \
   net-tools \
@@ -64,17 +65,18 @@ RUN apt-get update && apt-get upgrade -y \
   mdk3 \
   mdk4 \
   wireshark-common \
+  # Install Python packages via apt where available
+  && apt-get install -y \
+  python3-scapy \
+  python3-netaddr \
+  python3-requests \
+  python3-bs4 \
+  python3-selenium \
   # 
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install Python packages for WiFi security
-RUN pip3 install --no-cache-dir \
-  scapy \
-  netaddr \
-  requests \
-  beautifulsoup4 \
-  selenium \
-  pwntools
+# Install Python applications via pipx
+RUN pipx install pwntools
 
 # Create directories for labs and wordlists
 RUN mkdir -p /opt/wordlists /opt/labs /opt/captures /opt/scripts
