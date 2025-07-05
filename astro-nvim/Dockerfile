@@ -16,9 +16,7 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Create setup directory and copy setup files
 RUN mkdir -p /opt/dev-setup
-COPY install.sh /opt/dev-setup/
-COPY wrapper.sh /opt/dev-setup/
-COPY setup.conf /opt/dev-setup/
+COPY install.sh wrapper.sh setup.conf /opt/dev-setup/
 
 # Make scripts executable
 RUN chmod +x /opt/dev-setup/install.sh && \
@@ -38,9 +36,7 @@ USER ${DEVUSER_NAME}
 WORKDIR /home/${DEVUSER_NAME}
 
 # Copy setup scripts for user-level configuration
-COPY --chown=${DEVUSER_NAME} install.sh /home/${DEVUSER_NAME}/
-COPY --chown=${DEVUSER_NAME} wrapper.sh /home/${DEVUSER_NAME}/
-COPY --chown=${DEVUSER_NAME} setup.conf /home/${DEVUSER_NAME}/
+COPY --chown=${DEVUSER_NAME} install.sh wrapper.sh setup.conf /home/${DEVUSER_NAME}/
 
 # Make user scripts executable
 RUN chmod +x /home/${DEVUSER_NAME}/install.sh && \

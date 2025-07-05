@@ -12,7 +12,7 @@ set -euo pipefail
 
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly LOG_FILE="${SCRIPT_DIR}/setup.log"
-readonly CONFIG_FILE="${SCRIPT_DIR}/setup.conf"
+CONFIG_FILE="${SCRIPT_DIR}/setup.conf" # will be optionally overridden by --config
 
 # Default configuration
 declare -A CONFIG=(
@@ -319,7 +319,7 @@ configure_fish_nvm() {
     local fisher_path="$HOME/.config/fish/functions/fisher.fish"
     if [[ ! -f "$fisher_path" ]]; then
         curl -sL https://git.io/fisher --create-dirs -o "$fisher_path" ||
-            warn "Failed to install Fisher"
+            die "Fisher installation failed – aborting Fish/NVM configuration"
     fi
 
     # Install Bass plugin for NVM
@@ -780,11 +780,11 @@ main() {
     info "Starting development environment setup"
     info "System: $(detect_system), Package Manager: $(get_package_manager)"
 
-    # Load existing configuration
-    load_config
-
     # Parse command line arguments
     mapfile -t components < <(parse_arguments "$@" | tr ' ' '\n')
+
+    # Load configuration
+    load_config
 
     info "Components to install: ${components[*]}"
 
