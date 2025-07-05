@@ -424,6 +424,9 @@ install_editor_stack() {
         lazygit_url=$(curl -s https://api.github.com/repos/jesseduffield/lazygit/releases/latest |
             grep "browser_download_url.*lazygit.*$(uname -s).*$(uname -m).*tar.gz" |
             cut -d : -f 2,3 | tr -d \" | tail -n 1)
+        lazygit_url=$(trim "$lazygit_url")
+
+        debug "LazyGit download URL: $lazygit_url"
 
         [[ -n "$lazygit_url" ]] || die "Could not resolve LazyGit download URL"
 
@@ -638,7 +641,8 @@ install_docker_stack() {
             run_as_admin gpg --dearmor -o /etc/apt/keyrings/docker.gpg
         run_as_admin chmod a+r /etc/apt/keyrings/docker.gpg
 
-        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" |
+        source /etc/os-release
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/${ID} ${VERSION_CODENAME:-stable} stable" |
             run_as_admin tee /etc/apt/sources.list.d/docker.list >/dev/null
 
         run_as_admin apt update
