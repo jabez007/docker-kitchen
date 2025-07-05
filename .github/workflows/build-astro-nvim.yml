@@ -22,7 +22,6 @@ jobs:
         shell: bash
 
       - name: Copy install script to Docker context
-        if: ${{ vars.pipeline_debug == 'true' }}
         run: cp ./install.sh ./astro-nvim/
         shell: bash
 
