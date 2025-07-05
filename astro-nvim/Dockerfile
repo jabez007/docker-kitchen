@@ -24,7 +24,7 @@ RUN chmod +x /opt/dev-setup/install.sh && \
 
 # Install system-wide development environment
 RUN cd /opt/dev-setup && \
-  ./wrapper.sh preset docker --system-wide --debug && \
+  ./wrapper.sh base go --system-wide --debug && \
   apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Copy the entrypoint script into the container
@@ -44,7 +44,7 @@ RUN chmod +x /home/${DEVUSER_NAME}/install.sh && \
 
 # Set up user-level development environment
 RUN cd /home/${DEVUSER_NAME} && \
-  ./wrapper.sh preset full --debug && \
+  ./wrapper.sh node editor --debug && \
   rm -f /home/${DEVUSER_NAME}/setup.log
 
 # Make sure lazygit config exists

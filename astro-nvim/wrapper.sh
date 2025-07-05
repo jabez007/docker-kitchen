@@ -268,7 +268,7 @@ Usage: $0 [COMMAND] [OPTIONS]
 A wrapper script for install.sh that provides easy presets and utilities.
 
 COMMANDS:
-    preset PRESET        Run a preset configuration
+    preset PRESET       Run a preset configuration
     interactive         Interactive setup wizard
     config              Configuration management
     info                Show system information
