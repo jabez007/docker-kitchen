@@ -362,14 +362,14 @@ install_node_stack() {
             "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/${nvm_version}/install.sh | bash" ||
             die "NVM installation failed"
 
-        export NVM_DIR="$HOME/.nvm"
+        export NVM_DIR="${user_home}/.nvm"
         # shellcheck disable=SC1091
         [[ -s "$NVM_DIR/nvm.sh" ]] && source "$NVM_DIR/nvm.sh"
         # shellcheck disable=SC1091
         [ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
     else
         info "NVM already installed"
-        export NVM_DIR="$HOME/.nvm"
+        export NVM_DIR="${user_home}/.nvm"
         # shellcheck disable=SC1091
         [[ -s "$NVM_DIR/nvm.sh" ]] && source "$NVM_DIR/nvm.sh"
         # shellcheck disable=SC1091
@@ -725,7 +725,7 @@ install_docker_stack() {
     # Post-installation setup
     if [[ "$os" != "macos" ]]; then
         run_as_admin groupadd docker 2>/dev/null || true
-        run_as_admin usermod -aG docker "$USER"
+        run_as_admin usermod -aG docker "$(get_actual_user)"
         info "Added user to docker group. You may need to log out and back in."
     fi
 
@@ -792,8 +792,6 @@ OPTIONS:
     --keep-git               Keep .git directories in cloned configs
     --tmux-session NAME      Tmux session name (default: ${CONFIG[TMUX_SESSION]})
     --starship-preset NAME   Starship preset (default: ${CONFIG[STARSHIP_PRESET]})
-    --install-docker         Install Docker without prompting
-    --skip-docker            Skip Docker installation
     --astronvim-repo URL     AstroNvim config repository
     --config FILE            Configuration file path
     --save-config            Save current configuration
@@ -848,11 +846,11 @@ parse_arguments() {
             CONFIG[ASTRONVIM_REPO]="$2"
             shift 2
             ;;
-        --config)
-            [[ $# -ge 2 ]] || die "--config requires a filepath argument"
-            CONFIG_FILE="$2"
-            shift 2
-            ;;
+            #        --config)
+            #            [[ $# -ge 2 ]] || die "--config requires a filepath argument"
+            #            CONFIG_FILE="$2"
+            #            shift 2
+            #            ;;
         --save-config)
             save_config
             exit 0
