@@ -325,20 +325,24 @@ install_node_stack() {
             die "NVM installation failed"
 
         export NVM_DIR="$HOME/.nvm"
-        # shellcheck source=/dev/null
+        # shellcheck disable=SC1091
         [[ -s "$NVM_DIR/nvm.sh" ]] && source "$NVM_DIR/nvm.sh"
+        # shellcheck disable=SC1091
+        [ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
     else
         info "NVM already installed"
         export NVM_DIR="$HOME/.nvm"
-        # shellcheck source=/dev/null
+        # shellcheck disable=SC1091
         [[ -s "$NVM_DIR/nvm.sh" ]] && source "$NVM_DIR/nvm.sh"
+        # shellcheck disable=SC1091
+        [ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
     fi
 
     # Install latest LTS Node.js
     if ! command_exists node; then
         info "Installing Node.js LTS..."
         nvm install --lts || die "Node.js installation failed"
-        nvm use --lts
+        #nvm use --lts
     fi
 
     # Install Deno
@@ -764,10 +768,12 @@ parse_arguments() {
             shift
             ;;
         --tmux-session)
+            [[ $# -ge 2 ]] || die "--tmux-session requires a session name argument"
             CONFIG[TMUX_SESSION]="$2"
             shift 2
             ;;
         --starship-preset)
+            [[ $# -ge 2 ]] || die "--starship-preset requires a preset name argument"
             CONFIG[STARSHIP_PRESET]="$2"
             shift 2
             ;;
@@ -780,10 +786,12 @@ parse_arguments() {
             shift
             ;;
         --astronvim-repo)
+            [[ $# -ge 2 ]] || die "--astronvim-repo requires a git URL argument"
             CONFIG[ASTRONVIM_REPO]="$2"
             shift 2
             ;;
         --config)
+            [[ $# -ge 2 ]] || die "--config requires a filepath argument"
             CONFIG_FILE="$2"
             shift 2
             ;;
