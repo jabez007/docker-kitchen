@@ -32,6 +32,7 @@ declare -A COMPONENTS=(
     [go]="install_go"
     [node]="install_node_stack"
     [editor]="install_editor_stack"
+    [config]="install_user_configs"
     [shell]="install_shell_stack"
     [docker]="install_docker_stack"
 )
@@ -39,6 +40,42 @@ declare -A COMPONENTS=(
 # ============================================================================
 # Environment Detection
 # ============================================================================
+
+# Get the actual user (not root when using sudo)
+get_actual_user() {
+    if [[ -n "${SUDO_USER:-}" ]]; then
+        echo "$SUDO_USER"
+    else
+        echo "$USER"
+    fi
+}
+
+# Get user's home directory
+get_user_home() {
+    local actual_user
+    actual_user=$(get_actual_user)
+
+    if [[ "$actual_user" == "root" ]]; then
+        echo "/root"
+    else
+        echo "/home/$actual_user"
+    fi
+}
+
+# Execute command as actual user (not root)
+run_as_user() {
+    local actual_user user_home
+    actual_user=$(get_actual_user)
+    user_home=$(get_user_home)
+
+    if [[ "$actual_user" == "root" ]] || [[ -z "${SUDO_USER:-}" ]]; then
+        # Already running as the target user
+        "$@"
+    else
+        # Run as the original user
+        sudo -u "$actual_user" HOME="$user_home" "$@"
+    fi
+}
 
 # Detect if running in Docker or as root
 detect_environment() {
@@ -69,6 +106,7 @@ detect_environment() {
     export USE_SUDO="$use_sudo"
 
     debug "Environment: Docker=$is_docker, Root=$is_root, Use sudo=$use_sudo"
+    debug "Actual user: $(get_actual_user), User home: $(get_user_home)"
 }
 
 # Execute command with or without `sudo` based on environment
@@ -472,8 +510,17 @@ install_editor_stack() {
         info "Bottom already installed"
     fi
 
+    info "Editor stack installation complete. Use 'config' component to install AstroNvim configuration."
+    # install_astronvim_config
+}
+
+install_user_configs() {
+    info "Installing user configurations..."
+
     # Install AstroNvim config
     install_astronvim_config
+
+    info "User configurations installed successfully"
 }
 
 install_astronvim_config() {
@@ -726,6 +773,7 @@ COMPONENTS:
     go       - Go programming language
     node     - Node.js stack (NVM, Node.js, Deno)
     editor   - Editor stack (Neovim, LazyGit, Bottom, AstroNvim)
+    config   - User configurations (AstroNvim, dotfiles)
     shell    - Shell stack (Fish, Tmux, Starship)
     docker   - Docker and Docker Compose
     all      - Install all components
@@ -737,20 +785,26 @@ OPTIONS:
     --tmux-session NAME      Tmux session name (default: ${CONFIG[TMUX_SESSION]})
     --starship-preset NAME   Starship preset (default: ${CONFIG[STARSHIP_PRESET]})
     --install-docker         Install Docker without prompting
-    --skip-docker           Skip Docker installation
-    --astronvim-repo URL    AstroNvim config repository
-    --config FILE           Configuration file path
-    --save-config           Save current configuration
-    --help, -h              Show this help message
+    --skip-docker            Skip Docker installation
+    --astronvim-repo URL     AstroNvim config repository
+    --config FILE            Configuration file path
+    --save-config            Save current configuration
+    --help, -h               Show this help message
 
 EXAMPLES:
     $0 base go editor        # Install base tools, Go, and editor stack
     $0 --debug all           # Install everything with debug output
     $0 --system-wide base    # Install base dependencies system-wide
+    $0 editor config         # Install editor tools and user configs separately
     $0 --save-config         # Save current configuration
 
 LOGS:
     Setup logs are written to: $LOG_FILE
+
+NOTES:
+    - 'editor' installs system-wide tools (Neovim, LazyGit, Bottom)
+    - 'config' installs user-specific configurations (AstroNvim config)
+    - When running as root or with sudo, configs are installed to the original user's home
 EOF
 }
 
@@ -807,12 +861,12 @@ parse_arguments() {
             show_usage
             exit 0
             ;;
-        base | go | node | editor | shell | docker)
+        base | go | node | editor | config | shell | docker)
             components+=("$1")
             shift
             ;;
         all)
-            components=(base go node editor shell docker)
+            components=(base go node editor config shell docker)
             shift
             ;;
         *)

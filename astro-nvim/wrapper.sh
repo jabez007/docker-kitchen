@@ -70,7 +70,7 @@ preset_basic() {
 
 preset_web() {
     log_info "Installing web development environment..."
-    "$SETUP_SCRIPT" --config "$CONFIG_FILE" base node editor shell
+    "$SETUP_SCRIPT" --config "$CONFIG_FILE" base node editor
 }
 
 preset_full() {
@@ -277,7 +277,7 @@ COMMANDS:
 PRESETS:
     minimal             Base dependencies only
     basic               Base + Go + Editor
-    web                 Base + Node + Editor + Shell
+    web                 Base + Node + Editor
     full                Base + Go + Node + Editor + Shell
     docker              Full preset + Docker
     custom COMPONENTS   Custom component selection
