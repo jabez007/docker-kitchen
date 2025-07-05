@@ -33,6 +33,7 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # Switch to non-root user
 USER ${DEVUSER_NAME}
+ENV USER=${DEVUSER_NAME}
 WORKDIR /home/${DEVUSER_NAME}
 
 # Copy setup scripts for user-level configuration

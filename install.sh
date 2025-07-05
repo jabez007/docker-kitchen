@@ -44,8 +44,15 @@ declare -A COMPONENTS=(
 get_actual_user() {
     if [[ -n "${SUDO_USER:-}" ]]; then
         echo "$SUDO_USER"
-    else
+    elif [[ -n "${USER:-}" ]]; then
         echo "$USER"
+    else
+        # Fallback to whoami or id commands
+        if command -v whoami >/dev/null 2>&1; then
+            whoami
+        else
+            id -un
+        fi
     fi
 }
 
