@@ -677,6 +677,12 @@ load_config() {
         debug "Loading configuration from $CONFIG_FILE"
         # shellcheck source=/dev/null
         source "$CONFIG_FILE"
+
+        # sync scalar vars -> associative array
+        for k in DEBUG SYSTEM_WIDE KEEP_GIT TMUX_SESSION STARSHIP_PRESET \
+            INSTALL_DOCKER ASTRONVIM_REPO LOG_LEVEL; do
+            [[ -v $k ]] && CONFIG[$k]="${!k}"
+        done
     fi
 }
 
@@ -822,13 +828,14 @@ main() {
     # Initialize logging
     mkdir -p "$(dirname "$LOG_FILE")"
     info "Starting development environment setup"
+    detect_environment
     info "System: $(detect_system), Package Manager: $(get_package_manager)"
-
-    # Parse command line arguments
-    mapfile -t components < <(parse_arguments "$@" | tr ' ' '\n')
 
     # Load configuration
     load_config
+
+    # Parse command line arguments
+    mapfile -t components < <(parse_arguments "$@" | tr ' ' '\n')
 
     info "Components to install: ${components[*]}"
 
