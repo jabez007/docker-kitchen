@@ -18,7 +18,7 @@ CONFIG_FILE="${SCRIPT_DIR}/setup.conf" # will be optionally overridden by --conf
 declare -A CONFIG=(
     [DEBUG]=false
     [SYSTEM_WIDE]=false
-    [KEEP_GIT]=false
+    [KEEP_GIT]=true
     [TMUX_SESSION]="default"
     [STARSHIP_PRESET]="gruvbox-rainbow"
     [INSTALL_DOCKER]=""
@@ -35,6 +35,50 @@ declare -A COMPONENTS=(
     [shell]="install_shell_stack"
     [docker]="install_docker_stack"
 )
+
+# ============================================================================
+# Environment Detection
+# ============================================================================
+
+# Detect if running in Docker or as root
+detect_environment() {
+    local is_docker=false
+    local is_root=false
+    local use_sudo=true
+
+    # Check if running as root
+    if [[ $EUID -eq 0 ]]; then
+        is_root=true
+        use_sudo=false
+    fi
+
+    # Check if running in Docker container
+    if [[ -f /.dockerenv ]] || grep -q 'docker\|lxc' /proc/1/cgroup 2>/dev/null; then
+        is_docker=true
+        use_sudo=false
+    fi
+
+    # Check if `sudo` is available
+    if ! command -v sudo >/dev/null 2>&1; then
+        use_sudo=false
+    fi
+
+    # Export environment variables for use in other functions
+    export IS_DOCKER="$is_docker"
+    export IS_ROOT="$is_root"
+    export USE_SUDO="$use_sudo"
+
+    debug "Environment: Docker=$is_docker, Root=$is_root, Use sudo=$use_sudo"
+}
+
+# Execute command with or without `sudo` based on environment
+run_as_admin() {
+    if [[ "$USE_SUDO" == "true" ]]; then
+        sudo "$@"
+    else
+        "$@"
+    fi
+}
 
 # ============================================================================
 # Utility Functions
@@ -133,19 +177,19 @@ install_packages() {
 
     case "$pm" in
     apt)
-        sudo apt update && sudo apt install -y --no-install-recommends "${packages[@]}"
+        run_as_admin apt update && run_as_admin apt install -y --no-install-recommends "${packages[@]}"
         ;;
     dnf)
-        sudo dnf install -y "${packages[@]}"
+        run_as_admin dnf install -y "${packages[@]}"
         ;;
     yum)
-        sudo yum install -y "${packages[@]}"
+        run_as_admin yum install -y "${packages[@]}"
         ;;
     brew)
         brew install "${packages[@]}"
         ;;
     pacman)
-        sudo pacman -S --noconfirm "${packages[@]}"
+        run_as_admin pacman -S --noconfirm "${packages[@]}"
         ;;
     *)
         die "Unsupported package manager: $pm"
@@ -259,8 +303,8 @@ install_go() {
     debug "Go download URL: $go_url"
 
     curl -L "$go_url" -o /tmp/go.tar.gz || die "Failed to download Go"
-    sudo rm -rf /usr/local/go
-    sudo tar -C /usr/local -xzf /tmp/go.tar.gz || die "Failed to extract Go"
+    run_as_admin rm -rf /usr/local/go
+    run_as_admin tar -C /usr/local -xzf /tmp/go.tar.gz || die "Failed to extract Go"
     rm /tmp/go.tar.gz
 
     update_path "/usr/local/go/bin" "Go binaries"
@@ -359,9 +403,9 @@ install_editor_stack() {
         curl -LO "https://github.com/neovim/neovim/releases/download/stable/${nvim_tarball}.tar.gz" ||
             die "Failed to download Neovim"
 
-        sudo rm -rf /opt/nvim*
-        sudo tar -C /opt -xzf "${nvim_tarball}.tar.gz" || die "Failed to extract Neovim"
-        sudo ln -sf "/opt/${nvim_tarball}/bin/nvim" /usr/local/bin/nvim
+        run_as_admin rm -rf /opt/nvim*
+        run_as_admin tar -C /opt -xzf "${nvim_tarball}.tar.gz" || die "Failed to extract Neovim"
+        run_as_admin ln -sf "/opt/${nvim_tarball}/bin/nvim" /usr/local/bin/nvim
         rm "${nvim_tarball}.tar.gz"
 
         verify_installation nvim "Neovim"
@@ -380,7 +424,7 @@ install_editor_stack() {
         [[ -n "$lazygit_url" ]] || die "Could not resolve LazyGit download URL"
 
         curl -L "$lazygit_url" -o /tmp/lazygit.tar.gz || die "Failed to download LazyGit"
-        sudo tar -C /usr/local/bin -xzf /tmp/lazygit.tar.gz lazygit
+        run_as_admin tar -C /usr/local/bin -xzf /tmp/lazygit.tar.gz lazygit
         rm /tmp/lazygit.tar.gz
 
         verify_installation lazygit "LazyGit"
@@ -402,7 +446,7 @@ install_editor_stack() {
 
             if [[ -n "$bottom_url" ]]; then
                 curl -L "$bottom_url" -o /tmp/bottom.deb
-                sudo dpkg -i /tmp/bottom.deb
+                run_as_admin dpkg -i /tmp/bottom.deb
                 rm /tmp/bottom.deb
             else
                 warn "Could not install Bottom via deb package"
@@ -411,7 +455,7 @@ install_editor_stack() {
             # Try package manager
             case "$pm" in
             brew) brew install bottom ;;
-            pacman) sudo pacman -S --noconfirm bottom ;;
+            pacman) run_as_admin pacman -S --noconfirm bottom ;;
             *) warn "Bottom not available via $pm, skipping..." ;;
             esac
         fi
@@ -582,27 +626,27 @@ install_docker_stack() {
     case "$pm" in
     apt)
         # Ubuntu/Debian Docker installation
-        sudo apt update
-        sudo apt install -y ca-certificates curl gnupg
-        sudo install -m 0755 -d /etc/apt/keyrings
+        run_as_admin apt update
+        run_as_admin apt install -y ca-certificates curl gnupg
+        run_as_admin install -m 0755 -d /etc/apt/keyrings
 
         curl -fsSL https://download.docker.com/linux/ubuntu/gpg |
-            sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-        sudo chmod a+r /etc/apt/keyrings/docker.gpg
+            run_as_admin gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+        run_as_admin chmod a+r /etc/apt/keyrings/docker.gpg
 
         echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" |
-            sudo tee /etc/apt/sources.list.d/docker.list >/dev/null
+            run_as_admin tee /etc/apt/sources.list.d/docker.list >/dev/null
 
-        sudo apt update
-        sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+        run_as_admin apt update
+        run_as_admin apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
         ;;
     dnf)
         # Fedora Docker installation
-        sudo dnf -y install dnf-plugins-core
-        sudo dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
-        sudo dnf -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-        sudo systemctl start docker
-        sudo systemctl enable docker
+        run_as_admin dnf -y install dnf-plugins-core
+        run_as_admin dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
+        run_as_admin dnf -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+        run_as_admin systemctl start docker
+        run_as_admin systemctl enable docker
         ;;
     brew)
         # macOS Docker installation
@@ -616,8 +660,8 @@ install_docker_stack() {
 
     # Post-installation setup
     if [[ "$os" != "macos" ]]; then
-        sudo groupadd docker 2>/dev/null || true
-        sudo usermod -aG docker "$USER"
+        run_as_admin groupadd docker 2>/dev/null || true
+        run_as_admin usermod -aG docker "$USER"
         info "Added user to docker group. You may need to log out and back in."
     fi
 
