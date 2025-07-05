@@ -57,9 +57,6 @@ ENV SHELL="/bin/bash"
 # Set the SHELL to interactive bash
 SHELL ["/bin/bash", "-i", "-c"]
 
-# Source NVM and set up Node environment
-RUN bash -c 'source ~/.nvm/nvm.sh && nvm use --lts'
-
 # Pre-install Lazy and plugins
 RUN nvim --headless -c "Lazy! sync" -c "qa!"
 
