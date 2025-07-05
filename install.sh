@@ -21,7 +21,6 @@ declare -A CONFIG=(
     [KEEP_GIT]=true
     [TMUX_SESSION]="default"
     [STARSHIP_PRESET]="gruvbox-rainbow"
-    [INSTALL_DOCKER]=""
     [ASTRONVIM_REPO]="https://github.com/jabez007/AstroNvim-config.git"
     [LOG_LEVEL]="INFO"
 )
@@ -349,14 +348,18 @@ install_go() {
 install_node_stack() {
     info "Installing Node.js stack (NVM, Node, Deno)..."
 
+    local user_home
+    user_home=$(get_user_home)
+
     # Install NVM
-    if [[ ! -s "$HOME/.nvm/nvm.sh" ]]; then
+    if [[ ! -s "$user_home/.nvm/nvm.sh" ]]; then
         info "Installing NVM..."
         local nvm_version
         nvm_version=$(curl -fsSL https://api.github.com/repos/nvm-sh/nvm/releases/latest |
             grep '"tag_name"' | cut -d '"' -f 4)
 
-        curl -o- "https://raw.githubusercontent.com/nvm-sh/nvm/${nvm_version}/install.sh" | bash ||
+        run_as_user bash -c \
+            "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/${nvm_version}/install.sh | bash" ||
             die "NVM installation failed"
 
         export NVM_DIR="$HOME/.nvm"
@@ -376,15 +379,19 @@ install_node_stack() {
     # Install latest LTS Node.js
     if ! command_exists node; then
         info "Installing Node.js LTS..."
-        nvm install --lts || die "Node.js installation failed"
+        run_as_user bash -c \
+            "source $user_home/.nvm/nvm.sh && nvm install --lts" ||
+            die "Node.js installation failed"
         #nvm use --lts
     fi
 
     # Install Deno
     if ! command_exists deno; then
         info "Installing Deno..."
-        curl -fsSL https://deno.land/install.sh | sh || die "Deno installation failed"
-        update_path "$HOME/.deno/bin" "Deno binaries"
+        run_as_user bash -c \
+            "curl -fsSL https://deno.land/install.sh | sh -s -- -y" ||
+            die "Deno installation failed"
+        update_path "$user_home/.deno/bin" "Deno binaries"
     else
         info "Deno already installed"
     fi
@@ -398,23 +405,27 @@ install_node_stack() {
 configure_fish_nvm() {
     info "Configuring Fish shell for NVM..."
 
+    local user_home
+    user_home=$(get_user_home)
+
     # Install Fisher if not present
-    local fisher_path="$HOME/.config/fish/functions/fisher.fish"
+    local fisher_path="$user_home/.config/fish/functions/fisher.fish"
     if [[ ! -f "$fisher_path" ]]; then
-        curl -sL https://git.io/fisher --create-dirs -o "$fisher_path" ||
+        run_as_user bash -c \
+            "curl -sL https://git.io/fisher --create-dirs -o \"$fisher_path\"" ||
             die "Fisher installation failed – aborting Fish/NVM configuration"
     fi
 
     # Install Bass plugin for NVM
     if command_exists fish && [[ -f "$fisher_path" ]]; then
-        fish -c 'fisher install edc/bass' 2>/dev/null ||
+        run_as_user fish -c 'fisher install edc/bass' 2>/dev/null ||
             warn "Failed to install Bass plugin"
 
         # Create NVM function for Fish
-        local nvm_fish_file="$HOME/.config/fish/functions/nvm.fish"
+        local nvm_fish_file="$user_home/.config/fish/functions/nvm.fish"
         if [[ ! -f "$nvm_fish_file" ]]; then
-            mkdir -p "$(dirname "$nvm_fish_file")"
-            cat >"$nvm_fish_file" <<'EOF'
+            run_as_user mkdir -p "$(dirname "$nvm_fish_file")"
+            run_as_user tee "$nvm_fish_file" >/dev/null <<'EOF'
 function nvm
     bass source ~/.nvm/nvm.sh --no-use ';' nvm $argv
 end
@@ -557,6 +568,7 @@ install_shell_stack() {
 
     # Configure shells
     configure_fish_shell
+    configure_fish_nvm
     configure_tmux
     configure_starship
     configure_bash_integration
@@ -731,8 +743,8 @@ load_config() {
         source "$CONFIG_FILE"
 
         # sync scalar vars -> associative array
-        for k in DEBUG SYSTEM_WIDE KEEP_GIT TMUX_SESSION STARSHIP_PRESET \
-            INSTALL_DOCKER ASTRONVIM_REPO LOG_LEVEL; do
+        for k in DEBUG SYSTEM_WIDE KEEP_GIT TMUX_SESSION \
+            STARSHIP_PRESET ASTRONVIM_REPO LOG_LEVEL; do
             [[ -v $k ]] && CONFIG[$k]="${!k}"
         done
     fi
@@ -749,7 +761,6 @@ SYSTEM_WIDE=${CONFIG[SYSTEM_WIDE]}
 KEEP_GIT=${CONFIG[KEEP_GIT]}
 TMUX_SESSION="${CONFIG[TMUX_SESSION]}"
 STARSHIP_PRESET="${CONFIG[STARSHIP_PRESET]}"
-INSTALL_DOCKER="${CONFIG[INSTALL_DOCKER]}"
 ASTRONVIM_REPO="${CONFIG[ASTRONVIM_REPO]}"
 LOG_LEVEL="${CONFIG[LOG_LEVEL]}"
 EOF
@@ -832,14 +843,6 @@ parse_arguments() {
             CONFIG[STARSHIP_PRESET]="$2"
             shift 2
             ;;
-        --install-docker)
-            CONFIG[INSTALL_DOCKER]=true
-            shift
-            ;;
-        --skip-docker)
-            CONFIG[INSTALL_DOCKER]=false
-            shift
-            ;;
         --astronvim-repo)
             [[ $# -ge 2 ]] || die "--astronvim-repo requires a git URL argument"
             CONFIG[ASTRONVIM_REPO]="$2"
@@ -904,11 +907,6 @@ main() {
 
     # Process each component
     for component in "${components[@]}"; do
-        # Honour --skip-docker
-        if [[ "$component" == "docker" && "${CONFIG[INSTALL_DOCKER]}" == "false" ]]; then
-            info "Skipping Docker component as requested"
-            continue
-        fi
         if [[ -n "${COMPONENTS[$component]:-}" ]]; then
             info "Installing component: $component"
             ${COMPONENTS[$component]} || die "Failed to install component: $component"
@@ -916,14 +914,6 @@ main() {
             warn "Unknown component: $component"
         fi
     done
-
-    # Handle Docker prompt if needed
-    if [[ " ${components[*]} " =~ " docker " ]] && [[ -z "${CONFIG[INSTALL_DOCKER]}" ]]; then
-        read -p "Do you want to install Docker? (y/n): " -r
-        if [[ $REPLY =~ ^[Yy]$ ]]; then
-            install_docker_stack
-        fi
-    fi
 
     info "Setup completed successfully!"
     info "Log file: $LOG_FILE"
