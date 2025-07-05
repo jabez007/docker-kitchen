@@ -59,27 +59,27 @@ check_setup_script() {
 
 preset_minimal() {
     log_info "Installing minimal development environment..."
-    "$SETUP_SCRIPT" base
+    "$SETUP_SCRIPT" "$@" base
 }
 
 preset_basic() {
     log_info "Installing basic development environment..."
-    "$SETUP_SCRIPT" base go editor config
+    "$SETUP_SCRIPT" "$@" base go editor config
 }
 
 preset_web() {
     log_info "Installing web development environment..."
-    "$SETUP_SCRIPT" base node editor config
+    "$SETUP_SCRIPT" "$@" base node editor config
 }
 
 preset_full() {
     log_info "Installing full development environment..."
-    "$SETUP_SCRIPT" base go node editor config shell
+    "$SETUP_SCRIPT" "$@" base go node editor config shell
 }
 
 preset_docker() {
     log_info "Installing development environment with Docker..."
-    "$SETUP_SCRIPT" base go node editor config shell docker
+    "$SETUP_SCRIPT" "$@" base go node editor config shell docker
 }
 
 preset_custom() {
@@ -211,11 +211,26 @@ main() {
         fi
 
         case "$2" in
-        minimal) preset_minimal ;;
-        basic) preset_basic ;;
-        web) preset_web ;;
-        full) preset_full ;;
-        docker) preset_docker ;;
+        minimal)
+            shift 2
+            preset_minimal "$@"
+            ;;
+        basic)
+            shift 2
+            preset_basic "$@"
+            ;;
+        web)
+            shift 2
+            preset_web "$@"
+            ;;
+        full)
+            shift 2
+            preset_full "$@"
+            ;;
+        docker)
+            shift 2
+            preset_docker "$@"
+            ;;
         custom)
             shift 2
             preset_custom "$@"

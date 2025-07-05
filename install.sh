@@ -172,7 +172,6 @@ detect_system() {
     local os arch
 
     if [[ -f /etc/os-release ]]; then
-        # shellcheck source=/dev/null
         source /etc/os-release
         os="$ID"
     elif command_exists lsb_release; then
@@ -541,7 +540,10 @@ install_user_configs() {
 install_astronvim_config() {
     info "Installing AstroNvim configuration..."
 
-    local config_dir="$HOME/.config/nvim"
+    local user_home
+    user_home=$(get_user_home)
+
+    local config_dir="${user_home}/.config/nvim"
 
     if [[ -d "$config_dir" ]]; then
         warn "Neovim config directory exists, skipping AstroNvim setup"
@@ -584,8 +586,11 @@ install_shell_stack() {
 configure_fish_shell() {
     info "Configuring Fish shell..."
 
-    local fish_config="$HOME/.config/fish/config.fish"
-    mkdir -p "$(dirname "$fish_config")"
+    local user_home
+    user_home=$(get_user_home)
+
+    local fish_config="${user_home}/.config/fish/config.fish"
+    run_as_user mkdir -p "$(dirname "$fish_config")"
 
     # Add tmux auto-attach if not present
     if ! grep -q "tmux attach-session -t ${CONFIG[TMUX_SESSION]}" "$fish_config" 2>/dev/null; then
@@ -609,8 +614,11 @@ EOF
 configure_tmux() {
     info "Configuring Tmux..."
 
-    local tmux_conf="$HOME/.tmux.conf"
-    local tpm_dir="$HOME/.tmux/plugins/tpm"
+    local user_home
+    user_home=$(get_user_home)
+
+    local tmux_conf="${user_home}/.tmux.conf"
+    local tpm_dir="${user_home}/.tmux/plugins/tpm"
 
     # Install TPM if not present
     if [[ ! -d "$tpm_dir" ]]; then
@@ -637,21 +645,24 @@ EOF
 configure_starship() {
     info "Configuring Starship prompt..."
 
-    local starship_config="$HOME/.config/starship.toml"
-    mkdir -p "$(dirname "$starship_config")"
+    local user_home
+    user_home=$(get_user_home)
+
+    local starship_config="${user_home}/.config/starship.toml"
+    run_as_user mkdir -p "$(dirname "$starship_config")"
 
     # Apply preset
     starship preset "${CONFIG[STARSHIP_PRESET]}" -o "$starship_config" ||
         warn "Failed to apply Starship preset: ${CONFIG[STARSHIP_PRESET]}"
 
     # Add to Fish config
-    local fish_config="$HOME/.config/fish/config.fish"
+    local fish_config="${user_home}/.config/fish/config.fish"
     if ! grep -q 'starship init fish' "$fish_config" 2>/dev/null; then
         echo "starship init fish | source" >>"$fish_config"
     fi
 
     # Add to bashrc
-    local bashrc="$HOME/.bashrc"
+    local bashrc="${user_home}/.bashrc"
     if ! grep -q 'starship init bash' "$bashrc" 2>/dev/null; then
         cat >>"$bashrc" <<'EOF'
 
@@ -664,7 +675,10 @@ EOF
 configure_bash_integration() {
     info "Configuring Bash to Fish integration..."
 
-    local bashrc="$HOME/.bashrc"
+    local user_home
+    user_home=$(get_user_home)
+
+    local bashrc="${user_home}/.bashrc"
 
     if ! grep -q "exec fish" "$bashrc" 2>/dev/null; then
         cat >>"$bashrc" <<'EOF'
@@ -746,7 +760,7 @@ install_docker_stack() {
 load_config() {
     if [[ -f "$CONFIG_FILE" ]]; then
         debug "Loading configuration from $CONFIG_FILE"
-        # shellcheck source=/dev/null
+        # shellcheck source=./astro-nvim/setup.conf
         source "$CONFIG_FILE"
 
         # sync scalar vars -> associative array
@@ -800,7 +814,6 @@ OPTIONS:
     --tmux-session NAME      Tmux session name (default: ${CONFIG[TMUX_SESSION]})
     --starship-preset NAME   Starship preset (default: ${CONFIG[STARSHIP_PRESET]})
     --astronvim-repo URL     AstroNvim config repository
-    --config FILE            Configuration file path
     --save-config            Save current configuration
     --help, -h               Show this help message
 
