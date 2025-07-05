@@ -249,13 +249,10 @@ update_path() {
         shell_config="/etc/bash.bashrc"
         [[ -n "${ZSH_VERSION-}" ]] && shell_config="/etc/zsh/zshrc"
     else
-        if [[ -n "${SUDO_USER-}" ]]; then
-            shell_config="/home/$SUDO_USER/.bashrc"
-            [[ -n "${ZSH_VERSION-}" ]] && shell_config="/home/$SUDO_USER/.zshrc"
-        else
-            shell_config="${HOME}/.bashrc"
-            [[ -n "${ZSH_VERSION-}" ]] && shell_config="${HOME}/.zshrc"
-        fi
+        local user_home
+        user_home=$(get_user_home)
+        shell_config="${user_home}/.bashrc"
+        [[ -n "${ZSH_VERSION-}" ]] && shell_config="${user_home}/.zshrc"
     fi
 
     # Add to config if not present
@@ -264,7 +261,7 @@ update_path() {
             echo ""
             echo "# $comment"
             echo "export PATH=\"\$PATH:${path_entry}\""
-        } >>"$shell_config"
+        } | run_as_admin tee -a "$shell_config" >/dev/null
         info "Updated PATH in $shell_config"
     fi
 }
@@ -491,7 +488,7 @@ install_editor_stack() {
 
             if [[ -n "$bottom_url" ]]; then
                 curl -L "$bottom_url" -o /tmp/bottom.deb
-                run_as_admin dpkg -i /tmp/bottom.deb
+                run_as_admin apt install -y /tmp/bottom.deb
                 rm /tmp/bottom.deb
             else
                 warn "Could not install Bottom via deb package"
@@ -907,6 +904,11 @@ main() {
 
     # Process each component
     for component in "${components[@]}"; do
+        # Honour --skip-docker
+        if [[ "$component" == "docker" && "${CONFIG[INSTALL_DOCKER]}" == "false" ]]; then
+            info "Skipping Docker component as requested"
+            continue
+        fi
         if [[ -n "${COMPONENTS[$component]:-}" ]]; then
             info "Installing component: $component"
             ${COMPONENTS[$component]} || die "Failed to install component: $component"
