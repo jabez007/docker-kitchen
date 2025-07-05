@@ -12,7 +12,7 @@ set -euo pipefail
 
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly LOG_FILE="${SCRIPT_DIR}/setup.log"
-CONFIG_FILE="${SCRIPT_DIR}/setup.conf" # will be optionally overridden by --config
+readonly CONFIG_FILE="${SCRIPT_DIR}/setup.conf"
 
 # Default configuration
 declare -A CONFIG=(

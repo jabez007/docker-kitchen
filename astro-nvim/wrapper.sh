@@ -10,7 +10,6 @@ set -euo pipefail
 
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly SETUP_SCRIPT="${SCRIPT_DIR}/install.sh"
-readonly CONFIG_FILE="${SCRIPT_DIR}/setup.conf"
 
 # ============================================================================
 # Utility Functions
@@ -60,138 +59,33 @@ check_setup_script() {
 
 preset_minimal() {
     log_info "Installing minimal development environment..."
-    "$SETUP_SCRIPT" --config "$CONFIG_FILE" base
+    "$SETUP_SCRIPT" base
 }
 
 preset_basic() {
     log_info "Installing basic development environment..."
-    "$SETUP_SCRIPT" --config "$CONFIG_FILE" base go editor
+    "$SETUP_SCRIPT" base go editor config
 }
 
 preset_web() {
     log_info "Installing web development environment..."
-    "$SETUP_SCRIPT" --config "$CONFIG_FILE" base node editor
+    "$SETUP_SCRIPT" base node editor config
 }
 
 preset_full() {
     log_info "Installing full development environment..."
-    "$SETUP_SCRIPT" --config "$CONFIG_FILE" base go node editor shell
+    "$SETUP_SCRIPT" base go node editor config shell
 }
 
 preset_docker() {
     log_info "Installing development environment with Docker..."
-    "$SETUP_SCRIPT" --config "$CONFIG_FILE" --install-docker base go node editor shell docker
+    "$SETUP_SCRIPT" base go node editor config shell docker
 }
 
 preset_custom() {
     log_info "Installing custom development environment..."
     local components=("$@")
-    "$SETUP_SCRIPT" --config "$CONFIG_FILE" "${components[@]}"
-}
-
-# ============================================================================
-# Interactive Setup
-# ============================================================================
-
-interactive_setup() {
-    echo -e "${BLUE}=== Interactive Development Environment Setup ===${NC}"
-    echo
-
-    # Component selection
-    local components=()
-    local component_descriptions=(
-        "base:Base dependencies (curl, git, build tools, etc.)"
-        "go:Go programming language"
-        "node:Node.js stack (NVM, Node.js, Deno)"
-        "editor:Editor stack (Neovim, LazyGit, Bottom, AstroNvim)"
-        "shell:Shell stack (Fish, Tmux, Starship)"
-        "docker:Docker and Docker Compose"
-    )
-
-    echo "Select components to install:"
-    for desc in "${component_descriptions[@]}"; do
-        local component="${desc%%:*}"
-        local description="${desc#*:}"
-
-        echo -n -e "${CYAN}Install ${component}${NC} (${description})? [y/N]: "
-        read -r response
-        if [[ $response =~ ^[Yy]$ ]]; then
-            components+=("$component")
-        fi
-    done
-
-    if [[ ${#components[@]} -eq 0 ]]; then
-        log_warn "No components selected. Exiting."
-        exit 0
-    fi
-
-    # Additional options
-    local args=("--config" "$CONFIG_FILE")
-
-    echo -n -e "${CYAN}Enable debug output?${NC} [y/N]: "
-    read -r response
-    if [[ $response =~ ^[Yy]$ ]]; then
-        args+=("--debug")
-    fi
-
-    echo -n -e "${CYAN}Install system-wide where applicable?${NC} [y/N]: "
-    read -r response
-    if [[ $response =~ ^[Yy]$ ]]; then
-        args+=("--system-wide")
-    fi
-
-    if [[ " ${components[*]} " =~ " docker " ]]; then
-        echo -n -e "${CYAN}Install Docker without prompting?${NC} [y/N]: "
-        read -r response
-        if [[ $response =~ ^[Yy]$ ]]; then
-            args+=("--install-docker")
-        fi
-    fi
-
-    # Execute setup
-    log_info "Starting installation with components: ${components[*]}"
-    "$SETUP_SCRIPT" "${args[@]}" "${components[@]}"
-}
-
-# ============================================================================
-# Configuration Management
-# ============================================================================
-
-show_config() {
-    if [[ -f "$CONFIG_FILE" ]]; then
-        log_info "Current configuration:"
-        echo
-        cat "$CONFIG_FILE"
-    else
-        log_warn "Configuration file not found: $CONFIG_FILE"
-    fi
-}
-
-edit_config() {
-    local editor="${EDITOR:-nano}"
-
-    if [[ ! -f "$CONFIG_FILE" ]]; then
-        log_info "Creating new configuration file..."
-        "$SETUP_SCRIPT" --save-config
-    fi
-
-    log_info "Opening configuration file with $editor..."
-    "$editor" "$CONFIG_FILE"
-}
-
-reset_config() {
-    if [[ -f "$CONFIG_FILE" ]]; then
-        echo -n -e "${YELLOW}Reset configuration to defaults?${NC} [y/N]: "
-        read -r response
-        if [[ $response =~ ^[Yy]$ ]]; then
-            rm -f "$CONFIG_FILE"
-            "$SETUP_SCRIPT" --save-config
-            log_info "Configuration reset to defaults"
-        fi
-    else
-        log_info "Creating default configuration..."
-        "$SETUP_SCRIPT" --save-config
-    fi
+    "$SETUP_SCRIPT" "${components[@]}"
 }
 
 # ============================================================================
@@ -269,8 +163,6 @@ A wrapper script for install.sh that provides easy presets and utilities.
 
 COMMANDS:
     preset PRESET       Run a preset configuration
-    interactive         Interactive setup wizard
-    config              Configuration management
     info                Show system information
     help                Show this help message
 
@@ -282,18 +174,10 @@ PRESETS:
     docker              Full preset + Docker
     custom COMPONENTS   Custom component selection
 
-CONFIG COMMANDS:
-    show                Show current configuration
-    edit                Edit configuration file
-    reset               Reset configuration to defaults
-
 EXAMPLES:
     $0 preset minimal           # Install minimal environment
     $0 preset web               # Install web development environment
     $0 preset custom base go    # Install base dependencies and Go
-    $0 interactive              # Run interactive setup wizard
-    $0 config show              # Show current configuration
-    $0 config edit              # Edit configuration file
     $0 info                     # Show system information
 
 DIRECT COMPONENT INSTALLATION:
@@ -343,31 +227,16 @@ main() {
             ;;
         esac
         ;;
-    interactive)
-        interactive_setup
-        ;;
-    config)
-        case "${2:-show}" in
-        show) show_config ;;
-        edit) edit_config ;;
-        reset) reset_config ;;
-        *)
-            log_error "Unknown config command: $2"
-            show_usage
-            exit 1
-            ;;
-        esac
-        ;;
     info)
         show_system_info
         ;;
     help | --help | -h)
         show_usage
         ;;
-    base | go | node | editor | shell | docker)
+    base | go | node | editor | config | shell | docker)
         # Direct component installation
         log_info "Installing components directly: $*"
-        "$SETUP_SCRIPT" --config "$CONFIG_FILE" "$@"
+        "$SETUP_SCRIPT" "$@"
         ;;
     *)
         log_error "Unknown command: $1"
