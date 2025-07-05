@@ -22,6 +22,11 @@ jobs:
         run: ls -alh
         shell: bash
 
+      - name: Copy install script to Docker context
+        if: ${{ vars.pipeline_debug == 'true' }}
+        run: cp ./install.sh ./astro-nvim/
+        shell: bash
+
       - name: Build and push to DockerHub
         uses: jabez007/docker-kitchen/.github/shared/docker@master
         with:
@@ -47,6 +52,11 @@ jobs:
       - name: See which repo we just cloned
         if: ${{ vars.pipeline_debug == 'true' }}
         run: ls -alh
+        shell: bash
+
+      - name: Copy install script to Docker context
+        if: ${{ vars.pipeline_debug == 'true' }}
+        run: cp ./install.sh ./astro-nvim/
         shell: bash
 
       - name: Build and push to GHCR

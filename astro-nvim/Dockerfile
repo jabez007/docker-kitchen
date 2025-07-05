@@ -16,7 +16,7 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Create setup directory and copy setup files
 RUN mkdir -p /opt/dev-setup
-COPY ../install.sh /opt/dev-setup/
+COPY install.sh /opt/dev-setup/
 COPY wrapper.sh /opt/dev-setup/
 COPY setup.conf /opt/dev-setup/
 
