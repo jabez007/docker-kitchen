@@ -248,7 +248,7 @@ main() {
     help | --help | -h)
         show_usage
         ;;
-    base | go | node | editor | config | shell | docker)
+    base | go | node | editor | config | shell | docker | all)
         # Direct component installation
         log_info "Installing components directly: $*"
         "$SETUP_SCRIPT" "$@"

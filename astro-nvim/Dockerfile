@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM debian:stable-slim
+FROM debian:stable-slim
 
 # Set target architecture variable
 ARG TARGETARCH
