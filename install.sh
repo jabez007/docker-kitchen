@@ -111,8 +111,8 @@ detect_environment() {
     export IS_ROOT="$is_root"
     export USE_SUDO="$use_sudo"
 
-    debug "Environment: Docker=$is_docker, Root=$is_root, Use sudo=$use_sudo"
-    debug "Actual user: $(get_actual_user), User home: $(get_user_home)"
+    info "Environment: Docker=$is_docker, Root=$is_root, Use sudo=$use_sudo"
+    info "Actual user: $(get_actual_user), User home: $(get_user_home)"
 }
 
 # Execute command with or without `sudo` based on environment
