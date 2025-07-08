@@ -16,7 +16,6 @@ readonly CONFIG_FILE="${SCRIPT_DIR}/setup.conf"
 
 # Default configuration
 declare -A CONFIG=(
-    [DEBUG]=false
     [SYSTEM_WIDE]=false
     [KEEP_GIT]=true
     [TMUX_SESSION]="default"
@@ -139,7 +138,7 @@ log() {
     ERROR) echo -e "\033[31m[ERROR]\033[0m $message" >&2 ;;
     WARN) echo -e "\033[33m[WARN]\033[0m $message" ;;
     INFO) echo -e "\033[32m[INFO]\033[0m $message" ;;
-    DEBUG) [[ "${CONFIG[DEBUG]}" == "true" ]] && echo -e "\033[36m[DEBUG]\033[0m $message" ;;
+    DEBUG) echo -e "\033[36m[DEBUG]\033[0m $message" ;;
     esac
 
     # Also log to file
@@ -838,7 +837,7 @@ load_config() {
         source "$CONFIG_FILE"
 
         # sync scalar vars -> associative array
-        for k in DEBUG SYSTEM_WIDE KEEP_GIT TMUX_SESSION \
+        for k in SYSTEM_WIDE KEEP_GIT TMUX_SESSION \
             STARSHIP_PRESET ASTRONVIM_REPO LOG_LEVEL; do
             [[ -v $k ]] && CONFIG[$k]="${!k}"
         done
@@ -851,7 +850,6 @@ save_config() {
 # Development Environment Setup Configuration
 # Generated on $(date)
 
-DEBUG=${CONFIG[DEBUG]}
 SYSTEM_WIDE=${CONFIG[SYSTEM_WIDE]}
 KEEP_GIT=${CONFIG[KEEP_GIT]}
 TMUX_SESSION="${CONFIG[TMUX_SESSION]}"
@@ -914,7 +912,7 @@ parse_arguments() {
     while [[ $# -gt 0 ]]; do
         case "$1" in
         --debug | -d)
-            CONFIG[DEBUG]=true
+            CONFIG[LOG_LEVEL]=DEBUG
             shift
             ;;
         --system-wide | -s)

@@ -42,13 +42,6 @@ jobs:
       - name: Make install script executable
         run: chmod +x install.sh
 
-      - name: Generate setup config
-        run: |
-          cat <<EOF > setup.conf
-          DEBUG=true
-          LOG_LEVEL=DEBUG
-          EOF
-
       - name: Test component installation
         run: |
           docker run --rm -v "$PWD":/workspace -w /workspace \
@@ -87,9 +80,6 @@ jobs:
               # Ensure install.sh is executable
               chmod +x /workspace/install.sh
               
-              # Check Setup config
-              cat /workspace/setup.conf
-
               # Run the installation as the test user
               su - testuser -c 'cd /workspace && ./install.sh --debug ${{ matrix.component }}'
 
