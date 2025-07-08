@@ -225,10 +225,10 @@ install_packages() {
     dnf)
         for pkg in "${packages[@]}"; do
             if ! dnf list installed "$pkg" &>/dev/null; then
-                echo "Installing $pkg..."
+                debug "Installing $pkg..."
                 run_as_admin dnf install -y "$pkg"
             else
-                echo "$pkg is already installed"
+                warn "$pkg is already installed"
             fi
         done
         ;;
