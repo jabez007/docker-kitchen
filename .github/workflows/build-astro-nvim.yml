@@ -57,6 +57,8 @@ jobs:
           docker load < ./artifacts/${{ vars.DOCKER_USERNAME }}__${{ env.IMAGE_NAME }}.tar
 
       - name: Test Go installation
+        id: test-go-install
+        continue-on-error: true
         run: |
           set -euo pipefail
           echo "Testing Go installation..."
@@ -68,6 +70,8 @@ jobs:
           "
 
       - name: Test Go functionality
+        id: test-go-func
+        continue-on-error: true
         run: |
           set -euo pipefail
           echo "Testing basic Go functionality..."
@@ -83,6 +87,8 @@ jobs:
           "
 
       - name: Test Node.js installation
+        id: test-node-install
+        continue-on-error: true
         run: |
           set -euo pipefail
           echo "Testing Node.js installation..."
@@ -100,6 +106,8 @@ jobs:
           "
 
       - name: Test Node.js functionality
+        id: test-node-func
+        continue-on-error: true
         run: |
           set -euo pipefail
           echo "Testing basic Node.js functionality..."
@@ -111,6 +119,8 @@ jobs:
           "
 
       - name: Test Neovim and development tools
+        id: test-neovim
+        continue-on-error: true
         run: |
           set -euo pipefail
           echo "Testing Neovim and development tools..."
@@ -123,6 +133,8 @@ jobs:
           "
 
       - name: Test user environment
+        id: test-user-env
+        continue-on-error: true
         run: |
           set -euo pipefail
           echo "Testing user environment..."
@@ -133,3 +145,26 @@ jobs:
             echo 'Node env:' && npm config get prefix &&
             echo 'User environment test: PASSED'
           "
+
+      - name: Check test results
+        if: always()
+        run: |
+          echo "Test Results Summary:"
+          echo "Go installation: ${{ steps.test-go-install.outcome }}"
+          echo "Go functionality: ${{ steps.test-go-func.outcome }}"
+          echo "Node.js installation: ${{ steps.test-node-install.outcome }}"
+          echo "Node.js functionality: ${{ steps.test-node-func.outcome }}"
+          echo "Neovim and dev tools: ${{ steps.test-neovim.outcome }}"
+          echo "User environment: ${{ steps.test-user-env.outcome }}"
+          
+          if [[ "${{ steps.test-go-install.outcome }}" == "failure" || \
+                "${{ steps.test-go-func.outcome }}" == "failure" || \
+                "${{ steps.test-node-install.outcome }}" == "failure" || \
+                "${{ steps.test-node-func.outcome }}" == "failure" || \
+                "${{ steps.test-neovim.outcome }}" == "failure" || \
+                "${{ steps.test-user-env.outcome }}" == "failure" ]]; then
+            echo "One or more tests failed!"
+            exit 1
+          else
+            echo "All tests passed!"
+          fi
