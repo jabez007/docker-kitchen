@@ -575,6 +575,7 @@ install_editor_stack() {
             local bottom_url
             bottom_url=$(curl -s https://api.github.com/repos/ClementTsang/bottom/releases/latest |
                 grep "browser_download_url.*bottom.*$(rpm --eval %{_arch}).*rpm" |
+                grep -v "musl" |
                 cut -d : -f 2,3 | tr -d \" | tail -n 1)
             bottom_url=$(trim "$bottom_url")
 
