@@ -905,8 +905,8 @@ parse_arguments() {
         exit 1
     fi
 
-    # Return the components list as space-separated string
-    printf "%s\n" "${components[@]}"
+    # Return the components list
+    echo "${components[@]}"
 }
 
 # ============================================================================
@@ -925,8 +925,12 @@ main() {
     detect_environment
     info "System: $(detect_system), Package Manager: $(get_package_manager)"
 
-    # Parse command line arguments
-    readarray -t components < <(parse_arguments "$@")
+    # Run directly in main shell to allow proper exiting
+    local parsed
+    parsed="$(parse_arguments "$@")" || exit $?
+
+    # Convert output into an array
+    IFS=' ' read -r -a components <<<"$parsed"
 
     info "Components to install: ${components[*]}"
 
