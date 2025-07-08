@@ -505,6 +505,9 @@ install_editor_stack() {
             bottom_url=$(curl -s https://api.github.com/repos/ClementTsang/bottom/releases/latest |
                 grep "browser_download_url.*bottom.*$(dpkg --print-architecture).*deb" |
                 cut -d : -f 2,3 | tr -d \" | tail -n 1)
+            bottom_url=$(trim "$bottom_url")
+
+            debug "Bottom download URL: $bottom_url"
 
             if [[ -n "$bottom_url" ]]; then
                 curl -L "$bottom_url" -o /tmp/bottom.deb
