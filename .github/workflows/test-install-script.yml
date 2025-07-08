@@ -89,10 +89,10 @@ jobs:
                   command -v git && command -v curl && command -v rg
                   ;;
                 go)
-                  su - testuser -c 'source ~/.bashrc && command -v go && go version'
+                  su - testuser -c 'bash -i -c "command -v go && go version"'
                   ;;
                 node)
-                  su - testuser -c 'source ~/.bashrc && command -v node && node --version'
+                  su - testuser -c 'bash -i -c "command -v node && node --version"'
                   su - testuser -c 'command -v deno && deno --version'
                   ;;
                 editor)
