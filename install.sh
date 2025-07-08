@@ -692,7 +692,7 @@ configure_starship() {
     # Add to Fish config
     local fish_config="${user_home}/.config/fish/config.fish"
     if ! grep -q 'starship init fish' "$fish_config" 2>/dev/null; then
-        echo "starship init fish | source" >>"$fish_config"
+        run_as_user bash -c "echo \"starship init fish | source\" >>\"$fish_config\""
     fi
 
     # Add to bashrc
