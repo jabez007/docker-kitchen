@@ -45,6 +45,7 @@ jobs:
       - name: Generate setup config
         run: |
           cat <<EOF > setup.conf
+          DEBUG=true
           LOG_LEVEL=DEBUG
           EOF
 
@@ -76,8 +77,11 @@ jobs:
               # Ensure install.sh is executable
               chmod +x /workspace/install.sh
               
+              # Check Setup config
+              cat /workspace/setup.conf
+
               # Run the installation as the test user
-              sudo -u testuser bash -c 'cd /workspace && ./install.sh --debug ${{ matrix.component }}'     
+              sudo -u testuser bash -c 'cd /workspace && ./install.sh --debug ${{ matrix.component }}'
 
               # Verify installation based on component
               case '${{ matrix.component }}' in
