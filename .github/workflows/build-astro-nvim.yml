@@ -54,7 +54,8 @@ jobs:
       - name: Test Go installation
         run: |
           echo "Testing Go installation..."
-          docker run --rm ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
+          docker run --rm --entrypoint="" ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
+            source ~/.bashrc 2>/dev/null || true
             go version && 
             echo 'Go version check: PASSED' || 
             (echo 'Go version check: FAILED' && exit 1)
@@ -63,7 +64,8 @@ jobs:
       - name: Test Node.js installation
         run: |
           echo "Testing Node.js installation..."
-          docker run --rm ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
+          docker run --rm --entrypoint="" ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
+            source ~/.bashrc 2>/dev/null || true
             node --version && 
             npm --version && 
             echo 'Node.js version check: PASSED' || 
@@ -73,7 +75,8 @@ jobs:
       - name: Test basic functionality
         run: |
           echo "Testing basic Go functionality..."
-          docker run --rm ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
+          docker run --rm --entrypoint="" ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
+            source ~/.bashrc 2>/dev/null || true
             echo 'package main
             import \"fmt\"
             func main() {
@@ -87,7 +90,8 @@ jobs:
       - name: Test basic Node.js functionality
         run: |
           echo "Testing basic Node.js functionality..."
-          docker run --rm ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
+          docker run --rm --entrypoint="" ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
+            source ~/.bashrc 2>/dev/null || true
             echo 'console.log(\"Hello from Node.js!\");' > test.js &&
             node test.js &&
             echo 'Node.js functionality test: PASSED' ||
@@ -97,7 +101,8 @@ jobs:
       - name: Test Neovim and development tools
         run: |
           echo "Testing Neovim and development tools..."
-          docker run --rm ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
+          docker run --rm --entrypoint="" ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
+            source ~/.bashrc 2>/dev/null || true
             nvim --version &&
             which gopls &&
             echo 'Development tools test: PASSED' ||
@@ -107,7 +112,8 @@ jobs:
       - name: Test user environment
         run: |
           echo "Testing user environment..."
-          docker run --rm ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
+          docker run --rm --entrypoint="" ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
+            source ~/.bashrc 2>/dev/null || true
             echo 'Current user:' && whoami &&
             echo 'Home directory:' && pwd &&
             echo 'Go env:' && go env GOPATH &&
