@@ -61,8 +61,7 @@ jobs:
         run: |
           set -euo pipefail
           echo "Testing Go installation..."
-          docker run --rm --entrypoint="" ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
-            source /etc/bash.bashrc 2>/dev/null || true
+          docker run --rm --entrypoint="" -it ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
             go version && 
             echo 'Go version check: PASSED' || 
             (echo 'Go version check: FAILED' && exit 1)
@@ -73,8 +72,7 @@ jobs:
         run: |
           set -euo pipefail
           echo "Testing Node.js installation..."
-          docker run --rm --entrypoint="" ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
-            source ~/.bashrc 2>/dev/null || true
+          docker run --rm --entrypoint="" -it ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
             node --version && 
             npm --version && 
             echo 'Node.js version check: PASSED' || 
@@ -86,8 +84,7 @@ jobs:
         run: |
           set -euo pipefail
           echo "Testing basic Go functionality..."
-          docker run --rm --entrypoint="" ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
-            source ~/.bashrc 2>/dev/null || true
+          docker run --rm --entrypoint="" -it ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
             echo 'package main
             import \"fmt\"
             func main() {
@@ -103,8 +100,7 @@ jobs:
         run: |
           set -euo pipefail
           echo "Testing basic Node.js functionality..."
-          docker run --rm --entrypoint="" ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
-            source ~/.bashrc 2>/dev/null || true
+          docker run --rm --entrypoint="" -it ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
             echo 'console.log(\"Hello from Node.js!\");' > test.js &&
             node test.js &&
             echo 'Node.js functionality test: PASSED' ||
@@ -116,8 +112,7 @@ jobs:
         run: |
           set -euo pipefail
           echo "Testing Neovim and development tools..."
-          docker run --rm --entrypoint="" ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
-            source ~/.bashrc 2>/dev/null || true
+          docker run --rm --entrypoint="" -it ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
             nvim --version &&
             which gopls &&
             echo 'Development tools test: PASSED' ||
@@ -129,8 +124,7 @@ jobs:
         run: |
           set -euo pipefail
           echo "Testing user environment..."
-          docker run --rm --entrypoint="" ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
-            source ~/.bashrc 2>/dev/null || true
+          docker run --rm --entrypoint="" -it ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
             echo 'Current user:' && whoami &&
             echo 'Home directory:' && pwd &&
             echo 'Go env:' && go env GOPATH &&
