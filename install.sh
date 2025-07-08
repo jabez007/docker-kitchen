@@ -373,7 +373,7 @@ install_go() {
     fi
 
     info "Installing Go..."
-    local go_url arch
+    local go_ver go_url arch
 
     arch=$(uname -m)
     case "$arch" in
@@ -384,8 +384,10 @@ install_go() {
     i386) arch="386" ;;
     esac
 
-    go_url=$(curl -fsSL "https://go.dev/VERSION?m=text" | head -n1)
-    go_url="https://go.dev/dl/${go_url}.linux-${arch}.tar.gz"
+    go_ver=$(curl -fsSL "https://go.dev/VERSION?m=text" | head -n1) ||
+        die "Unable to resolve latest Go version"
+    [[ -n "$go_ver" ]] || die "Unable to resolve latest Go version"
+    go_url="https://go.dev/dl/${go_ver}.linux-${arch}.tar.gz"
 
     debug "Go download URL: $go_url"
 
