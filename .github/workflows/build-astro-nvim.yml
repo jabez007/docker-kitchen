@@ -27,8 +27,12 @@ jobs:
         shell: bash
 
       - name: Copy install script to Docker context
-        run: cp ./install.sh ./astro-nvim/
-        shell: bash
+        run: |
+          if [[ ! -f ./install.sh ]]; then
+            echo "install.sh not found – build cannot proceed" >&2
+            exit 1
+          fi
+          cp ./install.sh ./astro-nvim/
 
       - uses: jabez007/docker-kitchen/.github/shared/docker@master
         with:
@@ -53,6 +57,7 @@ jobs:
 
       - name: Test Go installation
         run: |
+          set -euo pipefail
           echo "Testing Go installation..."
           docker run --rm --entrypoint="" ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
             source ~/.bashrc 2>/dev/null || true
@@ -63,6 +68,7 @@ jobs:
 
       - name: Test Node.js installation
         run: |
+          set -euo pipefail
           echo "Testing Node.js installation..."
           docker run --rm --entrypoint="" ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
             source ~/.bashrc 2>/dev/null || true
@@ -74,6 +80,7 @@ jobs:
 
       - name: Test basic functionality
         run: |
+          set -euo pipefail
           echo "Testing basic Go functionality..."
           docker run --rm --entrypoint="" ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
             source ~/.bashrc 2>/dev/null || true
@@ -89,6 +96,7 @@ jobs:
 
       - name: Test basic Node.js functionality
         run: |
+          set -euo pipefail
           echo "Testing basic Node.js functionality..."
           docker run --rm --entrypoint="" ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
             source ~/.bashrc 2>/dev/null || true
@@ -100,6 +108,7 @@ jobs:
 
       - name: Test Neovim and development tools
         run: |
+          set -euo pipefail
           echo "Testing Neovim and development tools..."
           docker run --rm --entrypoint="" ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
             source ~/.bashrc 2>/dev/null || true
@@ -111,6 +120,7 @@ jobs:
 
       - name: Test user environment
         run: |
+          set -euo pipefail
           echo "Testing user environment..."
           docker run --rm --entrypoint="" ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
             source ~/.bashrc 2>/dev/null || true
