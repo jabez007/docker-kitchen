@@ -223,10 +223,13 @@ install_packages() {
         run_as_admin apt update && run_as_admin apt install -y --no-install-recommends "${packages[@]}"
         ;;
     dnf)
+        local match
         run_as_admin clean all
         run_as_admin makecache
         for pkg in "${packages[@]}"; do
-            if ! dnf list installed "$pkg" &>/dev/null; then
+            match=$(dnf list installed | awk '{print $1}' | grep -E "^${pkg}(\.|$)")
+
+            if [[ -n "$match" ]]; then
                 debug "Installing $pkg..."
                 run_as_admin dnf install -y "$pkg"
             else
