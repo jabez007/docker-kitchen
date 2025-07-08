@@ -223,12 +223,15 @@ install_packages() {
         run_as_admin apt update && run_as_admin apt install -y --no-install-recommends "${packages[@]}"
         ;;
     dnf)
+        run_as_admin clean all
+        run_as_admin makecache
         for pkg in "${packages[@]}"; do
             if ! dnf list installed "$pkg" &>/dev/null; then
                 debug "Installing $pkg..."
                 run_as_admin dnf install -y "$pkg"
             else
                 warn "$pkg is already installed"
+                run_as_admin dnf reinstall -y "$pkg"
             fi
         done
         ;;
