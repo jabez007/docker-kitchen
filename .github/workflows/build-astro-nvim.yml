@@ -61,13 +61,13 @@ jobs:
         run: |
           set -euo pipefail
           echo "Testing Go installation..."
-          docker run --rm --entrypoint="" ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest /bin/bash -c "
+          docker run --rm --entrypoint="" ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest /bin/bash -ilc "
             echo '=== Initial PATH ===' &&
             echo \$PATH &&
             echo '=== Contents of /etc/bash.bashrc ===' &&
-            cat /etc/bash.bashrc | grep -E 'PATH|go|node' || echo 'No PATH/go/node references found in /etc/bash.bashrc' &&
+            cat /etc/bash.bashrc | grep -E 'PATH|go' || echo 'No PATH references for go found in /etc/bash.bashrc' &&
             echo '=== Sourcing /etc/bash.bashrc ===' &&
-            source /etc/bash.bashrc 2>/dev/null || echo '/etc/bash.bashrc not found or failed' &&
+            source /etc/bash.bashrc 2>/dev/null || echo '/etc/bash.bashrc failed to source' &&
             echo '=== PATH after /etc/bash.bashrc ===' &&
             echo \$PATH &&
             echo '=== Looking for Go binary ===' &&
