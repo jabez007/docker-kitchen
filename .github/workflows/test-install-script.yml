@@ -71,9 +71,11 @@ jobs:
               chmod +x /workspace/install.sh
               
               # Run the installation as the test user
-              sudo -u testuser bash -c 'cd /workspace && ./install.sh --debug ${{ matrix.component }}'
-              
+              su testuser
+              cd /workspace && ./install.sh --debug ${{ matrix.component }}     
+
               # Verify installation based on component
+              source ~/.bashrc
               case '${{ matrix.component }}' in
                 base)
                   command -v git && command -v curl && command -v rg
