@@ -156,7 +156,7 @@ jobs:
           echo "Node.js functionality: ${{ steps.test-node-func.outcome }}"
           echo "Neovim and dev tools: ${{ steps.test-neovim.outcome }}"
           echo "User environment: ${{ steps.test-user-env.outcome }}"
-          
+
           if [[ "${{ steps.test-go-install.outcome }}" == "failure" || \
                 "${{ steps.test-go-func.outcome }}" == "failure" || \
                 "${{ steps.test-node-install.outcome }}" == "failure" || \
