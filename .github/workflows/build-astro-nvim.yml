@@ -62,39 +62,18 @@ jobs:
           set -euo pipefail
           echo "Testing Go installation..."
           docker run --rm --entrypoint="" ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest /bin/bash -ilc "
-            echo '=== Initial PATH ===' &&
-            echo \$PATH &&
-            echo '=== Contents of /etc/bash.bashrc ===' &&
-            cat /etc/bash.bashrc | grep -E 'PATH|go' || echo 'No PATH references for go found in /etc/bash.bashrc' &&
-            echo '=== Sourcing /etc/bash.bashrc ===' &&
-            source /etc/bash.bashrc 2>/dev/null || echo '/etc/bash.bashrc failed to source' &&
-            echo '=== PATH after /etc/bash.bashrc ===' &&
-            echo \$PATH &&
-            echo '=== Looking for Go binary ===' &&
             command -v go && 
             go version && 
             echo 'Go version check: PASSED' || 
             (echo 'Go version check: FAILED' && exit 1)
           "
 
-      - name: Test Node.js installation
-        continue-on-error: true
-        run: |
-          set -euo pipefail
-          echo "Testing Node.js installation..."
-          docker run --rm --entrypoint="" -it ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
-            node --version && 
-            npm --version && 
-            echo 'Node.js version check: PASSED' || 
-            (echo 'Node.js version check: FAILED' && exit 1)
-          "
-
-      - name: Test basic functionality
+      - name: Test Go functionality
         continue-on-error: true
         run: |
           set -euo pipefail
           echo "Testing basic Go functionality..."
-          docker run --rm --entrypoint="" -it ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
+          docker run --rm --entrypoint="" ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest /bin/bash -ilc "
             echo 'package main
             import \"fmt\"
             func main() {
@@ -105,12 +84,30 @@ jobs:
             (echo 'Go functionality test: FAILED' && exit 1)
           "
 
-      - name: Test basic Node.js functionality
+      - name: Test Node.js installation
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          echo "Testing Node.js installation..."
+          docker run --rm --entrypoint="" ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest /bin/bash -ilc "
+            command -v deno &&
+            deno --version &&
+            command -v nvm &&
+            nvm --version &&
+            command -v node &&
+            node --version && 
+            command -v npm &&
+            npm --version && 
+            echo 'Node.js version check: PASSED' || 
+            (echo 'Node.js version check: FAILED' && exit 1)
+          "
+
+      - name: Test Node.js functionality
         continue-on-error: true
         run: |
           set -euo pipefail
           echo "Testing basic Node.js functionality..."
-          docker run --rm --entrypoint="" -it ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
+          docker run --rm --entrypoint="" ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest /bin/bash -ilc "
             echo 'console.log(\"Hello from Node.js!\");' > test.js &&
             node test.js &&
             echo 'Node.js functionality test: PASSED' ||
@@ -122,7 +119,8 @@ jobs:
         run: |
           set -euo pipefail
           echo "Testing Neovim and development tools..."
-          docker run --rm --entrypoint="" -it ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
+          docker run --rm --entrypoint="" ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest /bin/bash -ilc "
+            command -v nvim &&
             nvim --version &&
             which gopls &&
             echo 'Development tools test: PASSED' ||
@@ -134,7 +132,7 @@ jobs:
         run: |
           set -euo pipefail
           echo "Testing user environment..."
-          docker run --rm --entrypoint="" -it ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
+          docker run --rm --entrypoint="" ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest /bin/bash -ilc "
             echo 'Current user:' && whoami &&
             echo 'Home directory:' && pwd &&
             echo 'Go env:' && go env GOPATH &&
