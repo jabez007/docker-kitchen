@@ -69,6 +69,13 @@ jobs:
               
               # Create a test user with proper home directory
               useradd -m -s /bin/bash testuser
+              
+              # Fedora-specific: Set a password for the user and configure PAM properly
+              if command -v dnf >/dev/null 2>&1; then
+                echo 'testuser:testpass' | chpasswd
+              fi
+              
+              # Allow sudo without password
               echo 'testuser ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
               
               # Fix ownership of the workspace for testuser
