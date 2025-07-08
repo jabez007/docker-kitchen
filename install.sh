@@ -321,9 +321,9 @@ install_base_dependencies() {
     info "Installing base dependencies..."
 
     local packages=(
-        bash curl git unzip ca-certificates
-        build-essential libssl-dev libffi-dev
-        openssh-client ripgrep
+        bash curl git
+        unzip ca-certificates
+        ripgrep
     )
 
     # Add python and lua based on OS
@@ -331,16 +331,28 @@ install_base_dependencies() {
     pm=$(get_package_manager)
     case "$pm" in
     apt)
-        packages+=(lua5.1 python3 python3-venv)
+        packages+=(
+            build-essential libssl-dev
+            libffi-dev openssh-client
+            lua5.1 python3 python3-venv
+        )
         ;;
     dnf | yum)
-        packages+=(lua python3 python3-venv)
+        packages+=(
+            gcc gcc-c++ make openssl-devel
+            libffi-devel openssh-clients
+            lua python3 python3-venv
+        )
         ;;
     brew)
+        # already satisfied by Xcode Command Line Tools / pkg-config
         packages+=(lua python)
         ;;
     pacman)
-        packages+=(lua python python-virtualenv)
+        packages+=(
+            base-devel openssh
+            lua python python-virtualenv
+        )
         ;;
     esac
 
