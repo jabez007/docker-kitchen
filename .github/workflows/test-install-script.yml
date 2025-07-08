@@ -74,6 +74,8 @@ jobs:
               if command -v dnf >/dev/null 2>&1; then
                 echo 'testuser:testpass' | chpasswd
                 usermod -aG wheel testuser
+                echo '%wheel ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
+                chmod u+r /etc/shadow
               fi
               
               # Allow sudo without password
