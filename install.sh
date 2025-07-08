@@ -244,31 +244,59 @@ install_packages() {
 update_path() {
     local path_entry="$1"
     local comment="${2:-Add to PATH}"
-    local shell_config
+    local shell_configs=()
+    local run_command
 
     # Update current session
     export PATH="$PATH:$path_entry"
 
     # Determine config file
     if [[ "${CONFIG[SYSTEM_WIDE]}" == "true" ]]; then
-        shell_config="/etc/bash.bashrc"
-        [[ -n "${ZSH_VERSION-}" ]] && shell_config="/etc/zsh/zshrc"
+        # System-wide: Update both profile and bashrc for maximum compatibility
+        shell_configs=("/etc/profile" "/etc/bash.bashrc")
+
+        # Add zsh system config if zsh is installed
+        if command_exists zsh && [[ -f "/etc/zsh/zshrc" ]]; then
+            shell_configs+=("/etc/zsh/zshrc")
+        fi
+
+        run_command="run_as_admin"
     else
+        # User-specific: Prefer .profile for PATH (shell-agnostic), but also update shell-specific configs
         local user_home
         user_home=$(get_user_home)
-        shell_config="${user_home}/.bashrc"
-        [[ -n "${ZSH_VERSION-}" ]] && shell_config="${user_home}/.zshrc"
+
+        # Start with .profile (shell-agnostic)
+        shell_configs=("${user_home}/.profile")
+
+        # Add shell-specific configs for interactive shells
+        if [[ -n "${ZSH_VERSION-}" ]] || command_exists zsh; then
+            shell_configs+=("${user_home}/.zshrc")
+        fi
+
+        # Add .bashrc for interactive bash sessions
+        shell_configs+=("${user_home}/.bashrc")
+
+        run_command="run_as_user"
     fi
 
-    # Add to config if not present
-    if ! grep -qxF "export PATH=\"\$PATH:${path_entry}\"" "$shell_config" 2>/dev/null; then
-        {
-            echo ""
-            echo "# $comment"
-            echo "export PATH=\"\$PATH:${path_entry}\""
-        } | run_as_admin tee -a "$shell_config" >/dev/null
-        info "Updated PATH in $shell_config"
-    fi
+    # Update each config file
+    for shell_config in "${shell_configs[@]}"; do
+        # Create directory if it doesn't exist (for user configs)
+        if [[ "${CONFIG[SYSTEM_WIDE]}" != "true" ]]; then
+            $run_command mkdir -p "$(dirname "$shell_config")"
+        fi
+
+        # Add to config if not present
+        if ! grep -qxF "export PATH=\"\$PATH:${path_entry}\"" "$shell_config" 2>/dev/null; then
+            {
+                echo ""
+                echo "# $comment"
+                echo "export PATH=\"\$PATH:${path_entry}\""
+            } | $run_command tee -a "$shell_config" >/dev/null
+            info "Updated PATH in $shell_config"
+        fi
+    done
 }
 
 # Verify installation
@@ -600,7 +628,7 @@ configure_fish_shell() {
 
     # Add tmux auto-attach if not present
     if ! grep -q "tmux attach-session -t ${CONFIG[TMUX_SESSION]}" "$fish_config" 2>/dev/null; then
-        cat >>"$fish_config" <<EOF
+        run_as_user tee -a "$fish_config" >/dev/null <<'EOF'
 
 # Automatically attach to or create a tmux session
 if type -q tmux
@@ -634,7 +662,7 @@ configure_tmux() {
 
     # Configure tmux.conf if not already configured
     if ! grep -q "tmux-plugins/tmux-resurrect" "$tmux_conf" 2>/dev/null; then
-        cat >>"$tmux_conf" <<'EOF'
+        run_as_user tee -a "$tmux_conf" >/dev/null <<'EOF'
 
 # Tmux Plugin Manager and plugins
 set -g @plugin 'tmux-plugins/tpm'
@@ -670,7 +698,7 @@ configure_starship() {
     # Add to bashrc
     local bashrc="${user_home}/.bashrc"
     if ! grep -q 'starship init bash' "$bashrc" 2>/dev/null; then
-        cat >>"$bashrc" <<'EOF'
+        run_as_user tee -a "$bashrc" >/dev/null <<'EOF'
 
 # Initialize Starship for Bash
 eval "$(starship init bash)"
@@ -687,7 +715,7 @@ configure_bash_integration() {
     local bashrc="${user_home}/.bashrc"
 
     if ! grep -q "exec fish" "$bashrc" 2>/dev/null; then
-        cat >>"$bashrc" <<'EOF'
+        run_as_user tee -a "$bashrc" >/dev/null <<'EOF'
 
 # Launch fish shell automatically unless bash was started from fish
 if command -v fish &> /dev/null && [[ $- == *i* ]]; then
