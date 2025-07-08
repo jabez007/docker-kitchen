@@ -61,7 +61,15 @@ jobs:
         run: |
           set -euo pipefail
           echo "Testing Go installation..."
-          docker run --rm --entrypoint="" -it ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
+          docker run --rm --entrypoint="" ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest /bin/bash -c "
+            echo '=== Initial PATH ===' &&
+            echo \$PATH &&
+            echo '=== Sourcing /etc/bash.bashrc ===' &&
+            source /etc/bash.bashrc 2>/dev/null || echo '/etc/bash.bashrc not found or failed' &&
+            echo '=== PATH after /etc/bash.bashrc ===' &&
+            echo \$PATH &&
+            echo '=== Looking for Go binary ===' &&
+            command -v go && 
             go version && 
             echo 'Go version check: PASSED' || 
             (echo 'Go version check: FAILED' && exit 1)
