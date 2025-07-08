@@ -1,0 +1,225 @@
+name: Test 'install' Script
+
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+    paths:
+      - "install.sh"
+  schedule:
+    # Run weekly to catch upstream changes
+    - cron: "0 2 * * 0"
+
+jobs:
+  test-matrix:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu:24.04
+          - ubuntu:22.04
+          - ubuntu:20.04
+          - debian:bookworm
+          - debian:bullseye
+          - fedora:42
+          - fedora:41
+          - archlinux:latest
+        component:
+          - base
+          - go
+          - node
+          - editor
+          - config
+          - shell
+          - docker
+        exclude:
+          # Docker-in-Docker issues with some combinations
+          - os: archlinux:latest
+            component: docker
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Test component installation
+        run: |
+          docker run --rm -v "$PWD":/workspace -w /workspace \
+            --privileged \
+            ${{ matrix.os }} \
+            bash -c "
+              set -e
+              # Install basic dependencies for the test
+              if command -v apt >/dev/null 2>&1; then
+                apt update && apt install -y sudo curl git
+              elif command -v dnf >/dev/null 2>&1; then
+                dnf install -y sudo curl git
+              elif command -v pacman >/dev/null 2>&1; then
+                pacman -Sy --noconfirm sudo curl git
+              fi
+              
+              # Create a test user
+              useradd -m -s /bin/bash testuser
+              echo 'testuser ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+              
+              # Run the installation as the test user
+              sudo -u testuser bash -c 'cd /workspace && bash install.sh --debug ${{ matrix.component }}'
+              
+              # Verify installation based on component
+              case '${{ matrix.component }}' in
+                base)
+                  command -v git && command -v curl && command -v rg
+                  ;;
+                go)
+                  command -v go && go version
+                  ;;
+                node)
+                  sudo -u testuser bash -c 'source ~/.nvm/nvm.sh && command -v node && node --version'
+                  sudo -u testuser bash -c 'command -v deno && deno --version'
+                  ;;
+                editor)
+                  command -v nvim && command -v lazygit && command -v btm
+                  ;;
+                config)
+                  sudo -u testuser bash -c 'test -d ~/.config/nvim'
+                  ;;
+                shell)
+                  command -v fish && command -v tmux && command -v starship
+                  ;;
+                docker)
+                  command -v docker && docker --version
+                  ;;
+              esac
+            "
+
+  test-combinations:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        test-case:
+          - components: "base go"
+            os: "ubuntu:24.04"
+          - components: "base node editor"
+            os: "debian:bookworm"
+          - components: "base shell"
+            os: "fedora:42"
+          - components: "all"
+            os: "ubuntu:22.04"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Test component combinations
+        run: |
+          docker run --rm -v "$PWD":/workspace -w /workspace \
+            --privileged \
+            ${{ matrix.test-case.os }} \
+            bash -c "
+              set -e
+              if command -v apt >/dev/null 2>&1; then
+                apt update && apt install -y sudo curl git
+              elif command -v dnf >/dev/null 2>&1; then
+                dnf install -y sudo curl git
+              elif command -v pacman >/dev/null 2>&1; then
+                pacman -Sy --noconfirm sudo curl git
+              fi
+              
+              useradd -m -s /bin/bash testuser
+              echo 'testuser ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+              
+              sudo -u testuser bash -c 'cd /workspace && bash install.sh --debug ${{ matrix.test-case.components }}'
+            "
+
+  test-options:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Test script options
+        run: |
+          docker run --rm -v "$PWD":/workspace -w /workspace \
+            ubuntu:22.04 \
+            bash -c "
+              set -e
+              apt update && apt install -y sudo curl git
+              useradd -m -s /bin/bash testuser
+              echo 'testuser ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+              
+              # Test help option
+              sudo -u testuser bash -c 'cd /workspace && bash install.sh --help'
+              
+              # Test save config
+              sudo -u testuser bash -c 'cd /workspace && bash install.sh --save-config'
+              
+              # Test custom options
+              sudo -u testuser bash -c 'cd /workspace && bash install.sh --debug --keep-git --tmux-session test base'
+            "
+
+  test-error-handling:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Test error conditions
+        run: |
+          docker run --rm -v "$PWD":/workspace -w /workspace \
+            ubuntu:22.04 \
+            bash -c "
+              set -e
+              apt update && apt install -y sudo curl git
+              useradd -m -s /bin/bash testuser
+              echo 'testuser ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+              
+              # Test invalid component
+              ! sudo -u testuser bash -c 'cd /workspace && bash install.sh invalid-component'
+              
+              # Test missing argument
+              ! sudo -u testuser bash -c 'cd /workspace && bash install.sh --tmux-session'
+              
+              # Test no components
+              ! sudo -u testuser bash -c 'cd /workspace && bash install.sh'
+            "
+
+  test-idempotency:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Test idempotency
+        run: |
+          docker run --rm -v "$PWD":/workspace -w /workspace \
+            ubuntu:22.04 \
+            bash -c "
+              set -e
+              apt update && apt install -y sudo curl git
+              useradd -m -s /bin/bash testuser
+              echo 'testuser ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+              
+              # Run twice to test idempotency
+              sudo -u testuser bash -c 'cd /workspace && bash install.sh --debug base go'
+              sudo -u testuser bash -c 'cd /workspace && bash install.sh --debug base go'
+            "
+
+  lint-script:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+
+      - name: Lint bash script
+        run: |
+          shellcheck install.sh || true  # Don't fail on warnings initially
+
+      - name: Check script syntax
+        run: |
+          bash -n install.sh
