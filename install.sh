@@ -81,7 +81,7 @@ run_as_user() {
         if command -v sudo >/dev/null 2>&1; then
             sudo -u "$actual_user" HOME="$user_home" "$@"
         else
-            su - "$actual_user" -c "$*"
+            su - "$actual_user" -c "$(printf '%q ' "$@")"
         fi
     fi
 }
