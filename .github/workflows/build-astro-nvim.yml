@@ -57,7 +57,6 @@ jobs:
           docker load < ./artifacts/${{ vars.DOCKER_USERNAME }}__${{ env.IMAGE_NAME }}.tar
 
       - name: Test Go installation
-        continue-on-error: true
         run: |
           set -euo pipefail
           echo "Testing Go installation..."
@@ -69,7 +68,6 @@ jobs:
           "
 
       - name: Test Go functionality
-        continue-on-error: true
         run: |
           set -euo pipefail
           echo "Testing basic Go functionality..."
@@ -85,7 +83,6 @@ jobs:
           "
 
       - name: Test Node.js installation
-        continue-on-error: true
         run: |
           set -euo pipefail
           echo "Testing Node.js installation..."
@@ -103,7 +100,6 @@ jobs:
           "
 
       - name: Test Node.js functionality
-        continue-on-error: true
         run: |
           set -euo pipefail
           echo "Testing basic Node.js functionality..."
@@ -115,7 +111,6 @@ jobs:
           "
 
       - name: Test Neovim and development tools
-        continue-on-error: true
         run: |
           set -euo pipefail
           echo "Testing Neovim and development tools..."
@@ -128,7 +123,6 @@ jobs:
           "
 
       - name: Test user environment
-        continue-on-error: true
         run: |
           set -euo pipefail
           echo "Testing user environment..."
