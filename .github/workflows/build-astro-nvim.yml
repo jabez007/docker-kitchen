@@ -28,11 +28,12 @@ jobs:
 
       - name: Copy install script to Docker context
         run: |
+          set -euo pipefail
           if [[ ! -f ./install.sh ]]; then
             echo "install.sh not found – build cannot proceed" >&2
             exit 1
           fi
-          cp ./install.sh ./astro-nvim/
+          cp "./install.sh" "./astro-nvim/"
 
       - uses: jabez007/docker-kitchen/.github/shared/docker@master
         with:
@@ -60,7 +61,7 @@ jobs:
           set -euo pipefail
           echo "Testing Go installation..."
           docker run --rm --entrypoint="" ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
-            source ~/.bashrc 2>/dev/null || true
+            source /etc/bash.bashrc 2>/dev/null || true
             go version && 
             echo 'Go version check: PASSED' || 
             (echo 'Go version check: FAILED' && exit 1)
