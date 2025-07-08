@@ -628,7 +628,7 @@ configure_fish_shell() {
 
     # Add tmux auto-attach if not present
     if ! grep -q "tmux attach-session -t ${CONFIG[TMUX_SESSION]}" "$fish_config" 2>/dev/null; then
-        run_as_user tee -a "$fish_config" >/dev/null <<'EOF'
+        run_as_user tee -a "$fish_config" >/dev/null <<EOF
 
 # Automatically attach to or create a tmux session
 if type -q tmux
@@ -686,13 +686,13 @@ configure_starship() {
     run_as_user mkdir -p "$(dirname "$starship_config")"
 
     # Apply preset
-    starship preset "${CONFIG[STARSHIP_PRESET]}" -o "$starship_config" ||
+    run_as_user starship preset "${CONFIG[STARSHIP_PRESET]}" -o "$starship_config" ||
         warn "Failed to apply Starship preset: ${CONFIG[STARSHIP_PRESET]}"
 
     # Add to Fish config
     local fish_config="${user_home}/.config/fish/config.fish"
     if ! grep -q 'starship init fish' "$fish_config" 2>/dev/null; then
-        run_as_user bash -c "echo \"starship init fish | source\" >>\"$fish_config\""
+        run_as_user bash -c 'echo "starship init fish | source" >>"'"$fish_config"'"'
     fi
 
     # Add to bashrc
