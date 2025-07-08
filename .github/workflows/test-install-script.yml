@@ -71,17 +71,15 @@ jobs:
               chmod +x /workspace/install.sh
               
               # Run the installation as the test user
-              su testuser
-              cd /workspace && ./install.sh --debug ${{ matrix.component }}     
+              sudo -u testuser bash -c 'cd /workspace && ./install.sh --debug ${{ matrix.component }}'     
 
               # Verify installation based on component
-              source ~/.bashrc
               case '${{ matrix.component }}' in
                 base)
                   command -v git && command -v curl && command -v rg
                   ;;
                 go)
-                  command -v go && go version
+                  sudo -u testuser bash -c 'source ~/.bashrc && command -v go && go version'
                   ;;
                 node)
                   sudo -u testuser bash -c 'source ~/.nvm/nvm.sh && command -v node && node --version'
