@@ -111,8 +111,8 @@ detect_environment() {
     export IS_ROOT="$is_root"
     export USE_SUDO="$use_sudo"
 
-    info "Environment: Docker=$is_docker, Root=$is_root, Use sudo=$use_sudo"
-    info "Actual user: $(get_actual_user), User home: $(get_user_home)"
+    debug "Environment: Docker=$is_docker, Root=$is_root, Use sudo=$use_sudo"
+    debug "Actual user: $(get_actual_user), User home: $(get_user_home)"
 }
 
 # Execute command with or without `sudo` based on environment
@@ -905,7 +905,8 @@ parse_arguments() {
         exit 1
     fi
 
-    echo "${components[@]}"
+    # Return the components list as space-separated string
+    printf "%s\n" "${components[@]}"
 }
 
 # ============================================================================
@@ -915,17 +916,17 @@ parse_arguments() {
 main() {
     local components
 
+    # Load configuration
+    load_config
+
     # Initialize logging
     mkdir -p "$(dirname "$LOG_FILE")"
     info "Starting development environment setup"
     detect_environment
     info "System: $(detect_system), Package Manager: $(get_package_manager)"
 
-    # Load configuration
-    load_config
-
     # Parse command line arguments
-    mapfile -t components < <(parse_arguments "$@" | tr ' ' '\n')
+    readarray -t components < <(parse_arguments "$@")
 
     info "Components to install: ${components[*]}"
 
