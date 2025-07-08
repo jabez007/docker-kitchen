@@ -392,6 +392,9 @@ install_node_stack() {
     fi
 
     # Install Deno
+    if ! command_exists unzip; then
+        install_packages unzip
+    fi
     if ! command_exists deno; then
         info "Installing Deno..."
         run_as_user bash -c \
