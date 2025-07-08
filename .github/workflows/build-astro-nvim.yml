@@ -64,6 +64,8 @@ jobs:
           docker run --rm --entrypoint="" ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest /bin/bash -c "
             echo '=== Initial PATH ===' &&
             echo \$PATH &&
+            echo '=== Contents of /etc/bash.bashrc ===' &&
+            cat /etc/bash.bashrc | grep -E 'PATH|go|node' || echo 'No PATH/go/node references found in /etc/bash.bashrc' &&
             echo '=== Sourcing /etc/bash.bashrc ===' &&
             source /etc/bash.bashrc 2>/dev/null || echo '/etc/bash.bashrc not found or failed' &&
             echo '=== PATH after /etc/bash.bashrc ===' &&
