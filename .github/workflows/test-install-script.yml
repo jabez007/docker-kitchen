@@ -81,7 +81,7 @@ jobs:
               cat /workspace/setup.conf
 
               # Run the installation as the test user
-              sudo -i -u testuser bash -c 'cd /workspace && ./install.sh --debug ${{ matrix.component }}'
+              su - testuser -c 'cd /workspace && ./install.sh --debug ${{ matrix.component }}'
 
               # Verify installation based on component
               case '${{ matrix.component }}' in
@@ -89,17 +89,17 @@ jobs:
                   command -v git && command -v curl && command -v rg
                   ;;
                 go)
-                  sudo -i -u testuser bash -c 'source ~/.bashrc && command -v go && go version'
+                  su - testuser -c 'source ~/.bashrc && command -v go && go version'
                   ;;
                 node)
-                  sudo -i -u testuser bash -c 'source ~/.nvm/nvm.sh && command -v node && node --version'
-                  sudo -i -u testuser bash -c 'command -v deno && deno --version'
+                  su - testuser -c 'source ~/.nvm/nvm.sh && command -v node && node --version'
+                  su - testuser -c 'command -v deno && deno --version'
                   ;;
                 editor)
                   command -v nvim && command -v lazygit && command -v btm
                   ;;
                 config)
-                  sudo -i -u testuser bash -c 'test -d ~/.config/nvim'
+                  su - testuser -c 'test -d ~/.config/nvim'
                   ;;
                 shell)
                   command -v fish && command -v tmux && command -v starship
