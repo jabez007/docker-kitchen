@@ -78,7 +78,11 @@ run_as_user() {
         "$@"
     else
         # Run as the original user
-        sudo -u "$actual_user" HOME="$user_home" "$@"
+        if command -v sudo >/dev/null 2>&1; then
+            sudo -u "$actual_user" HOME="$user_home" "$@"
+        else
+            su - "$actual_user" -c "$*"
+        fi
     fi
 }
 
