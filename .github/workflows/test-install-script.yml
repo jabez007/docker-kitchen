@@ -75,7 +75,7 @@ jobs:
                 echo 'testuser:testpass' | chpasswd
                 # Fix PAM configuration if needed
                 if [ ! -f /etc/pam.d/sudo ]; then
-                  cat > /etc/pam.d/sudo << 'EOF'
+                  cat > /etc/pam.d/sudo << EOF
             #%PAM-1.0
             auth       include      system-auth
             account    include      system-auth
