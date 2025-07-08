@@ -33,11 +33,7 @@ jobs:
           - editor
           - config
           - shell
-          - docker
-        exclude:
-          # Docker-in-Docker issues with some combinations
-          - os: archlinux:latest
-            component: docker
+          # Docker-in-Docker issues
 
     steps:
       - name: Checkout code
@@ -46,7 +42,6 @@ jobs:
       - name: Test component installation
         run: |
           docker run --rm -v "$PWD":/workspace -w /workspace \
-            --privileged \
             ${{ matrix.os }} \
             bash -c "
               set -e
