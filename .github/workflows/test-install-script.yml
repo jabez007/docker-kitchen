@@ -123,6 +123,7 @@ jobs:
   test-combinations:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         test-case:
           - components: "base go"
@@ -159,6 +160,15 @@ jobs:
               fi
               
               useradd -m -s /bin/bash testuser
+              
+              # Fedora-specific: Set a password for the user and configure PAM properly
+              if command -v dnf >/dev/null 2>&1; then
+                echo 'testuser:testpass' | chpasswd
+                usermod -aG wheel testuser
+                echo '%wheel ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
+                chmod u+r /etc/shadow
+              fi
+              
               echo 'testuser ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
               
               # Fix ownership and permissions
