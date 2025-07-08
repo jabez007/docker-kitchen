@@ -11,6 +11,9 @@ on:
       - "astro-nvim/*.sh"
       - "install.sh"
 
+env:
+  IMAGE_NAME: astro-nvim
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -30,6 +33,84 @@ jobs:
       - uses: jabez007/docker-kitchen/.github/shared/docker@master
         with:
           context: ./astro-nvim
-          image-name: jabez07/astro-nvim
+          image-name: ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}
           tag: latest
           debug: ${{ vars.pipeline_debug }}
+
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Download Docker image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: latest
+          path: ./artifacts
+
+      - name: Load Docker image
+        run: |
+          docker load < ./artifacts/${{ vars.DOCKER_USERNAME }}__${{ env.IMAGE_NAME }}.tar
+
+      - name: Test Go installation
+        run: |
+          echo "Testing Go installation..."
+          docker run --rm ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
+            go version && 
+            echo 'Go version check: PASSED' || 
+            (echo 'Go version check: FAILED' && exit 1)
+          "
+
+      - name: Test Node.js installation
+        run: |
+          echo "Testing Node.js installation..."
+          docker run --rm ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
+            node --version && 
+            npm --version && 
+            echo 'Node.js version check: PASSED' || 
+            (echo 'Node.js version check: FAILED' && exit 1)
+          "
+
+      - name: Test basic functionality
+        run: |
+          echo "Testing basic Go functionality..."
+          docker run --rm ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
+            echo 'package main
+            import \"fmt\"
+            func main() {
+              fmt.Println(\"Hello from Go!\")
+            }' > test.go &&
+            go run test.go &&
+            echo 'Go functionality test: PASSED' ||
+            (echo 'Go functionality test: FAILED' && exit 1)
+          "
+
+      - name: Test basic Node.js functionality
+        run: |
+          echo "Testing basic Node.js functionality..."
+          docker run --rm ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
+            echo 'console.log(\"Hello from Node.js!\");' > test.js &&
+            node test.js &&
+            echo 'Node.js functionality test: PASSED' ||
+            (echo 'Node.js functionality test: FAILED' && exit 1)
+          "
+
+      - name: Test Neovim and development tools
+        run: |
+          echo "Testing Neovim and development tools..."
+          docker run --rm ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
+            nvim --version &&
+            which gopls &&
+            echo 'Development tools test: PASSED' ||
+            (echo 'Development tools test: FAILED' && exit 1)
+          "
+
+      - name: Test user environment
+        run: |
+          echo "Testing user environment..."
+          docker run --rm ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c "
+            echo 'Current user:' && whoami &&
+            echo 'Home directory:' && pwd &&
+            echo 'Go env:' && go env GOPATH &&
+            echo 'Node env:' && npm config get prefix &&
+            echo 'User environment test: PASSED'
+          "
