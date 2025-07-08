@@ -175,7 +175,7 @@ jobs:
               chown -R testuser:testuser /workspace
               chmod +x /workspace/install.sh
               
-              sudo -u testuser bash -c 'cd /workspace && ./install.sh --debug ${{ matrix.test-case.components }}'
+              su - testuser -c 'cd /workspace && ./install.sh --debug ${{ matrix.test-case.components }}'
             "
 
   test-options:
@@ -204,13 +204,13 @@ jobs:
               chmod +x /workspace/install.sh
               
               # Test help option
-              sudo -u testuser bash -c 'cd /workspace && ./install.sh --help'
+              su - testuser -c 'cd /workspace && ./install.sh --help'
               
               # Test save config
-              sudo -u testuser bash -c 'cd /workspace && ./install.sh --save-config'
+              su - testuser -c 'cd /workspace && ./install.sh --save-config'
               
               # Test custom options
-              sudo -u testuser bash -c 'cd /workspace && ./install.sh --debug --keep-git --tmux-session test base'
+              su - testuser -c 'cd /workspace && ./install.sh --debug --keep-git --tmux-session test base'
             "
 
   test-error-handling:
@@ -239,13 +239,13 @@ jobs:
               chmod +x /workspace/install.sh
               
               # Test invalid component (expect failure)
-              ! sudo -u testuser bash -c 'cd /workspace && ./install.sh invalid-component'
+              ! su - testuser -c 'cd /workspace && ./install.sh invalid-component'
               
               # Test missing argument (expect failure)
-              ! sudo -u testuser bash -c 'cd /workspace && ./install.sh --tmux-session'
+              ! su - testuser -c 'cd /workspace && ./install.sh --tmux-session'
               
               # Test no components (expect failure)
-              ! sudo -u testuser bash -c 'cd /workspace && ./install.sh'
+              ! su - testuser -c 'cd /workspace && ./install.sh'
             "
 
   test-idempotency:
@@ -274,8 +274,8 @@ jobs:
               chmod +x /workspace/install.sh
               
               # Run twice to test idempotency
-              sudo -u testuser bash -c 'cd /workspace && ./install.sh --debug base go'
-              sudo -u testuser bash -c 'cd /workspace && ./install.sh --debug base go'
+              su - testuser -c 'cd /workspace && ./install.sh --debug base go'
+              su - testuser -c 'cd /workspace && ./install.sh --debug base go'
             "
 
   lint-script:
