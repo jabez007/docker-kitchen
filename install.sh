@@ -224,8 +224,8 @@ install_packages() {
         ;;
     dnf)
         local match
-        run_as_admin clean all
-        run_as_admin makecache
+        run_as_admin dnf clean all
+        run_as_admin dnf makecache
         for pkg in "${packages[@]}"; do
             match=$(dnf list installed | awk '{print $1}' | grep -E "^${pkg}(\.|$)")
 
