@@ -73,6 +73,16 @@ jobs:
               # Fedora-specific: Set a password for the user and configure PAM properly
               if command -v dnf >/dev/null 2>&1; then
                 echo 'testuser:testpass' | chpasswd
+                # Fix PAM configuration if needed
+                if [ ! -f /etc/pam.d/sudo ]; then
+                  cat > /etc/pam.d/sudo << 'EOF'
+            #%PAM-1.0
+            auth       include      system-auth
+            account    include      system-auth
+            password   include      system-auth
+            session    include      system-auth
+            EOF
+                fi
               fi
               
               # Allow sudo without password
