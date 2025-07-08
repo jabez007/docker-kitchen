@@ -39,12 +39,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Make install script executable
+        run: chmod +x install.sh
+
       - name: Test component installation
         run: |
           docker run --rm -v "$PWD":/workspace -w /workspace \
+            --privileged \
             ${{ matrix.os }} \
             bash -c "
               set -e
+              set -x  # Enable debug output
+              
               # Install basic dependencies for the test
               if command -v apt >/dev/null 2>&1; then
                 apt update && apt install -y sudo curl git
@@ -54,12 +60,18 @@ jobs:
                 pacman -Sy --noconfirm sudo curl git
               fi
               
-              # Create a test user
+              # Create a test user with proper home directory
               useradd -m -s /bin/bash testuser
               echo 'testuser ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
               
+              # Fix ownership of the workspace for testuser
+              chown -R testuser:testuser /workspace
+              
+              # Ensure install.sh is executable
+              chmod +x /workspace/install.sh
+              
               # Run the installation as the test user
-              sudo -u testuser bash -c 'cd /workspace && bash install.sh --debug ${{ matrix.component }}'
+              sudo -u testuser bash -c 'cd /workspace && ./install.sh --debug ${{ matrix.component }}'
               
               # Verify installation based on component
               case '${{ matrix.component }}' in
@@ -106,6 +118,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Make install script executable
+        run: chmod +x install.sh
+
       - name: Test component combinations
         run: |
           docker run --rm -v "$PWD":/workspace -w /workspace \
@@ -113,6 +128,8 @@ jobs:
             ${{ matrix.test-case.os }} \
             bash -c "
               set -e
+              set -x  # Enable debug output
+              
               if command -v apt >/dev/null 2>&1; then
                 apt update && apt install -y sudo curl git
               elif command -v dnf >/dev/null 2>&1; then
@@ -124,7 +141,11 @@ jobs:
               useradd -m -s /bin/bash testuser
               echo 'testuser ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
               
-              sudo -u testuser bash -c 'cd /workspace && bash install.sh --debug ${{ matrix.test-case.components }}'
+              # Fix ownership and permissions
+              chown -R testuser:testuser /workspace
+              chmod +x /workspace/install.sh
+              
+              sudo -u testuser bash -c 'cd /workspace && ./install.sh --debug ${{ matrix.test-case.components }}'
             "
 
   test-options:
@@ -133,24 +154,33 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Make install script executable
+        run: chmod +x install.sh
+
       - name: Test script options
         run: |
           docker run --rm -v "$PWD":/workspace -w /workspace \
             ubuntu:22.04 \
             bash -c "
               set -e
+              set -x  # Enable debug output
+              
               apt update && apt install -y sudo curl git
               useradd -m -s /bin/bash testuser
               echo 'testuser ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
               
+              # Fix ownership and permissions
+              chown -R testuser:testuser /workspace
+              chmod +x /workspace/install.sh
+              
               # Test help option
-              sudo -u testuser bash -c 'cd /workspace && bash install.sh --help'
+              sudo -u testuser bash -c 'cd /workspace && ./install.sh --help'
               
               # Test save config
-              sudo -u testuser bash -c 'cd /workspace && bash install.sh --save-config'
+              sudo -u testuser bash -c 'cd /workspace && ./install.sh --save-config'
               
               # Test custom options
-              sudo -u testuser bash -c 'cd /workspace && bash install.sh --debug --keep-git --tmux-session test base'
+              sudo -u testuser bash -c 'cd /workspace && ./install.sh --debug --keep-git --tmux-session test base'
             "
 
   test-error-handling:
@@ -159,24 +189,33 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Make install script executable
+        run: chmod +x install.sh
+
       - name: Test error conditions
         run: |
           docker run --rm -v "$PWD":/workspace -w /workspace \
             ubuntu:22.04 \
             bash -c "
               set -e
+              set -x  # Enable debug output
+              
               apt update && apt install -y sudo curl git
               useradd -m -s /bin/bash testuser
               echo 'testuser ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
               
-              # Test invalid component
-              ! sudo -u testuser bash -c 'cd /workspace && bash install.sh invalid-component'
+              # Fix ownership and permissions
+              chown -R testuser:testuser /workspace
+              chmod +x /workspace/install.sh
               
-              # Test missing argument
-              ! sudo -u testuser bash -c 'cd /workspace && bash install.sh --tmux-session'
+              # Test invalid component (expect failure)
+              ! sudo -u testuser bash -c 'cd /workspace && ./install.sh invalid-component'
               
-              # Test no components
-              ! sudo -u testuser bash -c 'cd /workspace && bash install.sh'
+              # Test missing argument (expect failure)
+              ! sudo -u testuser bash -c 'cd /workspace && ./install.sh --tmux-session'
+              
+              # Test no components (expect failure)
+              ! sudo -u testuser bash -c 'cd /workspace && ./install.sh'
             "
 
   test-idempotency:
@@ -185,19 +224,28 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Make install script executable
+        run: chmod +x install.sh
+
       - name: Test idempotency
         run: |
           docker run --rm -v "$PWD":/workspace -w /workspace \
             ubuntu:22.04 \
             bash -c "
               set -e
+              set -x  # Enable debug output
+              
               apt update && apt install -y sudo curl git
               useradd -m -s /bin/bash testuser
               echo 'testuser ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
               
+              # Fix ownership and permissions
+              chown -R testuser:testuser /workspace
+              chmod +x /workspace/install.sh
+              
               # Run twice to test idempotency
-              sudo -u testuser bash -c 'cd /workspace && bash install.sh --debug base go'
-              sudo -u testuser bash -c 'cd /workspace && bash install.sh --debug base go'
+              sudo -u testuser bash -c 'cd /workspace && ./install.sh --debug base go'
+              sudo -u testuser bash -c 'cd /workspace && ./install.sh --debug base go'
             "
 
   lint-script:
