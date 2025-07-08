@@ -568,6 +568,22 @@ install_editor_stack() {
             else
                 warn "Could not install Bottom via deb package"
             fi
+        elif [[ "$pm" == "dnf" ]]; then
+            local bottom_url
+            bottom_url=$(curl -s https://api.github.com/repos/ClementTsang/bottom/releases/latest |
+                grep "browser_download_url.*bottom.*$(rpm --eval %{_arch}).*rpm" |
+                cut -d : -f 2,3 | tr -d \" | tail -n 1)
+            bottom_url=$(trim "$bottom_url")
+
+            debug "Bottom download URL: $bottom_url"
+
+            if [[ -n "$bottom_url" ]]; then
+                curl -L "$bottom_url" -o /tmp/bottom.rpm
+                run_as_admin dnf install -y /tmp/bottom.rpm
+                rm /tmp/bottom.rpm
+            else
+                warn "Could not install Bottom via rpm package"
+            fi
         else
             # Try package manager
             case "$pm" in
