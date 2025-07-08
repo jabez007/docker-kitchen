@@ -348,7 +348,7 @@ install_base_dependencies() {
         packages+=(
             gcc gcc-c++ make openssl-devel
             libffi-devel openssh-clients
-            lua python3 python3-venv
+            lua python3 python3-virtualenv
         )
         ;;
     brew)
