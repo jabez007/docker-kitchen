@@ -124,7 +124,7 @@ jobs:
         run: |
           set -euo pipefail
           echo "Testing Neovim and development tools..."
-          docker run --rm --entrypoint="" -it ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest /bin/bash -ilc "
+          docker run --rm --entrypoint="" ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest /bin/bash -ilc "
             command -v nvim &&
             nvim --version &&
             echo 'Development tools test: PASSED' ||
