@@ -82,7 +82,7 @@ main() {
   # Check if this is the first run (no plugins installed)
   if ! check_plugins; then
     # Only run setup if we're not just executing a command
-    if [ "$#" -eq 0 ] || [[ "$1" != -* ]] && [ -t 0 ]; then
+    if { [ "$#" -eq 0 ] || [[ "$1" != -* ]]; } && [ -t 0 ]; then
       first_time_setup
     else
       print_status "Non-interactive mode detected, skipping plugin installation"
