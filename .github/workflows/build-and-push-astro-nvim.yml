@@ -7,8 +7,16 @@ on:
       - master
     paths:
       - "astro-nvim/Dockerfile"
+      - "astro-nvim/*.conf"
       - "astro-nvim/*.sh"
+      - "install.sh"
+  schedule:
+    # Run weekly to catch upstream changes
+    - cron: "0 2 * * 0"
   workflow_dispatch:
+
+env:
+  IMAGE_NAME: astro-nvim
 
 jobs:
   build_and_push_to_docker:
@@ -22,11 +30,20 @@ jobs:
         run: ls -alh
         shell: bash
 
+      - name: Copy install script to Docker context
+        run: |
+          set -euo pipefail
+          if [[ ! -f ./install.sh ]]; then
+            echo "install.sh not found – build cannot proceed" >&2
+            exit 1
+          fi
+          cp "./install.sh" "./astro-nvim/"
+
       - name: Build and push to DockerHub
         uses: jabez007/docker-kitchen/.github/shared/docker@master
         with:
           context: ./astro-nvim
-          image-name: ${{ vars.DOCKER_USERNAME }}/astro-nvim
+          image-name: ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}
           description: A portable installation of AstroNvim configured with a few community language packs
           tag: latest
           push: true
@@ -49,11 +66,20 @@ jobs:
         run: ls -alh
         shell: bash
 
+      - name: Copy install script to Docker context
+        run: |
+          set -euo pipefail
+          if [[ ! -f ./install.sh ]]; then
+            echo "install.sh not found – build cannot proceed" >&2
+            exit 1
+          fi
+          cp "./install.sh" "./astro-nvim/"
+
       - name: Build and push to GHCR
         uses: jabez007/docker-kitchen/.github/shared/ghcr@master
         with:
           context: ./astro-nvim
-          image-name: jabez007/astro-nvim
+          image-name: jabez007/${{ env.IMAGE_NAME }}
           description: A portable installation of AstroNvim configured with a few community language packs
           tag: latest
           push: true
