@@ -46,6 +46,7 @@ jobs:
           image-name: ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}
           description: A portable installation of AstroNvim configured with a few community language packs
           tag: latest
+          platforms: linux/amd64,linux/arm64
           push: true
           debug: ${{ vars.pipeline_debug }}
         env:
@@ -82,6 +83,7 @@ jobs:
           image-name: jabez007/${{ env.IMAGE_NAME }}
           description: A portable installation of AstroNvim configured with a few community language packs
           tag: latest
+          platforms: linux/amd64,linux/arm64
           push: true
           debug: ${{ vars.pipeline_debug }}
         env:
