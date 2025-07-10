@@ -39,7 +39,7 @@ install_plugins() {
 
   # Install Mason tools
   print_status "Installing Mason tools..."
-  if nvim --headless +"MasonInstall basedpyright css-lsp debugpy delve deno eslint-lsp goimports gomodifytags gopls gotests html-lsp iferr impl isort json-lsp js-debug-adapter prettierd vtsls vue-language-server" +q 2>/dev/null; then
+  if nvim --headless +"MasonInstall basedpyright css-lsp debugpy delve deno eslint-lsp goimports gomodifytags gopls gotests html-lsp iferr impl isort json-lsp js-debug-adapter prettierd vtsls vue-language-server" +qa; then
     print_success "Mason tools installed successfully"
   else
     print_error "Failed to install Mason tools"
