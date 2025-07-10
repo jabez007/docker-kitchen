@@ -1,0 +1,42 @@
+version: "3.8"
+
+services:
+  nvim-dev:
+    build: .
+    container_name: nvim-dev-container
+    volumes:
+      # Persist Neovim configuration and plugins
+      - nvim-config:/home/dev/.config/nvim
+      - nvim-share:/home/dev/.local/share/nvim
+      - nvim-state:/home/dev/.local/state/nvim
+      - nvim-cache:/home/dev/.cache/nvim
+
+      # Mount your project directory
+      - ./project:/home/dev/workspace
+
+      # Optional: persist other development tools
+      - dev-home:/home/dev
+
+    working_dir: /home/dev/workspace
+    stdin_open: true
+    tty: true
+    environment:
+      - TERM=xterm-256color
+
+    # Optional: expose ports if needed
+    # ports:
+    #   - "8080:8080"  # For web development
+    #   - "3000:3000"  # For Node.js apps
+
+# Named volumes for persistence
+volumes:
+  nvim-config:
+    driver: local
+  nvim-share:
+    driver: local
+  nvim-state:
+    driver: local
+  nvim-cache:
+    driver: local
+  dev-home:
+    driver: local
