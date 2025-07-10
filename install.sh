@@ -530,9 +530,20 @@ install_editor_stack() {
     # Install LazyGit
     if ! command_exists lazygit; then
         info "Installing LazyGit..."
-        local lazygit_url
+        local lazygit_arch lazygit_url
+
+        # Map uname -m output to LazyGit architecture naming
+        case "$(uname -m)" in
+        x86_64) lazygit_arch="x86_64" ;;
+        aarch64 | arm64) lazygit_arch="arm64" ;;
+        armv7l | armv6l | arm*) lazygit_arch="armv6" ;;
+        *) die "Unsupported architecture for LazyGit: $(uname -m)" ;;
+        esac
+
+        debug "LazyGit architecture: $lazygit_arch"
+
         lazygit_url=$(curl -s https://api.github.com/repos/jesseduffield/lazygit/releases/latest |
-            grep "browser_download_url.*lazygit.*$(uname -s).*$(uname -m).*tar.gz" |
+            grep "browser_download_url.*lazygit.*$(uname -s).*${lazygit_arch}.*tar.gz" |
             cut -d : -f 2,3 | tr -d \" | tail -n 1)
         lazygit_url=$(trim "$lazygit_url")
 
