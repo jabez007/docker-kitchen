@@ -14,8 +14,8 @@ services:
       # Mount your project directory
       - ./project:/home/dev/workspace
 
-      # Optional: persist other development tools
-      - dev-home:/home/dev
+      # Optional: persist all of dev home
+      #- dev-home:/home/dev
 
     working_dir: /home/dev/workspace
     stdin_open: true
