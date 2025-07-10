@@ -30,7 +30,7 @@ install_plugins() {
   print_status "Installing Neovim plugins..."
 
   # Install Lazy and plugins
-  if nvim --headless -c "Lazy! sync" -c "qa!" 2>/dev/null; then
+  if nvim --headless -c "Lazy! sync" -c "qa!"; then
     print_success "Lazy plugins installed successfully"
   else
     print_error "Failed to install Lazy plugins"
