@@ -36,6 +36,9 @@ USER ${DEVUSER_NAME}
 ENV USER=${DEVUSER_NAME}
 WORKDIR /home/${DEVUSER_NAME}
 
+# Set shell for ToggleTerm and Deno installer
+ENV SHELL="/bin/bash"
+
 # Copy setup scripts for user-level configuration
 COPY --chown=${DEVUSER_NAME} install.sh wrapper.sh setup.conf /home/${DEVUSER_NAME}/
 
@@ -48,48 +51,23 @@ RUN cd /home/${DEVUSER_NAME} && \
   ./wrapper.sh node config --debug && \
   rm -f /home/${DEVUSER_NAME}/setup.log
 
-# Make sure lazygit config exists
-RUN mkdir -p /home/${DEVUSER_NAME}/.config/lazygit && \
-  touch /home/${DEVUSER_NAME}/.config/lazygit/config.yml
+# Create directories for volume mounts
+RUN mkdir -p /home/${DEVUSER_NAME}/.config/nvim \
+  /home/${DEVUSER_NAME}/.local/share/nvim \
+  /home/${DEVUSER_NAME}/.local/state/nvim \
+  /home/${DEVUSER_NAME}/.cache/nvim \
+  /home/${DEVUSER_NAME}/.config/lazygit
 
-# Set shell for ToggleTerm and Deno installer
-ENV SHELL="/bin/bash"
+# Create a default lazygit config
+RUN touch /home/${DEVUSER_NAME}/.config/lazygit/config.yml
 
-# Set the SHELL to interactive bash
-SHELL ["/bin/bash", "-i", "-c"]
-
-# Pre-install Lazy and plugins
-RUN nvim --headless -c "Lazy! sync" -c "qa!"
-
-# Pre-install Mason tools
-# Run Mason commands with explicit plugin loading
-RUN nvim --headless +"\
-  MasonInstall \
-  basedpyright \
-  css-lsp \
-  debugpy \
-  delve \
-  deno \
-  eslint-lsp \
-  goimports \
-  gomodifytags \
-  gopls \
-  gotests \
-  html-lsp \
-  iferr \
-  impl \
-  isort \
-  json-lsp \
-  js-debug-adapter \
-  prettierd \
-  vtsls \
-  vue-language-server \
-  " +q
-
-# Clean up setup scripts (optional - remove if you want to keep them for later use)
+# Clean up setup scripts
 RUN rm -f /home/${DEVUSER_NAME}/install.sh \
   /home/${DEVUSER_NAME}/wrapper.sh \
   /home/${DEVUSER_NAME}/setup.conf
 
+# Define volumes for persistent storage
+VOLUME ["/home/${DEVUSER_NAME}/.config/nvim", "/home/${DEVUSER_NAME}/.local/share/nvim", "/home/${DEVUSER_NAME}/.local/state/nvim", "/home/${DEVUSER_NAME}/.cache/nvim"]
+
 # Start nvim
-ENTRYPOINT ["/bin/bash", "-i", "/usr/local/bin/entrypoint.sh"]
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
