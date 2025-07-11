@@ -1,4 +1,5 @@
 #!/bin/bash
++set -euo pipefail
 
 # Function to print colored output
 print_status() {
