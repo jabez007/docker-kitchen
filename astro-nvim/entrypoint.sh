@@ -28,6 +28,11 @@ check_plugins() {
 
 # Function to install plugins
 install_plugins() {
+  if ! command -v nvim >/dev/null 2>&1; then
+    print_error "Neovim binary not found in PATH"
+    return 127
+  fi
+
   print_status "Installing Neovim plugins..."
 
   # Install Lazy and plugins
