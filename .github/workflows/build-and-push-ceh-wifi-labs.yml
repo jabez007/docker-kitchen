@@ -8,7 +8,13 @@ on:
     paths:
       - "ceh-wifi-labs/Dockerfile"
       - "ceh-wifi-labs/*.sh"
+  schedule:
+    # Run weekly to catch upstream changes
+    - cron: "0 2 * * 0"
   workflow_dispatch:
+
+env:
+  IMAGE_NAME: ceh-wifi-labs
 
 jobs:
   build_and_push_to_docker:
@@ -26,9 +32,10 @@ jobs:
         uses: jabez007/docker-kitchen/.github/shared/docker@master
         with:
           context: ./ceh-wifi-labs
-          image-name: ${{ vars.DOCKER_USERNAME }}/ceh-wifi-labs
+          image-name: ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}
           description: A Docker image alternative to VMs for C:EH WiFi practice
           tag: latest
+          platforms: linux/amd64,linux/arm64
           push: true
           debug: ${{ vars.pipeline_debug }}
         env:
@@ -53,9 +60,10 @@ jobs:
         uses: jabez007/docker-kitchen/.github/shared/ghcr@master
         with:
           context: ./ceh-wifi-labs
-          image-name: jabez007/ceh-wifi-labs
+          image-name: jabez007/${{ env.IMAGE_NAME }}
           description: A Docker image alternative to VMs for C:EH WiFi practice
           tag: latest
+          platforms: linux/amd64,linux/arm64
           push: true
           debug: ${{ vars.pipeline_debug }}
         env:
