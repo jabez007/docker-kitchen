@@ -620,6 +620,12 @@ install_editor_stack() {
 install_user_configs() {
     info "Installing user configurations..."
 
+    # Ensure git is present before using or configuring it
+    if ! command_exists git; then
+        warn "Git not found – installing base dependencies"
+        install_base_dependencies        # guarantees git
+    fi
+
     # Install AstroNvim config
     install_astronvim_config
 
@@ -655,54 +661,60 @@ install_astronvim_config() {
 setup_git_config() {
     info "Setting up git configuration with best practices..."
 
+    # Always operate as the actual (non-root) user
+    local git_cfg=(git config --global)
+    if [[ "$IS_ROOT" == "true" ]]; then
+        git_cfg=(run_as_user git config --global)
+    fi
+
     # Core settings
-    git config --global init.defaultBranch main
-    git config --global core.autocrlf input
-    git config --global core.safecrlf true
-    git config --global pull.rebase true
-    git config --global push.default simple
-    git config --global fetch.prune true
-    git config --global rebase.autoStash true
+    "${git_cfg[@]}" init.defaultBranch main
+    "${git_cfg[@]}" core.autocrlf input
+    "${git_cfg[@]}" core.safecrlf true
+    "${git_cfg[@]}" pull.rebase true
+    "${git_cfg[@]}" push.default simple
+    "${git_cfg[@]}" fetch.prune true
+    "${git_cfg[@]}" rebase.autoStash true
 
     # Better diff and merge tools
-    git config --global diff.algorithm patience
-    git config --global merge.conflictstyle diff3
-    git config --global rerere.enabled true
+    "${git_cfg[@]}" diff.algorithm patience
+    "${git_cfg[@]}" merge.conflictstyle diff3
+    "${git_cfg[@]}" rerere.enabled true
 
     # Security and performance
-    git config --global transfer.fsckobjects true
-    git config --global fetch.fsckobjects true
-    git config --global receive.fsckObjects true
-    git config --global gc.auto 1
+    "${git_cfg[@]}" transfer.fsckobjects true
+    "${git_cfg[@]}" fetch.fsckobjects true
+    "${git_cfg[@]}" receive.fsckObjects true
+    "${git_cfg[@]}" gc.auto 1
 
     # Better output formatting
-    git config --global color.ui auto
-    git config --global branch.sort -committerdate
-    git config --global tag.sort version:refname
+    "${git_cfg[@]}" color.ui auto
+    "${git_cfg[@]}" branch.sort -committerdate
+    "${git_cfg[@]}" tag.sort version:refname
 
     # Useful aliases
-    git config --global alias.st status
-    git config --global alias.co checkout
-    git config --global alias.br branch
-    git config --global alias.ci commit
-    git config --global alias.unstage 'reset HEAD --'
-    git config --global alias.last 'log -1 HEAD'
-    git config --global alias.visual '!gitk'
-    git config --global alias.lg "log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit"
+    "${git_cfg[@]}" alias.st status
+    "${git_cfg[@]}" alias.co checkout
+    "${git_cfg[@]}" alias.br branch
+    "${git_cfg[@]}" alias.ci commit
+    "${git_cfg[@]}" alias.unstage 'reset HEAD --'
+    "${git_cfg[@]}" alias.last 'log -1 HEAD'
+    "${git_cfg[@]}" alias.visual '!gitk'
+    "${git_cfg[@]}" alias.lg "log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit"
 
     # Only set user info if not already configured
-    if ! git config --global user.name &>/dev/null; then
+    if ! "${git_cfg[@]}" user.name &>/dev/null; then
         if [[ -n "${CONFIG[GIT_USER_NAME]:-}" ]]; then
-            git config --global user.name "${CONFIG[GIT_USER_NAME]}"
+            "${git_cfg[@]}" user.name "${CONFIG[GIT_USER_NAME]}"
             info "Git user.name set to: ${CONFIG[GIT_USER_NAME]}"
         else
             warn "Git user.name not configured - set CONFIG[GIT_USER_NAME] or run 'git config --global user.name \"Your Name\"'"
         fi
     fi
 
-    if ! git config --global user.email &>/dev/null; then
+    if ! "${git_cfg[@]}" user.email &>/dev/null; then
         if [[ -n "${CONFIG[GIT_USER_EMAIL]:-}" ]]; then
-            git config --global user.email "${CONFIG[GIT_USER_EMAIL]}"
+            "${git_cfg[@]}" user.email "${CONFIG[GIT_USER_EMAIL]}"
             info "Git user.email set to: ${CONFIG[GIT_USER_EMAIL]}"
         else
             warn "Git user.email not configured - set CONFIG[GIT_USER_EMAIL] or run 'git config --global user.email \"you@example.com\"'"
