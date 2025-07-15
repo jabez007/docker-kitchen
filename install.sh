@@ -623,6 +623,9 @@ install_user_configs() {
     # Install AstroNvim config
     install_astronvim_config
 
+    # Configure git with best practices
+    setup_git_config
+
     info "User configurations installed successfully"
 }
 
@@ -647,6 +650,66 @@ install_astronvim_config() {
     fi
 
     info "AstroNvim configuration installed"
+}
+
+setup_git_config() {
+    info "Setting up git configuration with best practices..."
+
+    # Core settings
+    git config --global init.defaultBranch main
+    git config --global core.autocrlf input
+    git config --global core.safecrlf true
+    git config --global pull.rebase true
+    git config --global push.default simple
+    git config --global fetch.prune true
+    git config --global rebase.autoStash true
+
+    # Better diff and merge tools
+    git config --global diff.algorithm patience
+    git config --global merge.conflictstyle diff3
+    git config --global rerere.enabled true
+
+    # Security and performance
+    git config --global transfer.fsckobjects true
+    git config --global fetch.fsckobjects true
+    git config --global receive.fsckObjects true
+    git config --global gc.auto 1
+
+    # Better output formatting
+    git config --global color.ui auto
+    git config --global branch.sort -committerdate
+    git config --global tag.sort version:refname
+
+    # Useful aliases
+    git config --global alias.st status
+    git config --global alias.co checkout
+    git config --global alias.br branch
+    git config --global alias.ci commit
+    git config --global alias.unstage 'reset HEAD --'
+    git config --global alias.last 'log -1 HEAD'
+    git config --global alias.visual '!gitk'
+    git config --global alias.lg "log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit"
+
+    # Only set user info if not already configured
+    if ! git config --global user.name &>/dev/null; then
+        if [[ -n "${CONFIG[GIT_USER_NAME]:-}" ]]; then
+            git config --global user.name "${CONFIG[GIT_USER_NAME]}"
+            info "Git user.name set to: ${CONFIG[GIT_USER_NAME]}"
+        else
+            warn "Git user.name not configured - set CONFIG[GIT_USER_NAME] or run 'git config --global user.name \"Your Name\"'"
+        fi
+    fi
+
+    if ! git config --global user.email &>/dev/null; then
+        if [[ -n "${CONFIG[GIT_USER_EMAIL]:-}" ]]; then
+            git config --global user.email "${CONFIG[GIT_USER_EMAIL]}"
+            info "Git user.email set to: ${CONFIG[GIT_USER_EMAIL]}"
+        else
+            warn "Git user.email not configured - set CONFIG[GIT_USER_EMAIL] or run 'git config --global user.email \"you@example.com\"'"
+        fi
+    fi
+
+    info "Git configuration setup completed"
 }
 
 install_shell_stack() {
