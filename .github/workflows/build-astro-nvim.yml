@@ -8,8 +8,9 @@ on:
     paths:
       - "astro-nvim/Dockerfile"
       - "astro-nvim/*.conf"
-      - "astro-nvim/*.sh"
+      - "astro-nvim/**/*.sh"
       - "install.sh"
+      - ".install/**"
 
 env:
   IMAGE_NAME: astro-nvim

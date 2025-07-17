@@ -8,8 +8,9 @@ on:
     paths:
       - "astro-nvim/Dockerfile"
       - "astro-nvim/*.conf"
-      - "astro-nvim/*.sh"
+      - "astro-nvim/**/*.sh"
       - "install.sh"
+      - ".install/**"
   schedule:
     # Run weekly to catch upstream changes
     - cron: "0 2 * * 0"
