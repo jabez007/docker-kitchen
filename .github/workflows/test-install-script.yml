@@ -89,7 +89,7 @@ jobs:
               chmod +x /workspace/install.sh
               
               # Run the installation as the test user
-              su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"\$GITHUB_BRANCH\" ./install.sh --debug ${{ matrix.component }}'
+              su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --debug ${{ matrix.component }}'
 
               # Verify installation based on component
               case '${{ matrix.component }}' in

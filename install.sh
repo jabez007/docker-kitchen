@@ -63,6 +63,8 @@ safe_source() {
     source "$module_path"
 }
 
+echo "Running on branch '$GITHUB_BRANCH'"
+
 # Load helper modules
 safe_source "${SCRIPT_DIR}/.install/lib/config.sh"
 safe_source "${SCRIPT_DIR}/.install/lib/utils.sh"
