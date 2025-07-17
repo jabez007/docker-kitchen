@@ -174,7 +174,7 @@ jobs:
               chown -R testuser:testuser /workspace
               chmod +x /workspace/install.sh
               
-              su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"\$GITHUB_BRANCH\" ./install.sh --debug ${{ matrix.test-case.components }}'
+              su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --debug ${{ matrix.test-case.components }}'
             "
 
   test-options:
@@ -204,13 +204,13 @@ jobs:
               chmod +x /workspace/install.sh
               
               # Test help option
-              su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"\$GITHUB_BRANCH\" ./install.sh --help'
+              su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --help'
               
               # Test save config
-              su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"\$GITHUB_BRANCH\" ./install.sh --save-config'
+              su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --save-config'
               
               # Test custom options
-              su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"\$GITHUB_BRANCH\" ./install.sh --debug --keep-git --tmux-session test base'
+              su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --debug --keep-git --tmux-session test base'
             "
 
   test-error-handling:
@@ -240,13 +240,13 @@ jobs:
               chmod +x /workspace/install.sh
               
               # Test invalid component (expect failure)
-              ! su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"\$GITHUB_BRANCH\" ./install.sh invalid-component'
+              ! su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh invalid-component'
               
               # Test missing argument (expect failure)
-              ! su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"\$GITHUB_BRANCH\" ./install.sh --tmux-session'
+              ! su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --tmux-session'
               
               # Test no components (expect failure)
-              ! su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"\$GITHUB_BRANCH\" ./install.sh'
+              ! su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh'
             "
 
   test-idempotency:
@@ -276,8 +276,8 @@ jobs:
               chmod +x /workspace/install.sh
               
               # Run twice to test idempotency
-              su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"\$GITHUB_BRANCH\" ./install.sh --debug base go'
-              su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"\$GITHUB_BRANCH\" ./install.sh --debug base go'
+              su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --debug base go'
+              su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --debug base go'
             "
 
   lint-script:
