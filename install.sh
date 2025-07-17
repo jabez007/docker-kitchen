@@ -13,22 +13,61 @@ set -euo pipefail
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly LOG_FILE="${SCRIPT_DIR}/setup.log"
 readonly CONFIG_FILE="${SCRIPT_DIR}/setup.conf"
+readonly GITHUB_BASE_URL="https://raw.githubusercontent.com/jabez007/docker-kitchen/refs/heads/master"
+
+# ============================================================================
+# Module Loading Functions
+# ============================================================================
+
+download_missing_module() {
+    local module_path="$1"
+    local relative_path="${module_path#$SCRIPT_DIR/}"
+    local download_url="${GITHUB_BASE_URL}/${relative_path}"
+    
+    echo "Downloading missing module: $relative_path"
+    mkdir -p "$(dirname "$module_path")"
+    
+    if command -v curl >/dev/null 2>&1; then
+        curl -fsSL "$download_url" -o "$module_path" || {
+            echo "Error: Failed to download $relative_path from $download_url" >&2
+            return 1
+        }
+    elif command -v wget >/dev/null 2>&1; then
+        wget -q "$download_url" -O "$module_path" || {
+            echo "Error: Failed to download $relative_path from $download_url" >&2
+            return 1
+        }
+    else
+        echo "Error: Neither curl nor wget is available to download missing modules" >&2
+        return 1
+    fi
+}
+
+safe_source() {
+    local module_path="$1"
+    
+    if [[ ! -f "$module_path" ]]; then
+        download_missing_module "$module_path" || exit 1
+    fi
+    
+    source "$module_path"
+}
 
 # Load helper modules
-source "${SCRIPT_DIR}/.install/lib/config.sh"
-source "${SCRIPT_DIR}/.install/lib/utils.sh"
-source "${SCRIPT_DIR}/.install/lib/environment.sh"
-source "${SCRIPT_DIR}/.install/lib/package_manager.sh"
-source "${SCRIPT_DIR}/.install/lib/cli.sh"
+safe_source "${SCRIPT_DIR}/.install/lib/config.sh"
+safe_source "${SCRIPT_DIR}/.install/lib/utils.sh"
+safe_source "${SCRIPT_DIR}/.install/lib/environment.sh"
+safe_source "${SCRIPT_DIR}/.install/lib/package_manager.sh"
+safe_source "${SCRIPT_DIR}/.install/lib/cli.sh"
 
 # Load installation modules
-source "${SCRIPT_DIR}/.install/modules/base.sh"
-#source "${SCRIPT_DIR}/.install/modules/go.sh"
-#source "${SCRIPT_DIR}/.install/modules/node.sh"
-#source "${SCRIPT_DIR}/.install/modules/editor.sh"
-source "${SCRIPT_DIR}/.install/modules/config.sh"
-source "${SCRIPT_DIR}/.install/modules/shell.sh"
-source "${SCRIPT_DIR}/.install/modules/docker.sh"
+safe_source "${SCRIPT_DIR}/.install/modules/base.sh"
+#safe_source "${SCRIPT_DIR}/.install/modules/go.sh"
+#safe_source "${SCRIPT_DIR}/.install/modules/node.sh"
+#safe_source "${SCRIPT_DIR}/.install/modules/editor.sh"
+safe_source "${SCRIPT_DIR}/.install/modules/config.sh"
+safe_source "${SCRIPT_DIR}/.install/modules/shell.sh"
+safe_source "${SCRIPT_DIR}/.install/modules/docker.sh"
 
 # ============================================================================
 # Installation Functions
