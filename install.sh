@@ -23,16 +23,18 @@ download_missing_module() {
     local github_subdir="${2:-}" # Optional subdirectory parameter
     local relative_path="${module_path#"$SCRIPT_DIR"/}" # Strips off the $SCRIPT_DIR/ prefix from the absolute path to get the relative path within the repo
     
-    # If a GitHub subdirectory is specified, use it instead of the relative path
+    # If a GitHub subdirectory is specified, prepend it to the relative path
     if [[ -n "$github_subdir" ]]; then
-        local download_url="${GITHUB_BASE_URL}/${github_subdir}"
+        local download_uri="${github_subdir}/${relative_path}"
     else
-        local download_url="${GITHUB_BASE_URL}/${relative_path}"
+        local download_uri="${relative_path}"
     fi
     
-    echo "Downloading missing module: ${github_subdir:-$relative_path}"
+    echo "Downloading missing module: ${download_uri}"
     mkdir -p "$(dirname "$module_path")"
     
+    local download_url="${GITHUB_BASE_URL}/${download_uri}"
+
     if command -v curl >/dev/null 2>&1; then
         curl -fsSL "$download_url" -o "$module_path" || {
             echo "Error: Failed to download ${github_subdir:-$relative_path} from $download_url" >&2
@@ -69,9 +71,9 @@ safe_source "${SCRIPT_DIR}/.install/lib/cli.sh"
 
 # Load installation modules
 safe_source "${SCRIPT_DIR}/.install/modules/base.sh"
-#safe_source "${SCRIPT_DIR}/.install/modules/go.sh"
-#safe_source "${SCRIPT_DIR}/.install/modules/node.sh"
-#safe_source "${SCRIPT_DIR}/.install/modules/editor.sh"
+#safe_source "${SCRIPT_DIR}/.install/modules/go.sh" "astro-nvim"
+#safe_source "${SCRIPT_DIR}/.install/modules/node.sh" "astro-nvim"
+#safe_source "${SCRIPT_DIR}/.install/modules/editor.sh" "astro-nvim"
 safe_source "${SCRIPT_DIR}/.install/modules/config.sh"
 safe_source "${SCRIPT_DIR}/.install/modules/shell.sh"
 safe_source "${SCRIPT_DIR}/.install/modules/docker.sh"
