@@ -27,7 +27,7 @@ jobs:
         run: ls -alh
         shell: bash
 
-      - name: Copy install script to Docker context
+      - name: Copy install script and .install directory to Docker context
         run: |
           set -euo pipefail
           if [[ ! -f ./install.sh ]]; then
@@ -35,6 +35,16 @@ jobs:
             exit 1
           fi
           cp "./install.sh" "./astro-nvim/"
+          
+          if [[ -d ./.install ]]; then
+            echo "Copying .install directory to Docker context..."
+            cp -r "./.install" "./astro-nvim/" || {
+              echo "Failed to copy .install directory" >&2
+              exit 1
+            }
+          else
+            echo "Warning: .install directory not found in repository root"
+          fi
 
       - uses: jabez007/docker-kitchen/.github/shared/docker@master
         with:
