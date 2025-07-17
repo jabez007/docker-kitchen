@@ -1,12 +1,13 @@
 name: Test 'install' Script
 
 on:
-  pull_request:
-    branches:
+  push:
+    branches-ignore:
       - main
       - master
     paths:
       - "install.sh"
+      - ".install/**"
   schedule:
     # Run weekly to catch upstream changes
     - cron: "0 2 * * 0"
@@ -52,6 +53,7 @@ jobs:
         run: |
           docker run --rm -v "$PWD":/workspace -w /workspace \
             --privileged \
+            -e GITHUB_BRANCH="${{ github.head_ref || github.ref_name }}" \
             ${{ matrix.os }} \
             bash -c "
               set -e
@@ -87,7 +89,7 @@ jobs:
               chmod +x /workspace/install.sh
               
               # Run the installation as the test user
-              su - testuser -c 'cd /workspace && ./install.sh --debug ${{ matrix.component }}'
+              su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --debug ${{ matrix.component }}'
 
               # Verify installation based on component
               case '${{ matrix.component }}' in
@@ -105,7 +107,7 @@ jobs:
                   su - testuser -c 'command -v nvim && command -v lazygit && command -v btm'
                   ;;
                 config)
-                  su - testuser -c 'test -d ~/.config/nvim'
+                  su - testuser -c 'git config --global --list'
                   ;;
                 shell)
                   su - testuser -c 'command -v fish && command -v tmux && command -v starship'
@@ -142,6 +144,7 @@ jobs:
         run: |
           docker run --rm -v "$PWD":/workspace -w /workspace \
             --privileged \
+            -e GITHUB_BRANCH="${{ github.head_ref || github.ref_name }}" \
             ${{ matrix.test-case.os }} \
             bash -c "
               set -e
@@ -171,7 +174,7 @@ jobs:
               chown -R testuser:testuser /workspace
               chmod +x /workspace/install.sh
               
-              su - testuser -c 'cd /workspace && ./install.sh --debug ${{ matrix.test-case.components }}'
+              su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --debug ${{ matrix.test-case.components }}'
             "
 
   test-options:
@@ -186,6 +189,7 @@ jobs:
       - name: Test script options
         run: |
           docker run --rm -v "$PWD":/workspace -w /workspace \
+            -e GITHUB_BRANCH="${{ github.head_ref || github.ref_name }}" \
             ubuntu:22.04 \
             bash -c "
               set -e
@@ -200,13 +204,13 @@ jobs:
               chmod +x /workspace/install.sh
               
               # Test help option
-              su - testuser -c 'cd /workspace && ./install.sh --help'
+              su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --help'
               
               # Test save config
-              su - testuser -c 'cd /workspace && ./install.sh --save-config'
+              su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --save-config'
               
               # Test custom options
-              su - testuser -c 'cd /workspace && ./install.sh --debug --keep-git --tmux-session test base'
+              su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --debug --keep-git --tmux-session test base'
             "
 
   test-error-handling:
@@ -221,6 +225,7 @@ jobs:
       - name: Test error conditions
         run: |
           docker run --rm -v "$PWD":/workspace -w /workspace \
+            -e GITHUB_BRANCH="${{ github.head_ref || github.ref_name }}" \
             ubuntu:22.04 \
             bash -c "
               set -e
@@ -235,13 +240,13 @@ jobs:
               chmod +x /workspace/install.sh
               
               # Test invalid component (expect failure)
-              ! su - testuser -c 'cd /workspace && ./install.sh invalid-component'
+              ! su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh invalid-component'
               
               # Test missing argument (expect failure)
-              ! su - testuser -c 'cd /workspace && ./install.sh --tmux-session'
+              ! su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --tmux-session'
               
               # Test no components (expect failure)
-              ! su - testuser -c 'cd /workspace && ./install.sh'
+              ! su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh'
             "
 
   test-idempotency:
@@ -256,6 +261,7 @@ jobs:
       - name: Test idempotency
         run: |
           docker run --rm -v "$PWD":/workspace -w /workspace \
+            -e GITHUB_BRANCH="${{ github.head_ref || github.ref_name }}" \
             ubuntu:22.04 \
             bash -c "
               set -e
@@ -270,8 +276,8 @@ jobs:
               chmod +x /workspace/install.sh
               
               # Run twice to test idempotency
-              su - testuser -c 'cd /workspace && ./install.sh --debug base go'
-              su - testuser -c 'cd /workspace && ./install.sh --debug base go'
+              su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --debug base go'
+              su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --debug base go'
             "
 
   lint-script:
