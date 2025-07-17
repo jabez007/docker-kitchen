@@ -17,6 +17,7 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 # Create setup directory and copy setup files
 RUN mkdir -p /opt/dev-setup
 COPY install.sh wrapper.sh setup.conf /opt/dev-setup/
+COPY .install /opt/dev-setup/.install
 
 # Make scripts executable
 RUN chmod +x /opt/dev-setup/install.sh && \
@@ -41,6 +42,7 @@ ENV SHELL="/bin/bash"
 
 # Copy setup scripts for user-level configuration
 COPY --chown=${DEVUSER_NAME} install.sh wrapper.sh setup.conf /home/${DEVUSER_NAME}/
+COPY --chown=${DEVUSER_NAME} .install /home/${DEVUSER_NAME}/.install
 
 # Make user scripts executable
 RUN chmod +x /home/${DEVUSER_NAME}/install.sh && \
@@ -62,9 +64,10 @@ RUN mkdir -p /home/${DEVUSER_NAME}/.config/nvim \
 RUN touch /home/${DEVUSER_NAME}/.config/lazygit/config.yml
 
 # Clean up setup scripts
-RUN rm -f /home/${DEVUSER_NAME}/install.sh \
+RUN rm -rf /home/${DEVUSER_NAME}/install.sh \
   /home/${DEVUSER_NAME}/wrapper.sh \
-  /home/${DEVUSER_NAME}/setup.conf
+  /home/${DEVUSER_NAME}/setup.conf \
+  /home/${DEVUSER_NAME}/.install
 
 # Define volumes for persistent storage
 VOLUME ["/home/${DEVUSER_NAME}/.config/nvim", "/home/${DEVUSER_NAME}/.local/share/nvim", "/home/${DEVUSER_NAME}/.local/state/nvim", "/home/${DEVUSER_NAME}/.cache/nvim"]
