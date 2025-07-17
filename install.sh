@@ -12,7 +12,8 @@ set -euo pipefail
 
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly LOG_FILE="${SCRIPT_DIR}/setup.log"
-readonly GITHUB_BASE_URL="https://raw.githubusercontent.com/jabez007/docker-kitchen/refs/heads/master"
+readonly GITHUB_BRANCH="${GITHUB_BRANCH:-master}"
+readonly GITHUB_BASE_URL="https://raw.githubusercontent.com/jabez007/docker-kitchen/refs/heads/${GITHUB_BRANCH}"
 
 # ============================================================================
 # Module Loading Functions
