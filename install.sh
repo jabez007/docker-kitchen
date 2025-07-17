@@ -12,7 +12,6 @@ set -euo pipefail
 
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly LOG_FILE="${SCRIPT_DIR}/setup.log"
-readonly CONFIG_FILE="${SCRIPT_DIR}/setup.conf"
 readonly GITHUB_BASE_URL="https://raw.githubusercontent.com/jabez007/docker-kitchen/refs/heads/master"
 
 # ============================================================================
@@ -21,7 +20,7 @@ readonly GITHUB_BASE_URL="https://raw.githubusercontent.com/jabez007/docker-kitc
 
 download_missing_module() {
     local module_path="$1"
-    local relative_path="${module_path#$SCRIPT_DIR/}"
+    local relative_path="${module_path#"$SCRIPT_DIR"/}" # Strips off the $SCRIPT_DIR/ prefix from the absolute path to get the relative path within the repo
     local download_url="${GITHUB_BASE_URL}/${relative_path}"
     
     echo "Downloading missing module: $relative_path"

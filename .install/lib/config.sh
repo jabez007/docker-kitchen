@@ -1,6 +1,8 @@
 #!/bin/bash
 # lib/config.sh - Configuration management
 
+readonly CONFIG_FILE="${SCRIPT_DIR}/setup.conf"
+
 # Default configuration
 declare -A CONFIG=(
   [SYSTEM_WIDE]=false
