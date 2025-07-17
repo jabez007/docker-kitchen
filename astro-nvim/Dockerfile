@@ -28,6 +28,12 @@ RUN cd /opt/dev-setup && \
   ./wrapper.sh base go editor --system-wide --debug && \
   apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# Clean up setup scripts
+RUN rm -rf /opt/dev-setup/install.sh \
+  /opt/dev-setup/wrapper.sh \
+  /opt/dev-setup/setup.conf \
+  /opt/dev-setup/.install
+
 # Copy the entrypoint script into the container
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
