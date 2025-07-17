@@ -107,7 +107,7 @@ jobs:
                   su - testuser -c 'command -v nvim && command -v lazygit && command -v btm'
                   ;;
                 config)
-                  su - testuser -c 'test -d ~/.config/nvim'
+                  su - testuser -c 'git config --global --list'
                   ;;
                 shell)
                   su - testuser -c 'command -v fish && command -v tmux && command -v starship'
