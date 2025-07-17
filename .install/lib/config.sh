@@ -1,29 +1,6 @@
 #!/bin/bash
 # lib/config.sh - Configuration management
 
-readonly CONFIG_FILE="${SCRIPT_DIR}/setup.conf"
-
-# Default configuration
-declare -x -A CONFIG=(
-  [SYSTEM_WIDE]=false
-  [KEEP_GIT]=true
-  [TMUX_SESSION]="default"
-  [STARSHIP_PRESET]="gruvbox-rainbow"
-  [ASTRONVIM_REPO]="https://github.com/jabez007/AstroNvim-config.git"
-  [LOG_LEVEL]="INFO"
-)
-
-# Component definitions
-declare -x -A COMPONENTS=(
-  [base]="install_base_dependencies"
-  [go]="install_go"
-  [node]="install_node_stack"
-  [editor]="install_editor_stack"
-  [config]="install_user_configs"
-  [shell]="install_shell_stack"
-  [docker]="install_docker_stack"
-)
-
 # Load configuration from file
 load_config() {
   if [[ -f "$CONFIG_FILE" ]]; then

@@ -12,6 +12,29 @@ set -euo pipefail
 
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly LOG_FILE="${SCRIPT_DIR}/setup.log"
+readonly CONFIG_FILE="${SCRIPT_DIR}/setup.conf"
+
+# Default configuration
+declare -A CONFIG=(
+    [SYSTEM_WIDE]=false
+    [KEEP_GIT]=true
+    [TMUX_SESSION]="default"
+    [STARSHIP_PRESET]="gruvbox-rainbow"
+    [ASTRONVIM_REPO]="https://github.com/jabez007/AstroNvim-config.git"
+    [LOG_LEVEL]="INFO"
+)
+
+# Component definitions
+declare -A COMPONENTS=(
+    [base]="install_base_dependencies"
+    [go]="install_go"
+    [node]="install_node_stack"
+    [editor]="install_editor_stack"
+    [config]="install_user_configs"
+    [shell]="install_shell_stack"
+    [docker]="install_docker_stack"
+)
+
 readonly GITHUB_BRANCH="${GITHUB_BRANCH:-master}"
 readonly GITHUB_BASE_URL="https://raw.githubusercontent.com/jabez007/docker-kitchen/refs/heads/${GITHUB_BRANCH}"
 
