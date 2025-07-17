@@ -4,7 +4,7 @@
 readonly CONFIG_FILE="${SCRIPT_DIR}/setup.conf"
 
 # Default configuration
-declare -A CONFIG=(
+declare -x -A CONFIG=(
   [SYSTEM_WIDE]=false
   [KEEP_GIT]=true
   [TMUX_SESSION]="default"
@@ -14,7 +14,7 @@ declare -A CONFIG=(
 )
 
 # Component definitions
-declare -A COMPONENTS=(
+declare -x -A COMPONENTS=(
   [base]="install_base_dependencies"
   [go]="install_go"
   [node]="install_node_stack"
