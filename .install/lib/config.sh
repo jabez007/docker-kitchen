@@ -1,6 +1,18 @@
 #!/bin/bash
 # lib/config.sh - Configuration management
 
+readonly CONFIG_FILE="${SCRIPT_DIR}/setup.conf"
+
+# Default configuration
+declare -g -A CONFIG=(
+  [SYSTEM_WIDE]=false
+  [KEEP_GIT]=true
+  [TMUX_SESSION]="default"
+  [STARSHIP_PRESET]="gruvbox-rainbow"
+  [ASTRONVIM_REPO]="https://github.com/jabez007/AstroNvim-config.git"
+  [LOG_LEVEL]="INFO"
+)
+
 # Load configuration from file
 load_config() {
   if [[ -f "$CONFIG_FILE" ]]; then

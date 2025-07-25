@@ -12,17 +12,6 @@ set -euo pipefail
 
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly LOG_FILE="${SCRIPT_DIR}/setup.log"
-readonly CONFIG_FILE="${SCRIPT_DIR}/setup.conf"
-
-# Default configuration
-declare -A CONFIG=(
-    [SYSTEM_WIDE]=false
-    [KEEP_GIT]=true
-    [TMUX_SESSION]="default"
-    [STARSHIP_PRESET]="gruvbox-rainbow"
-    [ASTRONVIM_REPO]="https://github.com/jabez007/AstroNvim-config.git"
-    [LOG_LEVEL]="INFO"
-)
 
 # Component definitions
 declare -A COMPONENTS=(
@@ -44,19 +33,19 @@ readonly GITHUB_BASE_URL="https://raw.githubusercontent.com/jabez007/docker-kitc
 
 download_missing_module() {
     local module_path="$1"
-    local github_subdir="${2:-}" # Optional subdirectory parameter
+    local github_subdir="${2:-}"                        # Optional subdirectory parameter
     local relative_path="${module_path#"$SCRIPT_DIR"/}" # Strips off the $SCRIPT_DIR/ prefix from the absolute path to get the relative path within the repo
-    
+
     # If a GitHub subdirectory is specified, prepend it to the relative path
     if [[ -n "$github_subdir" ]]; then
         local download_uri="${github_subdir}/${relative_path}"
     else
         local download_uri="${relative_path}"
     fi
-    
+
     echo "Downloading missing module: ${download_uri}"
     mkdir -p "$(dirname "$module_path")"
-    
+
     local download_url="${GITHUB_BASE_URL}/${download_uri}"
 
     if command -v curl >/dev/null 2>&1; then
@@ -78,11 +67,11 @@ download_missing_module() {
 safe_source() {
     local module_path="$1"
     local github_subdir="${2:-}" # Optional subdirectory parameter
-    
+
     if [[ ! -f "$module_path" ]]; then
         download_missing_module "$module_path" "$github_subdir" || exit 1
     fi
-    
+
     source "$module_path"
 }
 
@@ -158,4 +147,3 @@ EOF
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     main "$@"
 fi
-
