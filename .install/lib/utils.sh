@@ -20,7 +20,10 @@ log() {
   esac
 
   # Also log to file
-  echo "[$timestamp] [$level] $message" >>"$LOG_FILE"
+  if [[ -n "${LOG_FILE:-}" ]]; then
+    mkdir -p "$(dirname "$LOG_FILE")" 2>/dev/null || true
+    echo "[$timestamp] [$level] $message" >>"$LOG_FILE"
+  fi
 }
 
 error() { log ERROR "$@"; }
