@@ -25,7 +25,7 @@ declare -A COMPONENTS=(
 )
 
 readonly GITHUB_BRANCH="${GITHUB_BRANCH:-master}"
-readonly GITHUB_BASE_URL="https://raw.githubusercontent.com/jabez007/docker-kitchen/refs/heads/${GITHUB_BRANCH}"
+readonly GITHUB_BASE_URL="https://raw.githubusercontent.com/jabez007/docker-kitchen/${GITHUB_BRANCH}"
 
 # ============================================================================
 # Module Loading Functions
