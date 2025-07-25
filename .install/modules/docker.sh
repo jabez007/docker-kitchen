@@ -30,6 +30,7 @@ install_docker_stack() {
 
     run_as_admin apt update
     run_as_admin apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+    run_as_admin systemctl enable --now docker
     ;;
   dnf)
     # Fedora Docker installation
