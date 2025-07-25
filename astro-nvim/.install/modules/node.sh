@@ -33,7 +33,7 @@ install_node_stack() {
   fi
 
   # Install latest LTS Node.js
-  if ! command_exists node; then
+  if ! run_as_user command_exists node; then
     info "Installing Node.js LTS..."
     run_as_user bash -c \
       "source $user_home/.nvm/nvm.sh && nvm install --lts" ||
