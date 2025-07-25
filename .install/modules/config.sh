@@ -100,6 +100,9 @@ install_astronvim_config() {
     return 0
   fi
 
+  [[ -n "${CONFIG[ASTRONVIM_REPO]:-}" ]] ||
+    die "CONFIG[ASTRONVIM_REPO] is empty – specify --astronvim-repo URL"
+
   git clone --depth 1 "${CONFIG[ASTRONVIM_REPO]}" "$config_dir" ||
     die "Failed to clone AstroNvim config"
 
