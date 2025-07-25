@@ -49,7 +49,7 @@ install_packages() {
     brew install "${packages[@]}"
     ;;
   pacman)
-    run_as_admin pacman -S --noconfirm "${packages[@]}"
+    run_as_admin pacman -Sy --noconfirm "${packages[@]}"
     ;;
   *)
     die "Unsupported package manager: $pm"
