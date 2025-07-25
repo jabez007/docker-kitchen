@@ -26,10 +26,10 @@ get_user_home() {
   local actual_user
   actual_user=$(get_actual_user)
 
-  if [[ "$actual_user" == "root" ]]; then
-    echo "/root"
+  if getent passwd "$actual_user" >/dev/null; then
+    getent passwd "$actual_user" | cut -d: -f6
   else
-    echo "/home/$actual_user"
+    [[ "$actual_user" == "root" ]] && echo "/root" || echo "/home/$actual_user"
   fi
 }
 
@@ -47,7 +47,7 @@ run_as_user() {
     if command -v sudo >/dev/null 2>&1; then
       sudo -u "$actual_user" HOME="$user_home" "$@"
     else
-      su - "$actual_user" -c "$(printf '%q ' "$@")"
+      su - "$actual_user" -c "$(printf ' %q' "$@")"
     fi
   fi
 }
