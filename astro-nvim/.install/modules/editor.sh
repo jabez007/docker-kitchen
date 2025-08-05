@@ -19,7 +19,7 @@ install_editor_stack() {
     curl -LO "https://github.com/neovim/neovim/releases/download/stable/${nvim_tarball}.tar.gz" ||
       die "Failed to download Neovim"
 
-    run_as_admin rm -rf /opt/nvim*
+    run_as_admin rm -rf /opt/${nvim_tarball}
     run_as_admin tar -C /opt -xzf "${nvim_tarball}.tar.gz" || die "Failed to extract Neovim"
     run_as_admin ln -sf "/opt/${nvim_tarball}/bin/nvim" /usr/local/bin/nvim
     rm "${nvim_tarball}.tar.gz"
