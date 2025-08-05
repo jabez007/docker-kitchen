@@ -11,7 +11,7 @@ RUN git clone https://github.com/jabez007/TC2-BBS-mesh.git
 
 ####
 
-FROM --platform=$BUILDPLATFORM python:alpine
+FROM python:alpine
 
 # Switch to non-root user
 RUN adduser --disabled-password mesh
@@ -31,6 +31,10 @@ VOLUME /home/mesh/bbs/config
 WORKDIR /home/mesh/bbs/config
 COPY --from=build /TC2-BBS-mesh/example_config.ini ./config.ini
 COPY --from=build /TC2-BBS-mesh/fortunes.txt ./
+
+# Add healthcheck - checks if the BBS can connect to meshtasticd
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD python3 -c "import socket; s=socket.socket(); s.settimeout(5); s.connect(('localhost', 4403)); s.close()" || exit 1
 
 # Define the command to run
 ENTRYPOINT [ "python3", "/home/mesh/bbs/server.py" ]
