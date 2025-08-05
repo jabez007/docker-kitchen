@@ -20,11 +20,11 @@ done
 # Execute the appropriate command based on whether the profile was found
 if [ "$profile_found" == true ]; then
   echo "'eks' profile found. Running 'aws sso login --profile'."
-  aws sso login --profile $profile_name
+  aws sso login --profile $profile_name --use-device-code
 else
   echo "'eks' profile not found. Running 'aws configure sso'."
   export AWS_SSO_SESSION_NAME="eks"
-  aws configure sso
+  aws configure sso --use-device-code
 
   # Get the newly configured profile name
   profiles=$(aws configure list-profiles)
@@ -39,7 +39,7 @@ fi
 
 # Add alias to .bashrc
 echo "Adding sso-login alias to .bashrc."
-echo "alias sso-login='aws sso login --profile $profile_name'" >> /root/.bashrc
+echo "alias sso-login='aws sso login --profile $profile_name --use-device-code'" >>/root/.bashrc
 
 # Update kubeconfig
 echo "Updating kubeconfig."
@@ -47,4 +47,4 @@ aws eks update-kubeconfig --profile $profile_name --region $AWS_REGION --name $E
 
 # Add alias to .bashrc
 echo "Adding update-kubeconfig alias to .bashrc."
-echo "alias update-kubeconfig='aws eks update-kubeconfig --profile $profile_name --region \$AWS_REGION --name \$EKS_CLUSTER'" >> /root/.bashrc
+echo "alias update-kubeconfig='aws eks update-kubeconfig --profile $profile_name --region \$AWS_REGION --name \$EKS_CLUSTER'" >>/root/.bashr

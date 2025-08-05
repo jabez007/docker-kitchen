@@ -9,6 +9,7 @@ on:
       - "aws-kubectl/Dockerfile"
       - "aws-kubectl/*.sh"
       - "aws-kubectl/*.pem"
+  workflow_dispatch:
 
 jobs:
   build_and_push_to_ghcr:
@@ -33,6 +34,7 @@ jobs:
           image-name: jabez007/aws-kubectl
           description: "A portable installation of aws-cli and kubectl configured for SSO and with a collection of helper scripts"
           tag: ${{ vars.AWS_REGION }}_${{ vars.EKS_CLUSTER }}
+          platforms: linux/amd64,linux/arm64
           build-args: |
             AWS_REGION=${{ vars.AWS_REGION }}
             EKS_CLUSTER=${{ vars.EKS_CLUSTER }}
@@ -60,6 +62,7 @@ jobs:
           image-name: ${{ vars.DOCKER_USERNAME }}/aws-kubectl
           description: "A portable installation of aws-cli and kubectl configured for SSO and with a collection of helper scripts"
           tag: ${{ vars.AWS_REGION }}_${{ vars.EKS_CLUSTER }}
+          platforms: linux/amd64,linux/arm64
           build-args: |
             AWS_REGION=${{ vars.AWS_REGION }}
             EKS_CLUSTER=${{ vars.EKS_CLUSTER }}

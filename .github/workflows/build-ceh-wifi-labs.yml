@@ -1,0 +1,29 @@
+name: Run Shared Build Workflow for ceh-wifi-labs
+
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+    paths:
+      - "ceh-wifi-labs/Dockerfile"
+      - "ceh-wifi-labs/*.sh"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: See which repo we just cloned
+        if: ${{ vars.pipeline_debug == 'true' }}
+        run: ls -alh
+        shell: bash
+
+      - uses: jabez007/docker-kitchen/.github/shared/docker@master
+        with:
+          context: ./ceh-wifi-labs
+          image-name: ${{ vars.DOCKER_USERNAME }}/ceh-wifi-labs
+          tag: latest
+          debug: ${{ vars.pipeline_debug }}

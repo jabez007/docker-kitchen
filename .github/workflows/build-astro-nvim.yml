@@ -7,23 +7,174 @@ on:
       - master
     paths:
       - "astro-nvim/Dockerfile"
-      - "astro-nvim/*.sh"
+      - "astro-nvim/*.conf"
+      - "astro-nvim/**/*.sh"
+      - "install.sh"
+      - ".install/**"
+
+env:
+  IMAGE_NAME: astro-nvim
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: See which repo we just cloned
         if: ${{ vars.pipeline_debug == 'true' }}
         run: ls -alh
         shell: bash
 
+      - name: Copy install script and .install directory to Docker context
+        run: |
+          set -euo pipefail
+          if [[ ! -f ./install.sh ]]; then
+            echo "install.sh not found – build cannot proceed" >&2
+            exit 1
+          fi
+          cp "./install.sh" "./astro-nvim/"
+          
+          if [[ -d ./.install ]]; then
+            echo "Copying .install directory to Docker context..."
+            cp -r "./.install" "./astro-nvim/" || {
+              echo "Failed to copy .install directory" >&2
+              exit 1
+            }
+          else
+            echo "Warning: .install directory not found in repository root"
+          fi
+
       - uses: jabez007/docker-kitchen/.github/shared/docker@master
         with:
           context: ./astro-nvim
-          image-name: jabez07/astro-nvim
+          image-name: ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}
           tag: latest
           debug: ${{ vars.pipeline_debug }}
+
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Download Docker image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: latest
+          path: ./artifacts
+
+      - name: Load Docker image
+        run: |
+          docker load < ./artifacts/${{ vars.DOCKER_USERNAME }}__${{ env.IMAGE_NAME }}.tar
+
+      - name: Test Go installation
+        id: test-go-install
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          echo "Testing Go installation..."
+          docker run --rm --entrypoint="" ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest /bin/bash -ilc "
+            command -v go && 
+            go version && 
+            echo 'Go version check: PASSED' || 
+            (echo 'Go version check: FAILED' && exit 1)
+          "
+
+      - name: Test Go functionality
+        id: test-go-func
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          echo "Testing basic Go functionality..."
+          docker run --rm --entrypoint="" ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest /bin/bash -ilc "
+            echo 'package main
+            import \"fmt\"
+            func main() {
+              fmt.Println(\"Hello from Go!\")
+            }' > test.go &&
+            go run test.go &&
+            echo 'Go functionality test: PASSED' ||
+            (echo 'Go functionality test: FAILED' && exit 1)
+          "
+
+      - name: Test Node.js installation
+        id: test-node-install
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          echo "Testing Node.js installation..."
+          docker run --rm --entrypoint="" ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest /bin/bash -ilc "
+            command -v deno &&
+            deno --version &&
+            command -v nvm &&
+            nvm --version &&
+            command -v node &&
+            node --version && 
+            command -v npm &&
+            npm --version && 
+            echo 'Node.js version check: PASSED' || 
+            (echo 'Node.js version check: FAILED' && exit 1)
+          "
+
+      - name: Test Node.js functionality
+        id: test-node-func
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          echo "Testing basic Node.js functionality..."
+          docker run --rm --entrypoint="" ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest /bin/bash -ilc "
+            echo 'console.log(\"Hello from Node.js!\");' > test.js &&
+            node test.js &&
+            echo 'Node.js functionality test: PASSED' ||
+            (echo 'Node.js functionality test: FAILED' && exit 1)
+          "
+
+      - name: Test Neovim and development tools
+        id: test-neovim
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          echo "Testing Neovim and development tools..."
+          docker run --rm --entrypoint="" ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest /bin/bash -ilc "
+            command -v nvim &&
+            nvim --version &&
+            echo 'Development tools test: PASSED' ||
+            (echo 'Development tools test: FAILED' && exit 1)
+          "
+
+      - name: Test user environment
+        id: test-user-env
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          echo "Testing user environment..."
+          docker run --rm --entrypoint="" ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest /bin/bash -ilc "
+            echo 'Current user:' && whoami &&
+            echo 'Home directory:' && pwd &&
+            echo 'Go env:' && go env GOPATH &&
+            echo 'Node env:' && npm config get prefix &&
+            echo 'User environment test: PASSED'
+          "
+
+      - name: Check test results
+        if: always()
+        run: |
+          echo "Test Results Summary:"
+          echo "Go installation: ${{ steps.test-go-install.outcome }}"
+          echo "Go functionality: ${{ steps.test-go-func.outcome }}"
+          echo "Node.js installation: ${{ steps.test-node-install.outcome }}"
+          echo "Node.js functionality: ${{ steps.test-node-func.outcome }}"
+          echo "Neovim and dev tools: ${{ steps.test-neovim.outcome }}"
+          echo "User environment: ${{ steps.test-user-env.outcome }}"
+
+          if [[ "${{ steps.test-go-install.outcome }}" == "failure" || \
+                "${{ steps.test-go-func.outcome }}" == "failure" || \
+                "${{ steps.test-node-install.outcome }}" == "failure" || \
+                "${{ steps.test-node-func.outcome }}" == "failure" || \
+                "${{ steps.test-neovim.outcome }}" == "failure" || \
+                "${{ steps.test-user-env.outcome }}" == "failure" ]]; then
+            echo "One or more tests failed!"
+            exit 1
+          else
+            echo "All tests passed!"
+          fi

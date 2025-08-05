@@ -19,7 +19,7 @@ ExecStartPre=-/usr/bin/docker rm %n
 ExecStartPre=/usr/bin/docker pull jabez07/meshtastic-bbs:latest
 
 # Main container start
-ExecStart=/usr/bin/docker run --name %n --network=host jabez07/meshtastic-bbs:latest
+ExecStart=/usr/bin/docker run --name %n --network=host --volume ./config:/home/mesh/bbs/config jabez07/meshtastic-bbs:latest
 
 # Health monitoring - restart if container becomes unhealthy
 ExecStartPost=/bin/bash -c 'while true; do sleep 60; if ! /usr/bin/docker inspect --format="{{.State.Health.Status}}" %n | grep -q "healthy"; then systemctl restart %n; break; fi; done &'

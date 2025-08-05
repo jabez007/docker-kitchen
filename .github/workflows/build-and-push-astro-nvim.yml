@@ -7,8 +7,17 @@ on:
       - master
     paths:
       - "astro-nvim/Dockerfile"
-      - "astro-nvim/*.sh"
+      - "astro-nvim/*.conf"
+      - "astro-nvim/**/*.sh"
+      - "install.sh"
+      - ".install/**"
+  schedule:
+    # Run weekly to catch upstream changes
+    - cron: "0 2 * * 0"
   workflow_dispatch:
+
+env:
+  IMAGE_NAME: astro-nvim
 
 jobs:
   build_and_push_to_docker:
@@ -22,13 +31,33 @@ jobs:
         run: ls -alh
         shell: bash
 
+      - name: Copy install script and .install directory to Docker context
+        run: |
+          set -euo pipefail
+          if [[ ! -f ./install.sh ]]; then
+            echo "install.sh not found – build cannot proceed" >&2
+            exit 1
+          fi
+          cp "./install.sh" "./astro-nvim/"
+
+          if [[ -d ./.install ]]; then
+            echo "Copying .install directory to Docker context..."
+            cp -r "./.install" "./astro-nvim/" || {
+              echo "Failed to copy .install directory" >&2
+              exit 1
+            }
+          else
+            echo "Warning: .install directory not found in repository root"
+          fi
+
       - name: Build and push to DockerHub
         uses: jabez007/docker-kitchen/.github/shared/docker@master
         with:
           context: ./astro-nvim
-          image-name: ${{ vars.DOCKER_USERNAME }}/astro-nvim
+          image-name: ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}
           description: A portable installation of AstroNvim configured with a few community language packs
           tag: latest
+          platforms: linux/amd64,linux/arm64
           push: true
           debug: ${{ vars.pipeline_debug }}
         env:
@@ -49,13 +78,33 @@ jobs:
         run: ls -alh
         shell: bash
 
+      - name: Copy install script and .install directory to Docker context
+        run: |
+          set -euo pipefail
+          if [[ ! -f ./install.sh ]]; then
+            echo "install.sh not found – build cannot proceed" >&2
+            exit 1
+          fi
+          cp "./install.sh" "./astro-nvim/"
+
+          if [[ -d ./.install ]]; then
+            echo "Copying .install directory to Docker context..."
+            cp -r "./.install" "./astro-nvim/" || {
+              echo "Failed to copy .install directory" >&2
+              exit 1
+            }
+          else
+            echo "Warning: .install directory not found in repository root"
+          fi
+
       - name: Build and push to GHCR
         uses: jabez007/docker-kitchen/.github/shared/ghcr@master
         with:
           context: ./astro-nvim
-          image-name: jabez007/astro-nvim
+          image-name: jabez007/${{ env.IMAGE_NAME }}
           description: A portable installation of AstroNvim configured with a few community language packs
           tag: latest
+          platforms: linux/amd64,linux/arm64
           push: true
           debug: ${{ vars.pipeline_debug }}
         env:

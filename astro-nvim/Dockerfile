@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM debian:stable-slim
+FROM debian:stable-slim
 
 # Set target architecture variable
 ARG TARGETARCH
@@ -7,66 +7,32 @@ ARG TARGETARCH
 ARG DEVUSER_NAME=dev
 RUN useradd -ms /bin/bash ${DEVUSER_NAME}
 
-#  Enable the arm64 architecture
+# Enable the arm64 architecture
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
   dpkg --add-architecture arm64; \
   fi
 
-# Install AstroNvim recommended dependencies
-RUN apt-get update && \
-  # apt-get upgrade -y && \
-  apt-get install -y --no-install-recommends \
-  bash \
-  curl \
-  git \
-  lua5.1 \
-  #nodejs \ 
-  #npm \
-  #lazygit \
-  #bottom \
-  python3 \
-  python-is-python3 \
-  #golang \
-  #neovim \
-  ripgrep \
-  unzip \
-  build-essential \
-  ca-certificates \
-  libssl-dev \
-  libffi-dev \
-  openssh-client \
-  && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Set the SHELL to bash with pipefail option
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-# Install the latest Go version
-RUN curl -L "https://go.dev/dl/$(curl -fsSL "https://go.dev/VERSION?m=text" | grep "^go").linux-$(dpkg --print-architecture).tar.gz" -o go.tar.gz && \
-  rm -rf /usr/local/go && \
-  tar -C /usr/local -xzf go.tar.gz && \
-  rm go.tar.gz
-ENV PATH="$PATH:/usr/local/go/bin"
+# Create setup directory and copy setup files
+RUN mkdir -p /opt/dev-setup
+COPY install.sh wrapper.sh setup.conf /opt/dev-setup/
+COPY .install /opt/dev-setup/.install
 
-# Install LazyGit
-RUN curl -L $(curl -s https://api.github.com/repos/jesseduffield/lazygit/releases/latest | \
-  grep "browser_download_url.*lazygit.*$(uname -s).*$(uname -m).*tar.gz" | \
-  cut -d : -f 2,3 | tr -d \" | tail -n 1) -o lazygit.tar.gz && \
-  tar -C /usr/local/bin -xzf lazygit.tar.gz && \
-  rm lazygit.tar.gz
+# Make scripts executable
+RUN chmod +x /opt/dev-setup/install.sh && \
+  chmod +x /opt/dev-setup/wrapper.sh
 
-# Install Bottom
-RUN curl -L $(curl -s https://api.github.com/repos/ClementTsang/bottom/releases/latest | \
-  grep "browser_download_url.*bottom.*$(dpkg --print-architecture).*deb" | \
-  cut -d : -f 2,3 | tr -d \" | tail -n 1) -o bottom.deb && \
-  dpkg -i bottom.deb && \
-  rm bottom.deb
+# Install system-wide development environment
+RUN cd /opt/dev-setup && \
+  ./wrapper.sh base go editor --system-wide --debug && \
+  apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Download and install the latest Neovim .tar.gz package
-RUN curl -LO https://github.com/neovim/neovim/releases/download/stable/nvim-linux64.tar.gz && \
-  rm -rf /opt/nvim* && \
-  tar -C /opt -xzf nvim-linux64.tar.gz && \
-  rm nvim-linux64.tar.gz && \
-  ln -s /opt/nvim-linux64/bin/nvim /usr/local/bin/nvim
+# Clean up setup scripts
+RUN rm -rf /opt/dev-setup/install.sh \
+  /opt/dev-setup/wrapper.sh \
+  /opt/dev-setup/setup.conf \
+  /opt/dev-setup/.install
 
 # Copy the entrypoint script into the container
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
@@ -74,57 +40,43 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # Switch to non-root user
 USER ${DEVUSER_NAME}
+ENV USER=${DEVUSER_NAME}
 WORKDIR /home/${DEVUSER_NAME}
-
-# Make sure lazygit config exists
-RUN mkdir -p /home/${DEVUSER_NAME}/.config/lazygit && \
-  touch /home/${DEVUSER_NAME}/.config/lazygit/config.yml
 
 # Set shell for ToggleTerm and Deno installer
 ENV SHELL="/bin/bash"
 
-# Install Deno
-#RUN curl -SL https://raw.githubusercontent.com/jabez007/deno_install/refs/heads/fix-docker/install.sh | sh -s -- -y
-RUN curl -SL https://deno.land/install.sh | sh -s -- -y
+# Copy setup scripts for user-level configuration
+COPY --chown=${DEVUSER_NAME} install.sh wrapper.sh setup.conf /home/${DEVUSER_NAME}/
+COPY --chown=${DEVUSER_NAME} .install /home/${DEVUSER_NAME}/.install
 
-# Install NVM
-RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+# Make user scripts executable
+RUN chmod +x /home/${DEVUSER_NAME}/install.sh && \
+  chmod +x /home/${DEVUSER_NAME}/wrapper.sh
 
-# Set the SHELL to interactive bash to use nvm
-SHELL ["/bin/bash", "-i", "-c"]
+# Set up user-level development environment
+RUN cd /home/${DEVUSER_NAME} && \
+  ./wrapper.sh node config --debug && \
+  rm -f /home/${DEVUSER_NAME}/setup.log
 
-# Install latest LTS version of Node.js
-RUN nvm install --lts
+# Create directories for volume mounts
+RUN mkdir -p /home/${DEVUSER_NAME}/.config/nvim \
+  /home/${DEVUSER_NAME}/.local/share/nvim \
+  /home/${DEVUSER_NAME}/.local/state/nvim \
+  /home/${DEVUSER_NAME}/.cache/nvim \
+  /home/${DEVUSER_NAME}/.config/lazygit
 
-# Clone AstroNvim config
-RUN git clone --depth 1 https://github.com/jabez007/AstroNvim-config.git ~/.config/nvim && \
-  rm -rf ~/.config/nvim/.git
+# Create a default lazygit config
+RUN touch /home/${DEVUSER_NAME}/.config/lazygit/config.yml
 
-# Pre-install Lazy and plugins
-RUN nvim --headless -c "Lazy! sync" -c "qa!"
+# Clean up setup scripts
+RUN rm -rf /home/${DEVUSER_NAME}/install.sh \
+  /home/${DEVUSER_NAME}/wrapper.sh \
+  /home/${DEVUSER_NAME}/setup.conf \
+  /home/${DEVUSER_NAME}/.install
 
-# Pre-install Mason tools
-# Run Mason commands with explicit plugin loading
-RUN nvim --headless +"\
-  MasonInstall \
-  css-lsp \
-  delve \
-  deno \
-  eslint-lsp \
-  goimports \
-  gomodifytags \
-  gopls \
-  gotests \
-  html-lsp \
-  iferr \
-  impl \
-  json-lsp \
-  js-debug-adapter \
-  prettierd \
-  vtsls \
-  vue-language-server \
-  " +q
+# Define volumes for persistent storage
+VOLUME ["/home/${DEVUSER_NAME}/.config/nvim", "/home/${DEVUSER_NAME}/.local/share/nvim", "/home/${DEVUSER_NAME}/.local/state/nvim", "/home/${DEVUSER_NAME}/.cache/nvim"]
 
 # Start nvim
-ENTRYPOINT ["/bin/bash", "-i", "/usr/local/bin/entrypoint.sh"]
-
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

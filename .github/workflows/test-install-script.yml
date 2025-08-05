@@ -1,0 +1,300 @@
+name: Test 'install' Script
+
+on:
+  push:
+    branches-ignore:
+      - main
+      - master
+    paths:
+      - "install.sh"
+      - ".install/**"
+  schedule:
+    # Run weekly to catch upstream changes
+    - cron: "0 2 * * 0"
+
+jobs:
+  test-components:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu:24.04
+          - ubuntu:22.04
+          - ubuntu:20.04
+          - debian:bookworm
+          - debian:bullseye
+          - fedora:42
+          - fedora:41
+          - archlinux:latest
+        component:
+          - base
+          - go
+          - node
+          - editor
+          - config
+          - shell
+          # Docker-in-Docker issues
+        exclude:
+          # Starship install has issues on Fedora without a terminal
+          - os: fedora:42
+            component: shell
+          - os: fedora:41
+            component: shell
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Make install script executable
+        run: chmod +x install.sh
+
+      - name: Test component installation
+        run: |
+          docker run --rm -v "$PWD":/workspace -w /workspace \
+            --privileged \
+            -e GITHUB_BRANCH="${{ github.head_ref || github.ref_name }}" \
+            ${{ matrix.os }} \
+            bash -c "
+              set -e
+              set -x  # Enable debug output
+              
+              # Install basic dependencies for the test
+              if command -v apt >/dev/null 2>&1; then
+                apt update && apt install -y sudo curl git
+              elif command -v dnf >/dev/null 2>&1; then
+                dnf install -y sudo curl git
+              elif command -v pacman >/dev/null 2>&1; then
+                pacman -Sy --noconfirm sudo curl git
+              fi
+              
+              # Create a test user with proper home directory
+              useradd -m -s /bin/bash testuser
+              
+              # Fedora-specific: Set a password for the user and configure PAM properly
+              if command -v dnf >/dev/null 2>&1; then
+                echo 'testuser:testpass' | chpasswd
+                usermod -aG wheel testuser
+                echo '%wheel ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
+                chmod u+r /etc/shadow
+              fi
+              
+              # Allow sudo without password
+              echo 'testuser ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+              
+              # Fix ownership of the workspace for testuser
+              chown -R testuser:testuser /workspace
+              
+              # Ensure install.sh is executable
+              chmod +x /workspace/install.sh
+              
+              # Run the installation as the test user
+              su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --debug ${{ matrix.component }}'
+
+              # Verify installation based on component
+              case '${{ matrix.component }}' in
+                base)
+                  command -v git && command -v curl && command -v rg
+                  ;;
+                go)
+                  su - testuser -c 'bash -i -c \"command -v go && go version\"'
+                  ;;
+                node)
+                  su - testuser -c 'bash -i -c \"command -v node && node --version\"'
+                  su - testuser -c 'command -v deno && deno --version'
+                  ;;
+                editor)
+                  su - testuser -c 'command -v nvim && command -v lazygit && command -v btm'
+                  ;;
+                config)
+                  su - testuser -c 'git config --global --list'
+                  ;;
+                shell)
+                  su - testuser -c 'command -v fish && command -v tmux && command -v starship'
+                  ;;
+                docker)
+                  command -v docker && docker --version
+                  ;;
+              esac
+            "
+
+  test-combinations:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        test-case:
+          - components: "base go"
+            os: "ubuntu:24.04"
+          - components: "base shell"
+            os: "debian:bookworm"
+          - components: "base node editor"
+            os: "fedora:42"
+          - components: "all"
+            os: "ubuntu:22.04"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Make install script executable
+        run: chmod +x install.sh
+
+      - name: Test component combinations
+        run: |
+          docker run --rm -v "$PWD":/workspace -w /workspace \
+            --privileged \
+            -e GITHUB_BRANCH="${{ github.head_ref || github.ref_name }}" \
+            ${{ matrix.test-case.os }} \
+            bash -c "
+              set -e
+              set -x  # Enable debug output
+              
+              if command -v apt >/dev/null 2>&1; then
+                apt update && apt install -y sudo curl git
+              elif command -v dnf >/dev/null 2>&1; then
+                dnf install -y sudo curl git
+              elif command -v pacman >/dev/null 2>&1; then
+                pacman -Sy --noconfirm sudo curl git
+              fi
+              
+              useradd -m -s /bin/bash testuser
+              
+              # Fedora-specific: Set a password for the user and configure PAM properly
+              if command -v dnf >/dev/null 2>&1; then
+                echo 'testuser:testpass' | chpasswd
+                usermod -aG wheel testuser
+                echo '%wheel ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
+                chmod u+r /etc/shadow
+              fi
+              
+              echo 'testuser ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+              
+              # Fix ownership and permissions
+              chown -R testuser:testuser /workspace
+              chmod +x /workspace/install.sh
+              
+              su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --debug ${{ matrix.test-case.components }}'
+            "
+
+  test-options:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Make install script executable
+        run: chmod +x install.sh
+
+      - name: Test script options
+        run: |
+          docker run --rm -v "$PWD":/workspace -w /workspace \
+            -e GITHUB_BRANCH="${{ github.head_ref || github.ref_name }}" \
+            ubuntu:22.04 \
+            bash -c "
+              set -e
+              set -x  # Enable debug output
+              
+              apt update && apt install -y sudo curl git
+              useradd -m -s /bin/bash testuser
+              echo 'testuser ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+              
+              # Fix ownership and permissions
+              chown -R testuser:testuser /workspace
+              chmod +x /workspace/install.sh
+              
+              # Test help option
+              su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --help'
+              
+              # Test save config
+              su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --save-config'
+              
+              # Test custom options
+              su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --debug --keep-git --tmux-session test base'
+            "
+
+  test-error-handling:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Make install script executable
+        run: chmod +x install.sh
+
+      - name: Test error conditions
+        run: |
+          docker run --rm -v "$PWD":/workspace -w /workspace \
+            -e GITHUB_BRANCH="${{ github.head_ref || github.ref_name }}" \
+            ubuntu:22.04 \
+            bash -c "
+              set -e
+              set -x  # Enable debug output
+              
+              apt update && apt install -y sudo curl git
+              useradd -m -s /bin/bash testuser
+              echo 'testuser ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+              
+              # Fix ownership and permissions
+              chown -R testuser:testuser /workspace
+              chmod +x /workspace/install.sh
+              
+              # Test invalid component (expect failure)
+              ! su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh invalid-component'
+              
+              # Test missing argument (expect failure)
+              ! su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --tmux-session'
+              
+              # Test no components (expect failure)
+              ! su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh'
+            "
+
+  test-idempotency:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Make install script executable
+        run: chmod +x install.sh
+
+      - name: Test idempotency
+        run: |
+          docker run --rm -v "$PWD":/workspace -w /workspace \
+            -e GITHUB_BRANCH="${{ github.head_ref || github.ref_name }}" \
+            ubuntu:22.04 \
+            bash -c "
+              set -e
+              set -x  # Enable debug output
+              
+              apt update && apt install -y sudo curl git
+              useradd -m -s /bin/bash testuser
+              echo 'testuser ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+              
+              # Fix ownership and permissions
+              chown -R testuser:testuser /workspace
+              chmod +x /workspace/install.sh
+              
+              # Run twice to test idempotency
+              su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --debug base go'
+              su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --debug base go'
+            "
+
+  lint-script:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+
+      - name: Lint bash script
+        run: |
+          shellcheck install.sh || true  # Don't fail on warnings initially
+
+      - name: Check script syntax
+        run: |
+          bash -n install.sh

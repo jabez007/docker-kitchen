@@ -10,7 +10,7 @@ inputs:
     default: .
   platforms:
     description: ""
-    default: linux/amd64,linux/arm64
+    default: linux/amd64,linux/arm,linux/arm64
   build-args:
     required: false
     description: ""
@@ -106,6 +106,8 @@ runs:
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
+      with:
+        platforms: ${{ inputs.platforms }}
 
     - name: Log in to GitHub Container Registry
       if: ${{ inputs.push == 'true' }}
