@@ -12,6 +12,11 @@ log() {
   local message="$*"
   local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
 
+  local current="${CONFIG[LOG_LEVEL]:-INFO}"
+  # Basic priority map
+  local -A prio=([ERROR]=0 [WARN]=1 [INFO]=2 [DEBUG]=3)
+  ((${prio[$level]} > ${prio[$current]})) && return
+
   case "$level" in
   ERROR) echo -e "\033[31m[ERROR]\033[0m $message" >&2 ;;
   WARN) echo -e "\033[33m[WARN]\033[0m $message" ;;
