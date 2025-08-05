@@ -45,7 +45,7 @@ install_editor_stack() {
     debug "LazyGit architecture: $lazygit_arch"
 
     lazygit_url=$(curl -s https://api.github.com/repos/jesseduffield/lazygit/releases/latest |
-      grep "browser_download_url.*lazygit.*$(uname -s).*${lazygit_arch}.*tar.gz" |
+      grep -i "browser_download_url.*lazygit.*$(uname -s).*${lazygit_arch}.*tar.gz" |
       cut -d : -f 2,3 | tr -d \" | tail -n 1)
     lazygit_url=$(trim "$lazygit_url")
 
