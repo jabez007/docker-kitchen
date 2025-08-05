@@ -12,11 +12,23 @@ TimeoutStartSec=0
 Restart=on-failure
 RestartSec=20
 WorkingDirectory=/etc/TC2-BBS-mesh
+
+# Make sure to have the latest of the Docker image
 ExecStartPre=-/usr/bin/docker kill %n
 ExecStartPre=-/usr/bin/docker rm %n
 ExecStartPre=/usr/bin/docker pull jabez07/meshtastic-bbs:latest
-ExecStart=/usr/bin/docker run --name %n jabez07/meshtastic-bbs:latest
+
+# Main container start
+ExecStart=/usr/bin/docker run --name %n --network=host jabez07/meshtastic-bbs:latest
+
+# Health monitoring - restart if container becomes unhealthy
+ExecStartPost=/bin/bash -c 'while true; do sleep 60; if ! /usr/bin/docker inspect --format="{{.State.Health.Status}}" %n | grep -q "healthy"; then systemctl restart %n; break; fi; done &'
+
 ExecStop=/usr/bin/docker stop %n
+
+# Additional restart conditions
+RestartForceExitStatus=125 126 127
+KillMode=mixed
 
 [Install]
 WantedBy=multi-user.target
