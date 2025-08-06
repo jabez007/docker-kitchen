@@ -5,13 +5,13 @@ import time
 
 # Test connection to meshtasticd with multiple attempts
 for attempt in range(3):
+    s = None
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(3)
         s.connect(("localhost", 4403))
         test_data = b"\x94\xc3\x00\x00"  # Simple protobuf header
         s.send(test_data)
-        s.close()
 
         print(f"Connection test {attempt + 1} passed")
         break
@@ -25,6 +25,9 @@ for attempt in range(3):
         if attempt == 2:
             sys.exit(1)
         time.sleep(1)
+    finally:
+        if s:
+            s.close()
 
 # Check if the main process is running
 try:
