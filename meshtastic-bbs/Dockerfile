@@ -13,6 +13,9 @@ RUN git clone https://github.com/jabez007/TC2-BBS-mesh.git
 
 FROM python:alpine
 
+COPY healthcheck.py /usr/local/bin/healthcheck.py
+RUN chmod a+x /usr/local/bin/healthcheck.py
+
 # Switch to non-root user
 RUN adduser --disabled-password mesh
 USER mesh
@@ -33,8 +36,6 @@ COPY --from=build /TC2-BBS-mesh/example_config.ini ./config.ini
 COPY --from=build /TC2-BBS-mesh/fortunes.txt ./
 
 # Add robust healthcheck - tests meshtasticd connection and detects broken pipe scenarios
-COPY healthcheck.py /usr/local/bin/healthcheck.py
-RUN chmod +x /usr/local/bin/healthcheck.py
 HEALTHCHECK --interval=20s --timeout=10s --start-period=40s --retries=2 \
   CMD /usr/local/bin/healthcheck.py || exit 1
 
