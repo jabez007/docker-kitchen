@@ -13,6 +13,9 @@ RUN git clone https://github.com/jabez007/TC2-BBS-mesh.git
 
 FROM python:alpine
 
+COPY healthcheck.py /usr/local/bin/healthcheck.py
+RUN chmod a+x /usr/local/bin/healthcheck.py
+
 # Switch to non-root user
 RUN adduser --disabled-password mesh
 USER mesh
@@ -32,9 +35,9 @@ WORKDIR /home/mesh/bbs/config
 COPY --from=build /TC2-BBS-mesh/example_config.ini ./config.ini
 COPY --from=build /TC2-BBS-mesh/fortunes.txt ./
 
-# Add healthcheck - checks if the BBS can connect to meshtasticd
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD python3 -c "import socket; s=socket.socket(); s.settimeout(5); s.connect(('localhost', 4403)); s.close()" || exit 1
+# Add robust healthcheck - tests meshtasticd connection and detects broken pipe scenarios
+HEALTHCHECK --interval=20s --timeout=10s --start-period=40s --retries=2 \
+  CMD /usr/local/bin/healthcheck.py || exit 1
 
 # Define the command to run
 ENTRYPOINT [ "python3", "/home/mesh/bbs/server.py" ]
