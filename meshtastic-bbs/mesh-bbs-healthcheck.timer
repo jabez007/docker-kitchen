@@ -1,0 +1,13 @@
+# /etc/systemd/system
+[Unit]
+Description=Timer for mesh-bbs health checks
+Requires=mesh-bbs.service
+After=mesh-bbs.service
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=15sec
+AccuracySec=5sec
+
+[Install]
+WantedBy=timers.target

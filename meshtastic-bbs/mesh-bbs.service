@@ -7,11 +7,11 @@ Requires=meshtasticd.service
 After=meshtasticd.service
 
 [Service]
-Type=forking
+Type=simple
 TimeoutStartSec=60
 TimeoutStopSec=30
 Restart=always
-RestartSec=10
+RestartSec=5
 WorkingDirectory=/etc/TC2-BBS-mesh
 
 # Make sure to have the latest of the Docker image
@@ -20,15 +20,11 @@ ExecStartPre=-/usr/bin/docker rm %n
 ExecStartPre=/usr/bin/docker pull jabez07/meshtastic-bbs:latest
 
 # Main container start
-ExecStart=/usr/bin/docker run --detach --name %n --network=host --volume ./config:/home/mesh/bbs/config jabez07/meshtastic-bbs:latest
-
-# Health monitoring that actively checks every 30 seconds
-ExecStartPost=/bin/bash -c 'echo $ > /run/mesh-bbs-monitor.pid; while true; do sleep 30; HEALTH=$(/usr/bin/docker inspect --format="{{.State.Health.Status}}" %n 2>/dev/null || echo "missing"); if [[ "$HEALTH" == "unhealthy" ]] || [[ "$HEALTH" == "missing" ]]; then logger "mesh-bbs: Container unhealthy ($HEALTH), triggering restart"; systemctl restart %n; exit 0; fi; done'
+ExecStart=/usr/bin/docker run --rm --name %n --network=host --volume ./config:/home/mesh/bbs/config jabez07/meshtastic-bbs:latest
 
 # Cleanup
 ExecStop=/usr/bin/docker stop %n
 ExecStopPost=-/usr/bin/docker rm %n
-ExecStopPost=-/bin/bash -c 'if [ -f /run/mesh-bbs-monitor.pid ]; then kill $(cat /run/mesh-bbs-monitor.pid) 2>/dev/null || true; rm -f /run/mesh-bbs-monitor.pid; fi'
 
 # Additional restart conditions
 RestartForceExitStatus=125 126 127

@@ -1,0 +1,20 @@
+# /etc/systemd/system
+[Unit]
+Description=Health check for mesh-bbs container
+After=mesh-bbs.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c '
+HEALTH=$(/usr/bin/docker inspect --format="{{.State.Health.Status}}" mesh-bbs.service 2>/dev/null || echo "missing")
+if [[ "$HEALTH" == "unhealthy" ]]; then
+    logger "mesh-bbs healthcheck: Container unhealthy, restarting service"
+    systemctl restart mesh-bbs.service
+elif [[ "$HEALTH" == "missing" ]]; then
+    # Container might be starting up, check if service is active
+    if systemctl is-active --quiet mesh-bbs.service; then
+        logger "mesh-bbs healthcheck: Container missing but service active, restarting"
+        systemctl restart mesh-bbs.service
+    fi
+fi
+'
