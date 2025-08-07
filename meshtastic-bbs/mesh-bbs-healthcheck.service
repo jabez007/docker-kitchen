@@ -5,14 +5,21 @@ After=mesh-bbs.service
 
 [Service]
 Type=oneshot
-ExecStart=/bin/bash -c "HEALTH=$(/usr/bin/docker inspect --format='{{.State.Health.Status}}' mesh-bbs 2>/dev/null || echo 'missing'); \
-if [[ \"$HEALTH\" == \"unhealthy\" ]]; then \
-    logger 'mesh-bbs healthcheck: Container unhealthy, restarting service'; \
-    systemctl restart mesh-bbs.service; \
-elif [[ \"$HEALTH\" == \"missing\" ]]; then \
-    if systemctl is-active --quiet mesh-bbs.service; then \
+ExecStart=/bin/bash -c "\
+  HEALTH=$(/usr/bin/docker inspect --format='{{.State.Health.Status}}' mesh-bbs 2>/dev/null || echo 'missing'); \
+  case \"$HEALTH\" in \
+    unhealthy) \
+      logger 'mesh-bbs healthcheck: Container unhealthy, restarting service'; \
+      systemctl restart mesh-bbs.service || logger 'mesh-bbs healthcheck: Failed to restart service'; \
+      ;; \
+    missing) \
+      if systemctl is-active --quiet mesh-bbs.service; then \
         logger 'mesh-bbs healthcheck: Container missing but service active, restarting'; \
-        systemctl restart mesh-bbs.service; \
-    fi; \
-fi"
+        systemctl restart mesh-bbs.service || logger 'mesh-bbs healthcheck: Failed to restart service'; \
+      fi; \
+      ;; \
+    healthy) \
+      logger 'mesh-bbs healthcheck: Container healthy'; \
+      ;; \
+  esac"
 
