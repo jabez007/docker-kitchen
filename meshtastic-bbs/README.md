@@ -3,14 +3,16 @@
 This project sets up a Meshtastic-based bulletin board system (BBS) on a Raspberry Pi with a LoRa hat.
 It includes example configurations for `meshtasticd` and the BBS,
 the Dockerfile for the container that will be running the TC2-BBS-mesh,
-and a service file managing the dockerized BBS with `systemd`.
+and service files for managing the dockerized BBS with `systemd`.
 
 ## Features
 
 - Automates the installation of meshtasticd with an included `install.sh` script.
 - Provides configurations for `meshtasticd`, the LoRa radio, and the BBS.
-- Deploys the BBS in a Docker container.
-- Includes a `systemd` service for automatic management.
+- Deploys the BBS in a Docker container with robust health monitoring.
+- Includes a `systemd` service for automatic management with health-based restarts.
+- Advanced healthcheck system that monitors both Meshtastic connectivity and process health.
+- Automatic container recovery and restart capabilities.
 
 ## Prerequisites
 
@@ -40,16 +42,16 @@ and a service file managing the dockerized BBS with `systemd`.
    curl -fsSL https://raw.githubusercontent.com/jabez007/docker-kitchen/master/meshtastic-bbs/install.sh | bash
    ```
 
-3. Copy config:
+3. Copy configuration files:
 
-   meshtasticd
+   **meshtasticd**
 
    ```bash
    mv /etc/meshtasticd/config.yaml /etc/meshtasticd/config.yaml.bak
    cp ./meshtasticd_config.yaml /etc/meshtasticd/config.yaml
    ```
 
-   BBS
+   **BBS**
 
    ```bash
    mkdir -p /etc/TC2-BBS-mesh/config
@@ -62,10 +64,13 @@ and a service file managing the dockerized BBS with `systemd`.
    to be the IP address of your Raspberry Pi
    if the sockets library is throwing a connection error.
 
-   systemd
+   **systemd services**
 
    ```bash
    cp ./mesh-bbs.service /etc/systemd/system/mesh-bbs.service
+   cp ./mesh-bbs-healthcheck.service /etc/systemd/system/mesh-bbs-healthcheck.service
+   cp ./mesh-bbs-healthcheck.timer /etc/systemd/system/mesh-bbs-healthcheck.timer
+   systemctl daemon-reload
    ```
 
 4. Configure Meshtastic:
@@ -109,22 +114,121 @@ and a service file managing the dockerized BBS with `systemd`.
 
    [Python CLI reference](https://meshtastic.org/docs/software/python/cli/)
 
-5. Enable the systemd service:
+5. Enable the systemd services:
+
    ```bash
+   # Enable and start the main BBS service
    sudo systemctl enable mesh-bbs.service
    sudo systemctl start mesh-bbs.service
+
+   # Enable and start the health monitoring system
+   sudo systemctl enable mesh-bbs-healthcheck.timer
+   sudo systemctl start mesh-bbs-healthcheck.timer
    ```
 
-## Troubleshooting
+## Health Monitoring System
 
-- Check Docker logs:
-  ```bash
-  docker logs mesh-bbs
-  ```
-- Verify `systemd` status:
-  ```bash
-  systemctl status mesh-bbs.service
-  ```
+The project includes a comprehensive health monitoring system to ensure reliable operation:
+
+### Docker Health Check
+
+The Docker container includes a built-in healthcheck that runs every 20 seconds and performs:
+
+- **Meshtastic Connection Test**: Establishes a TCP connection to meshtasticd and tests bidirectional communication
+- **Process Health Check**: Verifies the BBS server process is running and responsive
+- **Multiple Retry Logic**: Attempts connection tests up to 3 times before failing
+
+### systemd Health Monitoring
+
+A systemd timer (`mesh-bbs-healthcheck.timer`) runs every 15 seconds to:
+
+- Monitor the Docker container's health status
+- Automatically restart the service if the container becomes unhealthy
+- Handle cases where the container goes missing while the service is active
+- Log all health check actions to the system journal
+
+### Service Configuration
+
+The main service (`mesh-bbs.service`) includes:
+
+- Automatic restart on failure with exponential backoff
+- Proper dependency management (requires meshtasticd and Docker)
+- Container cleanup and image updates on startup
+- Graceful shutdown handling
+
+## Monitoring and Troubleshooting
+
+### Check Service Status
+
+```bash
+# Main BBS service status
+sudo systemctl status mesh-bbs.service
+
+# Health check timer status
+sudo systemctl status mesh-bbs-healthcheck.timer
+
+# View recent health check runs
+sudo systemctl list-timers mesh-bbs-healthcheck.timer
+```
+
+### View Logs
+
+```bash
+# Docker container logs
+docker logs mesh-bbs
+
+# systemd service logs
+sudo journalctl -u mesh-bbs.service -f
+
+# Health check logs
+sudo journalctl -u mesh-bbs-healthcheck.service -f
+
+# Combined logs for troubleshooting
+sudo journalctl -u mesh-bbs.service -u mesh-bbs-healthcheck.service -f
+```
+
+### Manual Health Check
+
+You can manually test the health check system:
+
+```bash
+# Check container health status
+docker inspect --format='{{.State.Health.Status}}' mesh-bbs
+
+# Run the health check script directly (if container is running)
+docker exec mesh-bbs /usr/local/bin/healthcheck.py
+```
+
+### Common Issues and Solutions
+
+**Container keeps restarting:**
+
+- Check meshtasticd is running: `systemctl status meshtasticd.service`
+- Verify LoRa hat connection and configuration
+- Check Docker logs for specific error messages
+
+**Health checks failing:**
+
+- Ensure meshtasticd is accessible on port 4403
+- Verify network connectivity between container and host
+- Check system resources (CPU/memory usage)
+
+**Service won't start:**
+
+- Verify Docker is running: `systemctl status docker.service`
+- Check that configuration files exist in `/etc/TC2-BBS-mesh/config/`
+- Ensure proper file permissions on config directory
+
+## Configuration Files
+
+The project includes several configuration files:
+
+- `meshtasticd_config.yaml` - Configuration for the Meshtastic daemon
+- `bbs_config.ini` - BBS server configuration
+- `fortunes.txt` - Fortune messages for the BBS
+- `mesh-bbs.service` - Main systemd service definition
+- `mesh-bbs-healthcheck.service` - Health check service
+- `mesh-bbs-healthcheck.timer` - Health check timer configuration
 
 ## Acknowledgments
 
