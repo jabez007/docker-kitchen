@@ -49,11 +49,18 @@ jobs:
             echo "Warning: .install directory not found in repository root"
           fi
 
+      - name: List Docker context for debugging
+        run: |
+          echo "Listing contents of ./astro-nvim/.install:"
+          ls -R ./astro-nvim/.install
+
       - uses: jabez007/docker-kitchen/.github/shared/docker@master
         with:
           context: ./astro-nvim
           image-name: ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}
           tag: latest
+          build-args: |
+            GITHUB_BRANCH=${{ github.head_ref || github.ref_name }}
           debug: ${{ vars.pipeline_debug }}
 
   test:

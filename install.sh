@@ -89,6 +89,8 @@ safe_source() {
         actual_local_path="${SCRIPT_DIR}/${github_subdir}/${relative_path}"
     fi
 
+    echo "Sourcing module: ${actual_local_path} (requested: ${module_path})"
+
     if [[ ! -f "$actual_local_path" ]]; then
         # Check if the requested module_path itself exists (fallback for flattened structures like Docker)
         if [[ ! -f "$module_path" ]]; then
@@ -99,12 +101,16 @@ safe_source() {
             # After download, the file should exist at module_path
             actual_local_path="$module_path"
         else
+            echo "Using fallback path: ${module_path}"
             actual_local_path="$module_path"
         fi
     fi
 
     # shellcheck source=/dev/null
-    source "$actual_local_path"
+    if ! source "$actual_local_path"; then
+        echo "Error: Failed to source ${actual_local_path}" >&2
+        exit 1
+    fi
 }
 
 echo "Running on branch '$GITHUB_BRANCH'"
