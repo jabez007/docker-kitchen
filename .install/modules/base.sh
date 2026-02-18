@@ -7,7 +7,7 @@ install_base_dependencies() {
   local packages=(
     bash curl git
     unzip ca-certificates
-    ripgrep
+    ripgrep jq
   )
 
   # Add python and lua based on OS

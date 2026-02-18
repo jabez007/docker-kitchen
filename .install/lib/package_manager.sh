@@ -37,8 +37,7 @@ install_packages() {
         debug "Installing $pkg..."
         run_as_admin dnf install -y "$pkg"
       else
-        warn "$pkg is already installed"
-        run_as_admin dnf reinstall -y "$pkg"
+        info "$pkg is already installed"
       fi
     done
     ;;

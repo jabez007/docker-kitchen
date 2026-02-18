@@ -9,18 +9,13 @@ Usage: $0 [OPTIONS] [COMPONENTS...]
 A modular Linux development environment setup script.
 
 COMPONENTS:
-    base     - Base dependencies (curl, git, build tools, etc.)
-    go       - Go programming language
-    node     - Node.js stack (NVM, Node.js, Deno)
-    editor   - Editor stack (Neovim, LazyGit, Bottom, AstroNvim)
-    config   - User configurations (AstroNvim, dotfiles)
-    shell    - Shell stack (Fish, Tmux, Starship)
-    docker   - Docker and Docker Compose
+$(for comp in $(printf "%s\n" "${!COMPONENTS[@]}" | sort); do printf "    %-8s - %s\n" "$comp" "${COMPONENT_DESC[$comp]:-No description available}"; done)
     all      - Install all components
 
 OPTIONS:
     --debug, -d              Enable debug output
     --system-wide, -s        Install system-wide where applicable
+    --upgrade, -u            Upgrade already installed components
     --keep-git               Keep .git directories in cloned configs
     --tmux-session NAME      Tmux session name (default: ${CONFIG[TMUX_SESSION]})
     --starship-preset NAME   Starship preset (default: ${CONFIG[STARSHIP_PRESET]})
@@ -59,6 +54,10 @@ parse_arguments() {
       CONFIG[SYSTEM_WIDE]=true
       shift
       ;;
+    --upgrade | -u)
+      CONFIG[UPGRADE]=true
+      shift
+      ;;
     --keep-git)
       CONFIG[KEEP_GIT]=true
       shift
@@ -86,16 +85,19 @@ parse_arguments() {
       show_usage
       exit 0
       ;;
-    base | go | node | editor | config | shell | docker)
-      components+=("$1")
-      shift
-      ;;
     all)
-      components=(base go node editor config shell docker)
+      # Predefined order for 'all' to ensure base is first and config is last
+      components=(base go node python editor shell docker config)
       shift
       ;;
     *)
-      die "Unknown option: $1\nUse --help for usage information."
+      # Check if it's a valid component
+      if [[ -v COMPONENTS["$1"] ]]; then
+        components+=("$1")
+        shift
+      else
+        die "Unknown option: $1\nUse --help for usage information."
+      fi
       ;;
     esac
   done

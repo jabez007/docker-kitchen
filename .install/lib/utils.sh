@@ -144,6 +144,16 @@ update_path() {
       info "Updated PATH in $shell_config"
     fi
   done
+
+  # Fish shell specific PATH update
+  if command_exists fish; then
+    if [[ "${CONFIG[SYSTEM_WIDE]}" == "true" ]]; then
+      run_as_admin fish -c "fish_add_path -m $path_entry" 2>/dev/null || true
+    else
+      run_as_user fish -c "fish_add_path -m $path_entry" 2>/dev/null || true
+    fi
+    info "Updated PATH for Fish shell"
+  fi
 }
 
 # ============================================================================

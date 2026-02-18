@@ -18,10 +18,22 @@ declare -A COMPONENTS=(
     [base]="install_base_dependencies"
     [go]="install_go"
     [node]="install_node_stack"
+    [python]="install_python_stack"
     [editor]="install_editor_stack"
     [config]="install_user_configs"
     [shell]="install_shell_stack"
     [docker]="install_docker_stack"
+)
+
+declare -A COMPONENT_DESC=(
+    [base]="Base dependencies (curl, git, build tools, etc.)"
+    [go]="Go programming language and toolchain"
+    [node]="Node.js stack (NVM, Node.js, Deno)"
+    [python]="Python stack (pyenv and interpreters)"
+    [editor]="Editor stack (Neovim, LazyGit, Bottom)"
+    [config]="User configurations (Git, AstroNvim config)"
+    [shell]="Shell stack (Fish, Tmux, Starship)"
+    [docker]="Docker and Docker Compose stack"
 )
 
 readonly GITHUB_BRANCH="${GITHUB_BRANCH:-master}"
@@ -68,11 +80,23 @@ safe_source() {
     local module_path="$1"
     local github_subdir="${2:-}" # Optional subdirectory parameter
 
-    if [[ ! -f "$module_path" ]]; then
-        download_missing_module "$module_path" "$github_subdir" || exit 1
+    # If github_subdir is specified, the actual local path might be different
+    local actual_local_path="$module_path"
+    if [[ -n "$github_subdir" ]]; then
+        local relative_path="${module_path#"$SCRIPT_DIR"/}"
+        actual_local_path="${SCRIPT_DIR}/${github_subdir}/${relative_path}"
     fi
 
-    source "$module_path"
+    if [[ ! -f "$actual_local_path" ]]; then
+        # Check if the requested module_path itself exists
+        if [[ ! -f "$module_path" ]]; then
+            download_missing_module "$module_path" "$github_subdir" || exit 1
+        else
+            actual_local_path="$module_path"
+        fi
+    fi
+
+    source "$actual_local_path"
 }
 
 echo "Running on branch '$GITHUB_BRANCH'"
@@ -88,6 +112,7 @@ safe_source "${SCRIPT_DIR}/.install/lib/cli.sh"
 safe_source "${SCRIPT_DIR}/.install/modules/base.sh"
 safe_source "${SCRIPT_DIR}/.install/modules/go.sh" "astro-nvim"
 safe_source "${SCRIPT_DIR}/.install/modules/node.sh" "astro-nvim"
+safe_source "${SCRIPT_DIR}/.install/modules/python.sh" "astro-nvim"
 safe_source "${SCRIPT_DIR}/.install/modules/editor.sh" "astro-nvim"
 safe_source "${SCRIPT_DIR}/.install/modules/config.sh"
 safe_source "${SCRIPT_DIR}/.install/modules/shell.sh"

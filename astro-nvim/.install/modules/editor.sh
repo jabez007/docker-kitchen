@@ -5,7 +5,7 @@ install_editor_stack() {
   info "Installing editor stack (Neovim, LazyGit, Bottom)..."
 
   # Install Neovim
-  if ! command_exists nvim; then
+  if ! command_exists nvim || [[ "${CONFIG[UPGRADE]}" == "true" ]]; then
     info "Installing Neovim..."
     local arch nvim_tarball
 
@@ -30,7 +30,7 @@ install_editor_stack() {
   fi
 
   # Install LazyGit
-  if ! command_exists lazygit; then
+  if ! command_exists lazygit || [[ "${CONFIG[UPGRADE]}" == "true" ]]; then
     info "Installing LazyGit..."
     local lazygit_arch lazygit_url
 
@@ -44,9 +44,14 @@ install_editor_stack() {
 
     debug "LazyGit architecture: $lazygit_arch"
 
-    lazygit_url=$(curl -s https://api.github.com/repos/jesseduffield/lazygit/releases/latest |
-      grep -i "browser_download_url.*lazygit.*$(uname -s).*${lazygit_arch}.*tar.gz" |
-      cut -d : -f 2,3 | tr -d \" | tail -n 1)
+    if command_exists jq; then
+      lazygit_url=$(curl -s https://api.github.com/repos/jesseduffield/lazygit/releases/latest |
+        jq -r ".assets[] | select(.name | contains(\"$(uname -s)\") and contains(\"$lazygit_arch\") and endswith(\"tar.gz\")) | .browser_download_url" | head -n 1)
+    else
+      lazygit_url=$(curl -s https://api.github.com/repos/jesseduffield/lazygit/releases/latest |
+        grep -i "browser_download_url.*lazygit.*$(uname -s).*${lazygit_arch}.*tar.gz" |
+        cut -d : -f 2,3 | tr -d \" | tail -n 1)
+    fi
     lazygit_url=$(trim "$lazygit_url")
 
     debug "LazyGit download URL: $lazygit_url"
@@ -63,16 +68,21 @@ install_editor_stack() {
   fi
 
   # Install Bottom
-  if ! command_exists btm; then
+  if ! command_exists btm || [[ "${CONFIG[UPGRADE]}" == "true" ]]; then
     info "Installing Bottom..."
     local pm
     pm=$(get_package_manager)
 
     if [[ "$pm" == "apt" ]]; then
       local bottom_url
-      bottom_url=$(curl -s https://api.github.com/repos/ClementTsang/bottom/releases/latest |
-        grep "browser_download_url.*bottom.*$(dpkg --print-architecture).*deb" |
-        cut -d : -f 2,3 | tr -d \" | tail -n 1)
+      if command_exists jq; then
+        bottom_url=$(curl -s https://api.github.com/repos/ClementTsang/bottom/releases/latest |
+          jq -r ".assets[] | select(.name | contains(\"$(dpkg --print-architecture)\") and endswith(\"deb\")) | .browser_download_url" | head -n 1)
+      else
+        bottom_url=$(curl -s https://api.github.com/repos/ClementTsang/bottom/releases/latest |
+          grep "browser_download_url.*bottom.*$(dpkg --print-architecture).*deb" |
+          cut -d : -f 2,3 | tr -d \" | tail -n 1)
+      fi
       bottom_url=$(trim "$bottom_url")
 
       debug "Bottom download URL: $bottom_url"
@@ -86,10 +96,15 @@ install_editor_stack() {
       fi
     elif [[ "$pm" == "dnf" ]]; then
       local bottom_url
-      bottom_url=$(curl -s https://api.github.com/repos/ClementTsang/bottom/releases/latest |
-        grep "browser_download_url.*bottom.*$(rpm --eval %{_arch}).*rpm" |
-        grep -v "musl" |
-        cut -d : -f 2,3 | tr -d \" | tail -n 1)
+      if command_exists jq; then
+        bottom_url=$(curl -s https://api.github.com/repos/ClementTsang/bottom/releases/latest |
+          jq -r ".assets[] | select(.name | contains(\"$(rpm --eval %{_arch})\") and endswith(\"rpm\") and (contains(\"musl\") | not)) | .browser_download_url" | head -n 1)
+      else
+        bottom_url=$(curl -s https://api.github.com/repos/ClementTsang/bottom/releases/latest |
+          grep "browser_download_url.*bottom.*$(rpm --eval %{_arch}).*rpm" |
+          grep -v "musl" |
+          cut -d : -f 2,3 | tr -d \" | tail -n 1)
+      fi
       bottom_url=$(trim "$bottom_url")
 
       debug "Bottom download URL: $bottom_url"
