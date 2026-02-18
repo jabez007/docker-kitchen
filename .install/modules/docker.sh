@@ -4,6 +4,10 @@
 install_docker_stack() {
   info "Installing Docker..."
 
+  local pm os
+  pm=$(get_package_manager)
+  os=$(detect_system | cut -d: -f1)
+
   if command_exists docker && [[ "${CONFIG[UPGRADE]}" != "true" ]]; then
     info "Docker already installed"
     return 0
@@ -12,10 +16,6 @@ install_docker_stack() {
   if command_exists docker && [[ "${CONFIG[UPGRADE]}" == "true" ]]; then
     info "Docker is already installed. Using $pm to check for updates via official repositories..."
   fi
-
-  local pm os
-  pm=$(get_package_manager)
-  os=$(detect_system | cut -d: -f1)
 
   case "$pm" in
   apt)
