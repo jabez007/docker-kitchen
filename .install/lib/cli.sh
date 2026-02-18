@@ -42,9 +42,11 @@ EOF
 
 # Parse command line arguments
 parse_arguments() {
+  echo "DEBUG: parse_arguments called with: $*"
   local components=()
 
   while [[ $# -gt 0 ]]; do
+    echo "DEBUG: Processing argument: $1"
     case "$1" in
     --debug | -d)
       CONFIG[LOG_LEVEL]=DEBUG

@@ -77,10 +77,11 @@ detect_environment() {
     use_sudo=false
   fi
 
-  # Check if running in Docker container
-  if [[ -f /.dockerenv ]] || grep -q 'docker\|lxc' /proc/1/cgroup 2>/dev/null; then
+  # Check if running in Docker container (set -e safe)
+  if [[ -f /.dockerenv ]]; then
     is_docker=true
-    #use_sudo=false
+  elif [[ -f /proc/1/cgroup ]] && grep -q 'docker\|lxc' /proc/1/cgroup 2>/dev/null; then
+    is_docker=true
   fi
 
   # Check if `sudo` is available

@@ -132,11 +132,14 @@ safe_source "${SCRIPT_DIR}/.install/modules/config.sh"
 safe_source "${SCRIPT_DIR}/.install/modules/shell.sh"
 safe_source "${SCRIPT_DIR}/.install/modules/docker.sh"
 
+echo "DEBUG: All modules sourced successfully"
+
 # ============================================================================
 # Main Function
 # ============================================================================
 
 main() {
+    echo "DEBUG: Entering main with arguments: $*"
     local components
 
     # Load configuration
@@ -150,7 +153,11 @@ main() {
 
     # Run directly in main shell to allow proper exiting
     local parsed
-    parsed="$(parse_arguments "$@")" || exit $?
+    if ! parsed="$(parse_arguments "$@")"; then
+        echo "Error: parse_arguments failed" >&2
+        exit 1
+    fi
+    echo "DEBUG: parse_arguments returned: $parsed"
 
     # Convert output into an array
     IFS=' ' read -r -a components <<<"$parsed"

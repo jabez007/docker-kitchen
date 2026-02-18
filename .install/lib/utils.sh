@@ -15,7 +15,10 @@ log() {
   local current="${CONFIG[LOG_LEVEL]:-INFO}"
   # Basic priority map
   local -A prio=([ERROR]=0 [WARN]=1 [INFO]=2 [DEBUG]=3)
-  ((${prio[$level]} > ${prio[$current]})) && return
+  
+  if (( prio[${level:-INFO}] > prio[${current:-INFO}] )); then
+    return
+  fi
 
   case "$level" in
   ERROR) echo -e "\033[31m[ERROR]\033[0m $message" >&2 ;;
@@ -39,6 +42,7 @@ debug() { log DEBUG "$@"; }
 # Exit with error
 die() {
   error "$@"
+  echo "CRITICAL ERROR: $*" >&2
   exit 1
 }
 
