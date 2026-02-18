@@ -87,7 +87,11 @@ install_docker_stack() {
     ;;
   brew)
     # macOS Docker installation
-    brew install --cask docker
+    if [[ "${CONFIG[UPGRADE]}" == "true" ]]; then
+      brew upgrade --cask docker || brew install --cask docker
+    else
+      brew install --cask docker
+    fi
     ;;
   *)
     warn "Docker installation not supported for package manager: $pm"
