@@ -55,7 +55,8 @@ download_missing_module() {
         local download_uri="${relative_path}"
     fi
 
-    echo "Downloading missing module: ${download_uri}"
+    echo "Module not found locally: ${module_path}"
+    echo "Attempting to download missing module: ${download_uri}"
     mkdir -p "$(dirname "$module_path")"
 
     local download_url="${GITHUB_BASE_URL}/${download_uri}"
@@ -71,7 +72,8 @@ download_missing_module() {
             return 1
         }
     else
-        echo "Error: Neither curl nor wget is available to download missing modules" >&2
+        echo "Error: Neither curl nor wget is available to download missing module: ${download_uri}" >&2
+        echo "Check if the file exists at: ${module_path}" >&2
         return 1
     fi
 }
@@ -88,9 +90,12 @@ safe_source() {
     fi
 
     if [[ ! -f "$actual_local_path" ]]; then
-        # Check if the requested module_path itself exists
+        # Check if the requested module_path itself exists (fallback for flattened structures like Docker)
         if [[ ! -f "$module_path" ]]; then
-            download_missing_module "$module_path" "$github_subdir" || exit 1
+            download_missing_module "$module_path" "$github_subdir" || {
+                echo "Critical Error: Failed to source module ${module_path}" >&2
+                exit 1
+            }
             # After download, the file should exist at module_path
             actual_local_path="$module_path"
         else
@@ -98,6 +103,7 @@ safe_source() {
         fi
     fi
 
+    # shellcheck source=/dev/null
     source "$actual_local_path"
 }
 

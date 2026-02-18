@@ -41,9 +41,12 @@ jobs:
           cp "./install.sh" "./astro-nvim/"
 
           if [[ -d ./.install ]]; then
-            echo "Copying .install directory to Docker context..."
-            cp -r "./.install" "./astro-nvim/" || {
-              echo "Failed to copy .install directory" >&2
+            echo "Merging .install directory to Docker context..."
+            # Ensure the target directory exists
+            mkdir -p "./astro-nvim/.install"
+            # Copy contents of root .install into astro-nvim/.install, merging them
+            cp -a ./.install/. ./astro-nvim/.install/ || {
+              echo "Failed to merge .install directory" >&2
               exit 1
             }
           else
@@ -88,9 +91,12 @@ jobs:
           cp "./install.sh" "./astro-nvim/"
 
           if [[ -d ./.install ]]; then
-            echo "Copying .install directory to Docker context..."
-            cp -r "./.install" "./astro-nvim/" || {
-              echo "Failed to copy .install directory" >&2
+            echo "Merging .install directory to Docker context..."
+            # Ensure the target directory exists
+            mkdir -p "./astro-nvim/.install"
+            # Copy contents of root .install into astro-nvim/.install, merging them
+            cp -a ./.install/. ./astro-nvim/.install/ || {
+              echo "Failed to merge .install directory" >&2
               exit 1
             }
           else
