@@ -24,14 +24,29 @@ install_docker_stack() {
       docker_distro=$(echo "${ID_LIKE:-$ID}" | awk '{print $1}')
     fi
 
-    # For derivatives, try to find the upstream codename
-    local docker_codename="${VERSION_CODENAME:-stable}"
+    if [[ "$docker_distro" != "debian" ]] && [[ "$docker_distro" != "ubuntu" ]]; then
+      die "Docker installation (apt) only supports 'debian' or 'ubuntu' families. Detected ID: '$ID', ID_LIKE: '${ID_LIKE:-none}', mapped to: '$docker_distro'."
+    fi
+
+    # Determine the distribution codename
+    local docker_codename="${VERSION_CODENAME:-}"
+    
+    # For derivatives, override with upstream codename if available
     if [[ "$ID" != "$docker_distro" ]]; then
       if [[ -n "${UBUNTU_CODENAME:-}" ]]; then
         docker_codename="$UBUNTU_CODENAME"
       elif [[ -n "${DEBIAN_CODENAME:-}" ]]; then
         docker_codename="$DEBIAN_CODENAME"
       fi
+    fi
+
+    # Fallback to lsb_release if still empty
+    if [[ -z "$docker_codename" ]] && command_exists lsb_release; then
+      docker_codename=$(lsb_release -cs)
+    fi
+
+    if [[ -z "$docker_codename" ]] || [[ "$docker_codename" == "stable" ]]; then
+      die "Could not determine a valid distribution codename for Docker repository (found: '${docker_codename:-none}')."
     fi
 
     run_as_admin apt update
