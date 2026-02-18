@@ -91,6 +91,8 @@ safe_source() {
         # Check if the requested module_path itself exists
         if [[ ! -f "$module_path" ]]; then
             download_missing_module "$module_path" "$github_subdir" || exit 1
+            # After download, the file should exist at module_path
+            actual_local_path="$module_path"
         else
             actual_local_path="$module_path"
         fi

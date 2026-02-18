@@ -16,16 +16,33 @@ install_docker_stack() {
   case "$pm" in
   apt)
     # Ubuntu/Debian Docker installation
+    [[ -f /etc/os-release ]] || die "/etc/os-release not found"
     source /etc/os-release
+
+    local docker_distro="$ID"
+    if [[ "$docker_distro" != "debian" ]] && [[ "$docker_distro" != "ubuntu" ]]; then
+      docker_distro=$(echo "${ID_LIKE:-$ID}" | awk '{print $1}')
+    fi
+
+    # For derivatives, try to find the upstream codename
+    local docker_codename="${VERSION_CODENAME:-stable}"
+    if [[ "$ID" != "$docker_distro" ]]; then
+      if [[ -n "${UBUNTU_CODENAME:-}" ]]; then
+        docker_codename="$UBUNTU_CODENAME"
+      elif [[ -n "${DEBIAN_CODENAME:-}" ]]; then
+        docker_codename="$DEBIAN_CODENAME"
+      fi
+    fi
+
     run_as_admin apt update
     run_as_admin apt install -y ca-certificates curl gnupg
     run_as_admin install -m 0755 -d /etc/apt/keyrings
 
-    curl -fsSL "https://download.docker.com/linux/${ID}/gpg" |
+    curl -fsSL "https://download.docker.com/linux/${docker_distro}/gpg" |
       run_as_admin gpg --dearmor -o /etc/apt/keyrings/docker.gpg
     run_as_admin chmod a+r /etc/apt/keyrings/docker.gpg
 
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/${ID} ${VERSION_CODENAME:-stable} stable" |
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/${docker_distro} ${docker_codename} stable" |
       run_as_admin tee /etc/apt/sources.list.d/docker.list >/dev/null
 
     run_as_admin apt update

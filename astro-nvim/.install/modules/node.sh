@@ -17,6 +17,11 @@ install_node_stack() {
       nvm_version=$(curl -fsSL https://api.github.com/repos/nvm-sh/nvm/releases/latest | grep '"tag_name"' | cut -d '"' -f 4)
     fi
 
+    # Validate nvm_version
+    if [[ -z "$nvm_version" ]] || [[ "$nvm_version" == "null" ]] || [[ ! "$nvm_version" =~ ^v ]]; then
+      die "Failed to retrieve a valid NVM version (got: '$nvm_version')"
+    fi
+
     run_as_user bash -c \
       "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/${nvm_version}/install.sh | bash" ||
       die "NVM installation failed"

@@ -12,7 +12,7 @@ install_python_stack() {
     info "Installing pyenv..."
     # Ensure dependencies for building python are met (handled by base.sh)
     
-    run_as_user bash -c "curl https://pyenv.run | bash" ||
+    run_as_user bash -c "curl -fsSL https://pyenv.run | bash" ||
       die "pyenv installation failed"
   else
     info "pyenv already installed"
@@ -46,7 +46,6 @@ configure_bash_pyenv() {
       echo 'export PYENV_ROOT="$HOME/.pyenv"'
       echo '[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"'
       echo 'eval "$(pyenv init -)"'
-      echo 'eval "$(pyenv init --path)"'
     } | run_as_user tee -a "$bashrc" >/dev/null
     info "pyenv configured in Bash"
   fi
@@ -59,6 +58,7 @@ configure_fish_pyenv() {
   local fish_config="${user_home}/.config/fish/config.fish"
 
   if ! grep -q "status is-interactive; and pyenv init" "$fish_config" 2>/dev/null; then
+    run_as_user mkdir -p "$(dirname "$fish_config")"
     {
       echo ""
       echo "# pyenv configuration"
