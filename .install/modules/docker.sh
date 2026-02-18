@@ -76,10 +76,27 @@ install_docker_stack() {
     run_as_admin systemctl enable --now docker
     ;;
   dnf)
-    # Fedora Docker installation
+    # Fedora/RHEL Docker installation
+    [[ -f /etc/os-release ]] || die "/etc/os-release not found"
+    source /etc/os-release
+
+    local repo_family="fedora"
+    if [[ "$ID" != "fedora" ]]; then
+      # Check for RHEL family
+      local is_rhel=false
+      for like in $ID $ID_LIKE; do
+        if [[ "$like" =~ ^(rhel|centos|fedora)$ ]]; then
+          [[ "$like" == "fedora" ]] || repo_family="rhel"
+          is_rhel=true
+          break
+        fi
+      done
+      [[ "$is_rhel" == "true" ]] || die "Docker installation (dnf) only supports Fedora or RHEL-based families. Detected ID: '$ID', ID_LIKE: '${ID_LIKE:-none}'."
+    fi
+
     if ! command_exists docker || [[ "${CONFIG[UPGRADE]}" == "true" ]]; then
       run_as_admin dnf -y install dnf-plugins-core
-      run_as_admin dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
+      run_as_admin dnf config-manager --add-repo "https://download.docker.com/linux/${repo_family}/docker-ce.repo"
     fi
     run_as_admin dnf -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
     run_as_admin systemctl start docker
