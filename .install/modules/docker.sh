@@ -58,7 +58,7 @@ install_docker_stack() {
       die "Could not determine a valid distribution codename for Docker repository (found: '${docker_codename:-none}')."
     fi
 
-    if ! command_exists docker; then
+    if ! command_exists docker || [[ "${CONFIG[UPGRADE]}" == "true" ]]; then
       run_as_admin apt update
       run_as_admin apt install -y ca-certificates curl gnupg
       run_as_admin install -m 0755 -d /etc/apt/keyrings
@@ -77,7 +77,7 @@ install_docker_stack() {
     ;;
   dnf)
     # Fedora Docker installation
-    if ! command_exists docker; then
+    if ! command_exists docker || [[ "${CONFIG[UPGRADE]}" == "true" ]]; then
       run_as_admin dnf -y install dnf-plugins-core
       run_as_admin dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
     fi
