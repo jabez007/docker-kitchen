@@ -44,12 +44,15 @@ install_editor_stack() {
 
     debug "LazyGit architecture: $lazygit_arch"
 
+    local os_name
+    os_name=$(uname -s | tr '[:upper:]' '[:lower:]')
+
     if command_exists jq; then
       lazygit_url=$(curl -s https://api.github.com/repos/jesseduffield/lazygit/releases/latest |
-        jq -r ".assets[] | select(.name | contains(\"$(uname -s)\") and contains(\"$lazygit_arch\") and endswith(\"tar.gz\")) | .browser_download_url" | head -n 1)
+        jq -r ".assets[] | select(.name | contains(\"$os_name\") and contains(\"$lazygit_arch\") and endswith(\"tar.gz\")) | .browser_download_url" | head -n 1)
     else
       lazygit_url=$(curl -s https://api.github.com/repos/jesseduffield/lazygit/releases/latest |
-        grep -i "browser_download_url.*lazygit.*$(uname -s).*${lazygit_arch}.*tar.gz" |
+        grep -i "browser_download_url.*lazygit.*$os_name.*${lazygit_arch}.*tar.gz" |
         cut -d : -f 2,3 | tr -d \" | tail -n 1)
     fi
     lazygit_url=$(trim "$lazygit_url")

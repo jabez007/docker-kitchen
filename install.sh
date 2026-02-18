@@ -89,7 +89,7 @@ safe_source() {
         actual_local_path="${SCRIPT_DIR}/${github_subdir}/${relative_path}"
     fi
 
-    echo "Sourcing module: ${actual_local_path} (requested: ${module_path})"
+    echo "Sourcing module: ${actual_local_path} (requested: ${module_path})" >&2
 
     if [[ ! -f "$actual_local_path" ]]; then
         # Check if the requested module_path itself exists (fallback for flattened structures like Docker)
@@ -101,7 +101,7 @@ safe_source() {
             # After download, the file should exist at module_path
             actual_local_path="$module_path"
         else
-            echo "Using fallback path: ${module_path}"
+            echo "Using fallback path: ${module_path}" >&2
             actual_local_path="$module_path"
         fi
     fi
@@ -113,7 +113,7 @@ safe_source() {
     fi
 }
 
-echo "Running on branch '$GITHUB_BRANCH'"
+echo "Running on branch '$GITHUB_BRANCH'" >&2
 
 # Load helper modules
 safe_source "${SCRIPT_DIR}/.install/lib/config.sh"
@@ -132,14 +132,14 @@ safe_source "${SCRIPT_DIR}/.install/modules/config.sh"
 safe_source "${SCRIPT_DIR}/.install/modules/shell.sh"
 safe_source "${SCRIPT_DIR}/.install/modules/docker.sh"
 
-echo "DEBUG: All modules sourced successfully"
+echo "DEBUG: All modules sourced successfully" >&2
 
 # ============================================================================
 # Main Function
 # ============================================================================
 
 main() {
-    echo "DEBUG: Entering main with arguments: $*"
+    echo "DEBUG: Entering main with arguments: $*" >&2
     local components
 
     # Load configuration
@@ -157,7 +157,7 @@ main() {
         echo "Error: parse_arguments failed" >&2
         exit 1
     fi
-    echo "DEBUG: parse_arguments returned: $parsed"
+    echo "DEBUG: parse_arguments returned: $parsed" >&2
 
     # Convert output into an array
     IFS=' ' read -r -a components <<<"$parsed"
