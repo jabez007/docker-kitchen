@@ -25,7 +25,12 @@ install_docker_stack() {
 
     local docker_distro="$ID"
     if [[ "$docker_distro" != "debian" ]] && [[ "$docker_distro" != "ubuntu" ]]; then
-      docker_distro=$(echo "${ID_LIKE:-$ID}" | awk '{print $1}')
+      for like in ${ID_LIKE:-}; do
+        if [[ "$like" == "debian" ]] || [[ "$like" == "ubuntu" ]]; then
+          docker_distro="$like"
+          break
+        fi
+      done
     fi
 
     if [[ "$docker_distro" != "debian" ]] && [[ "$docker_distro" != "ubuntu" ]]; then
