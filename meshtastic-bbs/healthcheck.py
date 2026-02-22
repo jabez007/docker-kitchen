@@ -108,17 +108,25 @@ print(f"Detected interface: {interface_type}")
 if interface_type == "tcp":
     print(f"Running TCP connection health check to {hostname}:{tcp_port}...")
     connection_ok = False
-    for attempt in range(3):
+    max_attempts = 3
+    for attempt in range(max_attempts):
         if check_meshtastic_connection(host=hostname, port=tcp_port):
             connection_ok = True
             print(f"Connection test attempt {attempt + 1}: PASS")
             break
         else:
             print(f"Connection test attempt {attempt + 1}: FAIL")
-            time.sleep(1)
+            if attempt < max_attempts - 1:
+                time.sleep(1)
     
     if not connection_ok:
         print("All connection attempts failed")
+        sys.exit(1)
+    
+    # Second gate: Ensure process is also healthy
+    print("Running process health check...")
+    if not check_process_health():
+        print("Process health check failed")
         sys.exit(1)
 else:
     print("Skipping TCP check for serial/unknown interface. Running process health check...")
