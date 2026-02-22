@@ -8,19 +8,21 @@ import configparser
 
 def get_config():
     """Read configuration from expected locations and return (config, path)"""
-    config = configparser.ConfigParser()
     config_paths = [
         "/home/mesh/bbs/config.ini",
         "/home/mesh/bbs/config/config.ini",
         "config.ini",
     ]
     for path in config_paths:
-        if os.path.exists(path):
-            try:
-                config.read(path)
-                return config, path
-            except (configparser.Error, OSError) as e:
+        config = configparser.ConfigParser()
+        try:
+            with open(path, "r") as fh:
+                config.read_file(fh)
+        except (FileNotFoundError, configparser.Error, OSError) as e:
+            if not isinstance(e, FileNotFoundError):
                 print(f"Error reading config at {path}: {e}")
+        else:
+            return config, path
     return None, None
 
 
@@ -46,7 +48,7 @@ def check_meshtastic_connection(host="localhost", port=4403):
             pass
             
         return True
-    except (OSError, socket.timeout) as e:
+    except OSError as e:
         print(f"Connection test to {host}:{port} failed: {e}")
         return False
     finally:
@@ -92,17 +94,23 @@ def check_process_health():
                 with open(os.path.join('/proc', pid, 'cmdline'), 'rb') as f:
                     cmdline = f.read().decode('utf-8', errors='ignore')
                     if 'server.py' in cmdline:
-                        print(f"Found server.py process at PID {pid}")
                         try:
                             # Test if process is responsive
                             os.kill(int(pid), 0)
+                            print(f"Found server.py process at PID {pid}")
                             print(f"Process {pid} is responsive (signal 0 passed)")
+                            found = True
+                            break
+                        except ProcessLookupError:
+                            print(f"PID {pid} exited before check")
+                            continue
                         except PermissionError:
                             # If we can't signal it but it exists, consider it found
+                            print(f"Found server.py process at PID {pid}")
                             print(f"Process {pid} exists but permission denied for signaling")
-                        found = True
-                        break
-            except (OSError, IOError):
+                            found = True
+                            break
+            except OSError:
                 continue
         
         if not found:
