@@ -25,11 +25,26 @@ def get_config():
 
 
 def check_meshtastic_connection(host="localhost", port=4403):
-    """Test if the meshtastic TCP API port is open and accepting connections"""
+    """Test if the meshtastic TCP API port is open and bidirectional"""
     s = None
     try:
-        # Use create_connection for better IPv4/IPv6 compatibility and built-in timeout
+        # 1. Test the Handshake
         s = socket.create_connection((host, port), timeout=3)
+        
+        # 2. Test the WRITE side to catch BrokenPipeError
+        # Sending a newline is safe; it's generally ignored by protobuf but forces a write
+        s.sendall(b"\n")
+        
+        # 3. Test the READ side to ensure the remote hasn't hung up
+        s.settimeout(1)
+        try:
+            # Peek to see if the connection is still alive (b"" means EOF/Closed)
+            if s.recv(1, socket.MSG_PEEK) == b"":
+                return False
+        except socket.timeout:
+            # Timeout is GOOD - it means the connection is open but quiet
+            pass
+            
         return True
     except (OSError, socket.timeout) as e:
         print(f"Connection test to {host}:{port} failed: {e}")
@@ -37,6 +52,21 @@ def check_meshtastic_connection(host="localhost", port=4403):
     finally:
         if s:
             s.close()
+
+def check_files():
+    """Verify essential application files exist"""
+    essential_files = [
+        "/home/mesh/bbs/config.ini",
+        "/home/mesh/bbs/bulletins.db"
+    ]
+    for f in essential_files:
+        if not os.path.exists(f):
+            print(f"Essential file missing: {f}")
+            return False
+        if not os.access(f, os.R_OK):
+            print(f"File not readable: {f}")
+            return False
+    return True
 
 
 def check_process_health():
@@ -90,6 +120,11 @@ if config_path:
     print(f"Using configuration from: {config_path}")
 else:
     print("No configuration file found, using defaults.")
+
+print("Running file health checks...")
+if not check_files():
+    print("File health checks failed")
+    sys.exit(1)
 
 interface_type = "serial"
 hostname = "localhost"
