@@ -18,9 +18,10 @@ def get_config():
         try:
             with open(path, "r") as fh:
                 config.read_file(fh)
-        except (FileNotFoundError, configparser.Error, OSError) as e:
-            if not isinstance(e, FileNotFoundError):
-                print(f"Error reading config at {path}: {e}")
+        except FileNotFoundError:
+            continue
+        except (configparser.Error, OSError) as e:
+            print(f"Error reading config at {path}: {e}")
         else:
             return config, path
     return None, None
@@ -47,10 +48,11 @@ def check_meshtastic_connection(host="localhost", port=4403):
             # Timeout is GOOD - it means the connection is open but quiet
             pass
             
-        return True
     except OSError as e:
         print(f"Connection test to {host}:{port} failed: {e}")
         return False
+    else:
+        return True
     finally:
         if s:
             s.close()
@@ -115,10 +117,11 @@ def check_process_health():
         
         if not found:
             print(f"server.py process not found after scanning {len(pids)} PIDs")
-        return found
     except OSError as e:
         print(f"Process check failed during /proc scan: {e}")
         return False
+    else:
+        return found
 
 
 # Run health checks
