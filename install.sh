@@ -58,7 +58,7 @@ download_missing_module() {
     if declare -f debug >/dev/null; then
         debug "Module not found locally: ${module_path}"
         debug "Attempting to download missing module: ${download_uri}"
-    elif [[ "${CONFIG[LOG_LEVEL]:-}" == "DEBUG" ]]; then
+    elif [[ "${LOG_LEVEL:-}" == "DEBUG" ]]; then
         echo "DEBUG: Module not found locally: ${module_path}" >&2
         echo "DEBUG: Attempting to download missing module: ${download_uri}" >&2
     fi
@@ -96,7 +96,7 @@ safe_source() {
 
     if declare -f debug >/dev/null; then
         debug "Sourcing module: ${actual_local_path} (requested: ${module_path})"
-    elif [[ "${CONFIG[LOG_LEVEL]:-}" == "DEBUG" ]]; then
+    elif [[ "${LOG_LEVEL:-}" == "DEBUG" ]]; then
         echo "DEBUG: Sourcing module: ${actual_local_path} (requested: ${module_path})" >&2
     fi
 
@@ -112,7 +112,7 @@ safe_source() {
         else
             if declare -f debug >/dev/null; then
                 debug "Using fallback path: ${module_path}"
-            elif [[ "${CONFIG[LOG_LEVEL]:-}" == "DEBUG" ]]; then
+            elif [[ "${LOG_LEVEL:-}" == "DEBUG" ]]; then
                 echo "DEBUG: Using fallback path: ${module_path}" >&2
             fi
             actual_local_path="$module_path"

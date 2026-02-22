@@ -12,11 +12,11 @@ log() {
   local message="$*"
   local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
 
-  local current="${CONFIG[LOG_LEVEL]:-INFO}"
+  local current="${CONFIG["LOG_LEVEL"]:-INFO}"
   # Basic priority map
   local -A prio=([ERROR]=0 [WARN]=1 [INFO]=2 [DEBUG]=3)
   
-  if (( prio[${level:-INFO}] > prio[${current:-INFO}] )); then
+  if (( prio["${level:-INFO}"] > prio["${current:-INFO}"] )); then
     return
   fi
 

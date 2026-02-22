@@ -17,8 +17,8 @@ OPTIONS:
     --system-wide, -s        Install system-wide where applicable
     --upgrade, -u            Upgrade already installed components
     --keep-git               Keep .git directories in cloned configs
-    --tmux-session NAME      Tmux session name (default: ${CONFIG[TMUX_SESSION]})
-    --starship-preset NAME   Starship preset (default: ${CONFIG[STARSHIP_PRESET]})
+    --tmux-session NAME      Tmux session name (default: ${CONFIG["TMUX_SESSION"]})
+    --starship-preset NAME   Starship preset (default: ${CONFIG["STARSHIP_PRESET"]})
     --astronvim-repo URL     AstroNvim config repository
     --save-config            Save current configuration
     --help, -h               Show this help message
