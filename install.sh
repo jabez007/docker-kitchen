@@ -164,21 +164,12 @@ main() {
     detect_environment
     info "System: $(detect_system), Package Manager: $(get_package_manager)"
 
-    # Run directly in main shell to allow proper exiting
-    local parsed
-    if ! parsed="$(parse_arguments "$@")"; then
-        echo "Error: parse_arguments failed" >&2
-        exit 1
-    fi
-    debug "parse_arguments returned: $parsed"
-
-    # Convert output into an array
-    IFS=' ' read -r -a components <<<"$parsed"
-
-    info "Components to install: ${components[*]}"
+    # Run directly in main shell to allow proper exiting and persist CONFIG changes
+    parse_arguments "$@"
+    debug "parse_arguments returned: ${SELECTED_COMPONENTS[*]}"
 
     # Process each component
-    for component in "${components[@]}"; do
+    for component in "${SELECTED_COMPONENTS[@]}"; do
         if [[ -n "${COMPONENTS[$component]:-}" ]]; then
             info "Installing component: $component"
             ${COMPONENTS[$component]} || die "Failed to install component: $component"

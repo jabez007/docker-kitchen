@@ -43,40 +43,40 @@ EOF
 # Parse command line arguments
 parse_arguments() {
   debug "parse_arguments called with: $*"
-  local components=()
+  SELECTED_COMPONENTS=()
 
   while [[ $# -gt 0 ]]; do
     debug "Processing argument: $1"
     case "$1" in
     --debug | -d)
-      CONFIG[LOG_LEVEL]=DEBUG
+      CONFIG["LOG_LEVEL"]=DEBUG
       shift
       ;;
     --system-wide | -s)
-      CONFIG[SYSTEM_WIDE]=true
+      CONFIG["SYSTEM_WIDE"]=true
       shift
       ;;
     --upgrade | -u)
-      CONFIG[UPGRADE]=true
+      CONFIG["UPGRADE"]=true
       shift
       ;;
     --keep-git)
-      CONFIG[KEEP_GIT]=true
+      CONFIG["KEEP_GIT"]=true
       shift
       ;;
     --tmux-session)
       [[ $# -ge 2 ]] || die "--tmux-session requires a session name argument"
-      CONFIG[TMUX_SESSION]="$2"
+      CONFIG["TMUX_SESSION"]="$2"
       shift 2
       ;;
     --starship-preset)
       [[ $# -ge 2 ]] || die "--starship-preset requires a preset name argument"
-      CONFIG[STARSHIP_PRESET]="$2"
+      CONFIG["STARSHIP_PRESET"]="$2"
       shift 2
       ;;
     --astronvim-repo)
       [[ $# -ge 2 ]] || die "--astronvim-repo requires a git URL argument"
-      CONFIG[ASTRONVIM_REPO]="$2"
+      CONFIG["ASTRONVIM_REPO"]="$2"
       shift 2
       ;;
     --save-config)
@@ -89,13 +89,13 @@ parse_arguments() {
       ;;
     all)
       # Predefined order for 'all' to ensure base is first and config is last
-      components=(base go node python editor shell docker config)
+      SELECTED_COMPONENTS=(base go node python editor shell docker config)
       shift
       ;;
     *)
       # Check if it's a valid component
       if [[ -v COMPONENTS["$1"] ]]; then
-        components+=("$1")
+        SELECTED_COMPONENTS+=("$1")
         shift
       else
         die "Unknown option: $1\nUse --help for usage information."
@@ -105,11 +105,8 @@ parse_arguments() {
   done
 
   # If no components specified, show usage
-  if [[ ${#components[@]} -eq 0 ]]; then
+  if [[ ${#SELECTED_COMPONENTS[@]} -eq 0 ]]; then
     show_usage
     exit 1
   fi
-
-  # Return the components list
-  echo "${components[@]}"
 }
