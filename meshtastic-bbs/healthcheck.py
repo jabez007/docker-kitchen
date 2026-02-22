@@ -19,7 +19,7 @@ def get_config():
             try:
                 config.read(path)
                 return config, path
-            except Exception as e:
+            except (configparser.Error, OSError) as e:
                 print(f"Error reading config at {path}: {e}")
     return None, None
 
@@ -53,13 +53,15 @@ def check_meshtastic_connection(host="localhost", port=4403):
         if s:
             s.close()
 
-def check_files():
+def check_files(config_path):
     """Verify essential application files exist"""
     essential_files = [
-        "/home/mesh/bbs/config.ini",
+        config_path,
         "/home/mesh/bbs/bulletins.db"
     ]
     for f in essential_files:
+        if not f:
+            continue
         if not os.path.exists(f):
             print(f"Essential file missing: {f}")
             return False
@@ -98,7 +100,6 @@ def check_process_health():
                         except PermissionError:
                             # If we can't signal it but it exists, consider it found
                             print(f"Process {pid} exists but permission denied for signaling")
-                            pass
                         found = True
                         break
             except (OSError, IOError):
@@ -106,23 +107,22 @@ def check_process_health():
         
         if not found:
             print(f"server.py process not found after scanning {len(pids)} PIDs")
-            return False
+        return found
     except OSError as e:
         print(f"Process check failed during /proc scan: {e}")
         return False
-    else:
-        return True
 
 
 # Run health checks
 config, config_path = get_config()
-if config_path:
-    print(f"Using configuration from: {config_path}")
-else:
-    print("No configuration file found, using defaults.")
+if not config_path:
+    print("Error: No configuration file (config.ini) found in expected locations.")
+    sys.exit(1)
+
+print(f"Using configuration from: {config_path}")
 
 print("Running file health checks...")
-if not check_files():
+if not check_files(config_path):
     print("File health checks failed")
     sys.exit(1)
 
