@@ -12,10 +12,13 @@ log() {
   local message="$*"
   local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
 
-  local current="${CONFIG[LOG_LEVEL]:-INFO}"
+  local current="${CONFIG["LOG_LEVEL"]:-INFO}"
   # Basic priority map
   local -A prio=([ERROR]=0 [WARN]=1 [INFO]=2 [DEBUG]=3)
-  ((${prio[$level]} > ${prio[$current]})) && return
+  
+  if (( prio["${level:-INFO}"] > prio["${current:-INFO}"] )); then
+    return
+  fi
 
   case "$level" in
   ERROR) echo -e "\033[31m[ERROR]\033[0m $message" >&2 ;;
@@ -39,6 +42,7 @@ debug() { log DEBUG "$@"; }
 # Exit with error
 die() {
   error "$@"
+  echo "CRITICAL ERROR: $*" >&2
   exit 1
 }
 
@@ -144,6 +148,18 @@ update_path() {
       info "Updated PATH in $shell_config"
     fi
   done
+
+  # Fish shell specific PATH update
+  if command_exists fish; then
+    local escaped_path
+    escaped_path=$(printf '%q' "$path_entry")
+    if [[ "${CONFIG[SYSTEM_WIDE]}" == "true" ]]; then
+      run_as_admin fish -c "fish_add_path -m $escaped_path" 2>/dev/null || true
+    else
+      run_as_user fish -c "fish_add_path -m $escaped_path" 2>/dev/null || true
+    fi
+    info "Updated PATH for Fish shell"
+  fi
 }
 
 # ============================================================================

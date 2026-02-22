@@ -37,20 +37,30 @@ jobs:
           cp "./install.sh" "./astro-nvim/"
           
           if [[ -d ./.install ]]; then
-            echo "Copying .install directory to Docker context..."
-            cp -r "./.install" "./astro-nvim/" || {
-              echo "Failed to copy .install directory" >&2
+            echo "Merging .install directory to Docker context..."
+            # Ensure the target directory exists
+            mkdir -p "./astro-nvim/.install"
+            # Copy contents of root .install into astro-nvim/.install, merging them
+            cp -a ./.install/. ./astro-nvim/.install/ || {
+              echo "Failed to merge .install directory" >&2
               exit 1
             }
           else
             echo "Warning: .install directory not found in repository root"
           fi
 
+      - name: List Docker context for debugging
+        run: |
+          echo "Listing contents of ./astro-nvim/.install:"
+          ls -R ./astro-nvim/.install
+
       - uses: jabez007/docker-kitchen/.github/shared/docker@master
         with:
           context: ./astro-nvim
           image-name: ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}
           tag: latest
+          build-args: |
+            GITHUB_BRANCH=${{ github.head_ref || github.ref_name }}
           debug: ${{ vars.pipeline_debug }}
 
   test:

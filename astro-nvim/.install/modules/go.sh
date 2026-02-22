@@ -2,7 +2,7 @@
 # modules/go.sh - Go programming language installation
 
 install_go() {
-  if command_exists go; then
+  if command_exists go && [[ "${CONFIG[UPGRADE]}" != "true" ]]; then
     info "Go is already installed, skipping..."
     return 0
   fi

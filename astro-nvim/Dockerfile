@@ -19,6 +19,10 @@ RUN mkdir -p /opt/dev-setup
 COPY install.sh wrapper.sh setup.conf /opt/dev-setup/
 COPY .install /opt/dev-setup/.install
 
+# Set GitHub branch for script downloads if needed
+ARG GITHUB_BRANCH=master
+ENV GITHUB_BRANCH=${GITHUB_BRANCH}
+
 # Make scripts executable
 RUN chmod +x /opt/dev-setup/install.sh && \
   chmod +x /opt/dev-setup/wrapper.sh

@@ -192,6 +192,7 @@ EOF
 # ============================================================================
 
 main() {
+    echo "DEBUG: wrapper.sh main called with arguments: $*" >&2
     # Check if main setup script exists
     check_setup_script
 
@@ -251,6 +252,7 @@ main() {
     base | go | node | editor | config | shell | docker | all)
         # Direct component installation
         log_info "Installing components directly: $*"
+        echo "DEBUG: Calling $SETUP_SCRIPT with $*" >&2
         "$SETUP_SCRIPT" "$@"
         ;;
     *)

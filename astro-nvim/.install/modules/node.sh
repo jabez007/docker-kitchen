@@ -11,8 +11,16 @@ install_node_stack() {
   if [[ ! -s "$user_home/.nvm/nvm.sh" ]]; then
     info "Installing NVM..."
     local nvm_version
-    nvm_version=$(curl -fsSL https://api.github.com/repos/nvm-sh/nvm/releases/latest |
-      grep '"tag_name"' | cut -d '"' -f 4)
+    if command_exists jq; then
+      nvm_version=$(curl -fsSL https://api.github.com/repos/nvm-sh/nvm/releases/latest | jq -r .tag_name)
+    else
+      nvm_version=$(curl -fsSL https://api.github.com/repos/nvm-sh/nvm/releases/latest | grep '"tag_name"' | cut -d '"' -f 4)
+    fi
+
+    # Validate nvm_version
+    if [[ -z "$nvm_version" ]] || [[ "$nvm_version" == "null" ]] || [[ ! "$nvm_version" =~ ^v ]]; then
+      die "Failed to retrieve a valid NVM version (got: '$nvm_version')"
+    fi
 
     run_as_user bash -c \
       "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/${nvm_version}/install.sh | bash" ||
@@ -67,15 +75,14 @@ configure_fish_nvm() {
   user_home=$(get_user_home)
 
   # Install Fisher if not present
-  local fisher_path="$user_home/.config/fish/functions/fisher.fish"
-  if [[ ! -f "$fisher_path" ]]; then
-    run_as_user bash -c \
-      "curl -sL https://git.io/fisher --create-dirs -o \"$fisher_path\"" ||
+  if ! run_as_user fish -c "functions -q fisher" 2>/dev/null; then
+    info "Installing Fisher..."
+    run_as_user fish -c "curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher install jorgebucaran/fisher" ||
       die "Fisher installation failed – aborting Fish/NVM configuration"
   fi
 
   # Install Bass plugin for NVM
-  if command_exists fish && [[ -f "$fisher_path" ]]; then
+  if command_exists fish; then
     run_as_user fish -c 'fisher install edc/bass' 2>/dev/null ||
       warn "Failed to install Bass plugin"
 

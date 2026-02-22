@@ -41,14 +41,22 @@ jobs:
           cp "./install.sh" "./astro-nvim/"
 
           if [[ -d ./.install ]]; then
-            echo "Copying .install directory to Docker context..."
-            cp -r "./.install" "./astro-nvim/" || {
-              echo "Failed to copy .install directory" >&2
+            echo "Merging .install directory to Docker context..."
+            # Ensure the target directory exists
+            mkdir -p "./astro-nvim/.install"
+            # Copy contents of root .install into astro-nvim/.install, merging them
+            cp -a ./.install/. ./astro-nvim/.install/ || {
+              echo "Failed to merge .install directory" >&2
               exit 1
             }
           else
             echo "Warning: .install directory not found in repository root"
           fi
+
+      - name: List Docker context for debugging
+        run: |
+          echo "Listing contents of ./astro-nvim/.install:"
+          ls -R ./astro-nvim/.install
 
       - name: Build and push to DockerHub
         uses: jabez007/docker-kitchen/.github/shared/docker@master
@@ -58,6 +66,8 @@ jobs:
           description: A portable installation of AstroNvim configured with a few community language packs
           tag: latest
           platforms: linux/amd64,linux/arm64
+          build-args: |
+            GITHUB_BRANCH=${{ github.head_ref || github.ref_name }}
           push: true
           debug: ${{ vars.pipeline_debug }}
         env:
@@ -88,14 +98,22 @@ jobs:
           cp "./install.sh" "./astro-nvim/"
 
           if [[ -d ./.install ]]; then
-            echo "Copying .install directory to Docker context..."
-            cp -r "./.install" "./astro-nvim/" || {
-              echo "Failed to copy .install directory" >&2
+            echo "Merging .install directory to Docker context..."
+            # Ensure the target directory exists
+            mkdir -p "./astro-nvim/.install"
+            # Copy contents of root .install into astro-nvim/.install, merging them
+            cp -a ./.install/. ./astro-nvim/.install/ || {
+              echo "Failed to merge .install directory" >&2
               exit 1
             }
           else
             echo "Warning: .install directory not found in repository root"
           fi
+
+      - name: List Docker context for debugging
+        run: |
+          echo "Listing contents of ./astro-nvim/.install:"
+          ls -R ./astro-nvim/.install
 
       - name: Build and push to GHCR
         uses: jabez007/docker-kitchen/.github/shared/ghcr@master
@@ -105,6 +123,8 @@ jobs:
           description: A portable installation of AstroNvim configured with a few community language packs
           tag: latest
           platforms: linux/amd64,linux/arm64
+          build-args: |
+            GITHUB_BRANCH=${{ github.head_ref || github.ref_name }}
           push: true
           debug: ${{ vars.pipeline_debug }}
         env:

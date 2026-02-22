@@ -18,10 +18,22 @@ declare -A COMPONENTS=(
     [base]="install_base_dependencies"
     [go]="install_go"
     [node]="install_node_stack"
+    [python]="install_python_stack"
     [editor]="install_editor_stack"
     [config]="install_user_configs"
     [shell]="install_shell_stack"
     [docker]="install_docker_stack"
+)
+
+declare -A COMPONENT_DESC=(
+    [base]="Base dependencies (curl, git, build tools, etc.)"
+    [go]="Go programming language and toolchain"
+    [node]="Node.js stack (NVM, Node.js, Deno)"
+    [python]="Python stack (pyenv and interpreters)"
+    [editor]="Editor stack (Neovim, LazyGit, Bottom)"
+    [config]="User configurations (Git, AstroNvim config)"
+    [shell]="Shell stack (Fish, Tmux, Starship)"
+    [docker]="Docker and Docker Compose stack"
 )
 
 readonly GITHUB_BRANCH="${GITHUB_BRANCH:-master}"
@@ -43,7 +55,13 @@ download_missing_module() {
         local download_uri="${relative_path}"
     fi
 
-    echo "Downloading missing module: ${download_uri}"
+    if declare -f debug >/dev/null; then
+        debug "Module not found locally: ${module_path}"
+        debug "Attempting to download missing module: ${download_uri}"
+    elif [[ "${LOG_LEVEL:-}" == "DEBUG" ]]; then
+        echo "DEBUG: Module not found locally: ${module_path}" >&2
+        echo "DEBUG: Attempting to download missing module: ${download_uri}" >&2
+    fi
     mkdir -p "$(dirname "$module_path")"
 
     local download_url="${GITHUB_BASE_URL}/${download_uri}"
@@ -59,7 +77,8 @@ download_missing_module() {
             return 1
         }
     else
-        echo "Error: Neither curl nor wget is available to download missing modules" >&2
+        echo "Error: Neither curl nor wget is available to download missing module: ${download_uri}" >&2
+        echo "Check if the file exists at: ${module_path}" >&2
         return 1
     fi
 }
@@ -68,14 +87,46 @@ safe_source() {
     local module_path="$1"
     local github_subdir="${2:-}" # Optional subdirectory parameter
 
-    if [[ ! -f "$module_path" ]]; then
-        download_missing_module "$module_path" "$github_subdir" || exit 1
+    # If github_subdir is specified, the actual local path might be different
+    local actual_local_path="$module_path"
+    if [[ -n "$github_subdir" ]]; then
+        local relative_path="${module_path#"$SCRIPT_DIR"/}"
+        actual_local_path="${SCRIPT_DIR}/${github_subdir}/${relative_path}"
     fi
 
-    source "$module_path"
+    if declare -f debug >/dev/null; then
+        debug "Sourcing module: ${actual_local_path} (requested: ${module_path})"
+    elif [[ "${LOG_LEVEL:-}" == "DEBUG" ]]; then
+        echo "DEBUG: Sourcing module: ${actual_local_path} (requested: ${module_path})" >&2
+    fi
+
+    if [[ ! -f "$actual_local_path" ]]; then
+        # Check if the requested module_path itself exists (fallback for flattened structures like Docker)
+        if [[ ! -f "$module_path" ]]; then
+            download_missing_module "$module_path" "$github_subdir" || {
+                echo "Critical Error: Failed to source module ${module_path}" >&2
+                exit 1
+            }
+            # After download, the file should exist at module_path
+            actual_local_path="$module_path"
+        else
+            if declare -f debug >/dev/null; then
+                debug "Using fallback path: ${module_path}"
+            elif [[ "${LOG_LEVEL:-}" == "DEBUG" ]]; then
+                echo "DEBUG: Using fallback path: ${module_path}" >&2
+            fi
+            actual_local_path="$module_path"
+        fi
+    fi
+
+    # shellcheck source=/dev/null
+    if ! source "$actual_local_path"; then
+        echo "Error: Failed to source ${actual_local_path}" >&2
+        exit 1
+    fi
 }
 
-echo "Running on branch '$GITHUB_BRANCH'"
+[[ "${LOG_LEVEL:-}" == "DEBUG" ]] && echo "DEBUG: Running on branch '$GITHUB_BRANCH'" >&2
 
 # Load helper modules
 safe_source "${SCRIPT_DIR}/.install/lib/config.sh"
@@ -88,17 +139,21 @@ safe_source "${SCRIPT_DIR}/.install/lib/cli.sh"
 safe_source "${SCRIPT_DIR}/.install/modules/base.sh"
 safe_source "${SCRIPT_DIR}/.install/modules/go.sh" "astro-nvim"
 safe_source "${SCRIPT_DIR}/.install/modules/node.sh" "astro-nvim"
+safe_source "${SCRIPT_DIR}/.install/modules/python.sh" "astro-nvim"
 safe_source "${SCRIPT_DIR}/.install/modules/editor.sh" "astro-nvim"
 safe_source "${SCRIPT_DIR}/.install/modules/config.sh"
 safe_source "${SCRIPT_DIR}/.install/modules/shell.sh"
 safe_source "${SCRIPT_DIR}/.install/modules/docker.sh"
+
+debug "All modules sourced successfully"
 
 # ============================================================================
 # Main Function
 # ============================================================================
 
 main() {
-    local components
+    debug "Entering main with arguments: $*"
+    local components=()
 
     # Load configuration
     load_config
@@ -109,17 +164,12 @@ main() {
     detect_environment
     info "System: $(detect_system), Package Manager: $(get_package_manager)"
 
-    # Run directly in main shell to allow proper exiting
-    local parsed
-    parsed="$(parse_arguments "$@")" || exit $?
-
-    # Convert output into an array
-    IFS=' ' read -r -a components <<<"$parsed"
-
-    info "Components to install: ${components[*]}"
+    # Run directly in main shell to allow proper exiting and persist CONFIG changes
+    parse_arguments "$@"
+    debug "parse_arguments returned: ${SELECTED_COMPONENTS[*]}"
 
     # Process each component
-    for component in "${components[@]}"; do
+    for component in "${SELECTED_COMPONENTS[@]}"; do
         if [[ -n "${COMPONENTS[$component]:-}" ]]; then
             info "Installing component: $component"
             ${COMPONENTS[$component]} || die "Failed to install component: $component"

@@ -8,7 +8,7 @@ install_shell_stack() {
   install_packages fish tmux
 
   # Install Starship
-  if ! command_exists starship; then
+  if ! command_exists starship || [[ "${CONFIG[UPGRADE]}" == "true" ]]; then
     info "Installing Starship..."
     curl -fsSL https://starship.rs/install.sh | sh -s -- -y ||
       die "Failed to install Starship"
@@ -99,17 +99,19 @@ configure_starship() {
   # Add to Fish config
   local fish_config="${user_home}/.config/fish/config.fish"
   if ! grep -q 'starship init fish' "$fish_config" 2>/dev/null; then
-    run_as_user bash -c 'echo "starship init fish | source" >>"'"$fish_config"'"'
+    echo "starship init fish | source" | run_as_user tee -a "$fish_config" >/dev/null
+    info "Starship initialized in Fish config"
   fi
 
   # Add to bashrc
   local bashrc="${user_home}/.bashrc"
   if ! grep -q 'starship init bash' "$bashrc" 2>/dev/null; then
-    run_as_user tee -a "$bashrc" >/dev/null <<'EOF'
-
-# Initialize Starship for Bash
-eval "$(starship init bash)"
-EOF
+    {
+      echo ""
+      echo "# Initialize Starship for Bash"
+      echo 'eval "$(starship init bash)"'
+    } | run_as_user tee -a "$bashrc" >/dev/null
+    info "Starship initialized in Bash config"
   fi
 }
 
@@ -122,16 +124,16 @@ configure_bash_integration() {
   local bashrc="${user_home}/.bashrc"
 
   if ! grep -q "exec fish" "$bashrc" 2>/dev/null; then
-    run_as_user tee -a "$bashrc" >/dev/null <<'EOF'
-
-# Launch fish shell automatically unless bash was started from fish
-if command -v fish &> /dev/null && [[ $- == *i* ]]; then
-    parent_process=$(ps -o comm= -p $(ps -o ppid= -p $$))
-    if [[ "$parent_process" != "fish" ]]; then
-        exec fish
-    fi
-fi
-EOF
+    {
+      echo ""
+      echo "# Launch fish shell automatically unless bash was started from fish"
+      echo 'if command -v fish &> /dev/null && [[ $- == *i* ]]; then'
+      echo '    parent_process=$(ps -o comm= -p $(ps -o ppid= -p $$))'
+      echo '    if [[ "$parent_process" != "fish" ]]; then'
+      echo '        exec fish'
+      echo '    fi'
+      echo 'fi'
+    } | run_as_user tee -a "$bashrc" >/dev/null
     info "Bash configured to launch Fish automatically"
   fi
 }

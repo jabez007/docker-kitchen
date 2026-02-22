@@ -11,10 +11,12 @@ declare -g -A CONFIG=(
   [STARSHIP_PRESET]="gruvbox-rainbow"
   [ASTRONVIM_REPO]="https://github.com/jabez007/AstroNvim-config.git"
   [LOG_LEVEL]="INFO"
+  [UPGRADE]=false
 )
 
 # Load configuration from file
 load_config() {
+  debug "Checking for config file at $CONFIG_FILE"
   if [[ -f "$CONFIG_FILE" ]]; then
     debug "Loading configuration from $CONFIG_FILE"
     # shellcheck source=./setup.conf
@@ -22,8 +24,11 @@ load_config() {
 
     # sync scalar vars -> associative array
     for k in SYSTEM_WIDE KEEP_GIT TMUX_SESSION \
-      STARSHIP_PRESET ASTRONVIM_REPO LOG_LEVEL; do
-      [[ -v $k ]] && CONFIG[$k]="${!k}"
+      STARSHIP_PRESET ASTRONVIM_REPO LOG_LEVEL UPGRADE; do
+      if [[ -v $k ]]; then
+        debug "Syncing $k=${!k} to CONFIG[$k]"
+        CONFIG[$k]="${!k}"
+      fi
     done
   fi
 }
@@ -35,11 +40,12 @@ save_config() {
 # Development Environment Setup Configuration
 # Generated on $(date)
 
-SYSTEM_WIDE=${CONFIG[SYSTEM_WIDE]}
-KEEP_GIT=${CONFIG[KEEP_GIT]}
-TMUX_SESSION="${CONFIG[TMUX_SESSION]}"
-STARSHIP_PRESET="${CONFIG[STARSHIP_PRESET]}"
-ASTRONVIM_REPO="${CONFIG[ASTRONVIM_REPO]}"
-LOG_LEVEL="${CONFIG[LOG_LEVEL]}"
+SYSTEM_WIDE=${CONFIG["SYSTEM_WIDE"]}
+UPGRADE=${CONFIG["UPGRADE"]}
+KEEP_GIT=${CONFIG["KEEP_GIT"]}
+TMUX_SESSION="${CONFIG["TMUX_SESSION"]}"
+STARSHIP_PRESET="${CONFIG["STARSHIP_PRESET"]}"
+ASTRONVIM_REPO="${CONFIG["ASTRONVIM_REPO"]}"
+LOG_LEVEL="${CONFIG["LOG_LEVEL"]}"
 EOF
 }
