@@ -19,6 +19,7 @@ and service files for managing the dockerized BBS with `systemd`.
 - A Raspberry Pi with a LoRa hat.
   - [MeshAdv Pi Hat](https://www.etsy.com/listing/1849074257/meshadv-pi-hat-v11-fully-assembled-1)
 - Raspberry Pi OS (any version based on Debian Bookworm).
+- Docker and Docker Compose installed.
 - Internet access for downloading dependencies.
 
 ## Installation
@@ -55,7 +56,7 @@ and service files for managing the dockerized BBS with `systemd`.
 
    ```bash
    mkdir -p /etc/TC2-BBS-mesh/config
-   chown $USER:$USER /etc/TC2-BBS-mesh/config
+   sudo chown -R 1000:1000 /etc/TC2-BBS-mesh/config
    cp ./bbs_config.ini /etc/TC2-BBS-mesh/config/config.ini
    cp ./fortunes.txt /etc/TC2-BBS-mesh/config/fortunes.txt
    ```
@@ -140,7 +141,7 @@ The Docker container includes a built-in healthcheck that runs every 20 seconds 
 
 ### systemd Health Monitoring
 
-A systemd timer (`mesh-bbs-healthcheck.timer`) runs every 15 seconds to:
+A systemd timer (`mesh-bbs-healthcheck.timer`) runs every 15 seconds (with a 2-minute delay after boot) to:
 
 - Monitor the Docker container's health status
 - Automatically restart the service if the container becomes unhealthy
