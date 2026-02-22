@@ -81,7 +81,7 @@ def check_process_health():
         if not found:
             print("server.py process not found")
             return False
-    except (ProcessLookupError, PermissionError, OSError) as e:
+    except OSError as e:
         print(f"Process check failed: {e}")
         return False
     else:
