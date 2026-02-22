@@ -16,10 +16,9 @@ declare -g -A CONFIG=(
 
 # Load configuration from file
 load_config() {
-  echo "DEBUG: Checking for config file at $CONFIG_FILE" >&2
+  debug "Checking for config file at $CONFIG_FILE"
   if [[ -f "$CONFIG_FILE" ]]; then
     debug "Loading configuration from $CONFIG_FILE"
-    echo "DEBUG: Loading configuration from $CONFIG_FILE" >&2
     # shellcheck source=./setup.conf
     source "$CONFIG_FILE"
 
@@ -27,7 +26,7 @@ load_config() {
     for k in SYSTEM_WIDE KEEP_GIT TMUX_SESSION \
       STARSHIP_PRESET ASTRONVIM_REPO LOG_LEVEL UPGRADE; do
       if [[ -v $k ]]; then
-        echo "DEBUG: Syncing $k=${!k} to CONFIG[$k]" >&2
+        debug "Syncing $k=${!k} to CONFIG[$k]"
         CONFIG[$k]="${!k}"
       fi
     done
