@@ -7,7 +7,7 @@ RUN apt-get update && \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Clone the repository
-RUN git clone --depth 1 --branch v1.0.3 https://github.com/jabez007/TC2-BBS-mesh.git
+RUN git clone --depth 1 --branch v1.0.4 https://github.com/jabez007/TC2-BBS-mesh.git
 
 ####
 
