@@ -85,6 +85,23 @@ trap cleanup SIGTERM SIGINT
 main() {
   print_status "Starting Neovim container..."
 
+  # Maintenance commands run on their own, before any automatic setup
+  case "${1:-}" in
+  setup)
+    print_status "Force setup requested..."
+    first_time_setup
+    exit 0
+    ;;
+  clean)
+    print_status "Cleaning Neovim data..."
+    rm -rf "$HOME/.local/share/nvim/lazy" \
+      "$HOME/.local/state/nvim" \
+      "$HOME/.cache/nvim"
+    print_success "Cleanup completed"
+    exit 0
+    ;;
+  esac
+
   # Check if this is the first run (no plugins installed)
   if ! check_plugins; then
     # Only run setup if we're not just executing a command
@@ -106,19 +123,6 @@ main() {
     # Start shell instead of nvim
     print_status "Starting shell..."
     exec "$@"
-  elif [ "$1" = "setup" ]; then
-    # Force setup
-    print_status "Force setup requested..."
-    first_time_setup
-    exit 0
-  elif [ "$1" = "clean" ]; then
-    # Clean plugins and cache
-    print_status "Cleaning Neovim data..."
-    rm -rf "$HOME/.local/share/nvim/lazy" \
-      "$HOME/.local/state/nvim" \
-      "$HOME/.cache/nvim"
-    print_success "Cleanup completed"
-    exit 0
   else
     # Pass all arguments to nvim
     print_status "Starting Neovim with arguments: $*"
