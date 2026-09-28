@@ -34,10 +34,10 @@ The following tools and packages are installed:
 
 The Dockerfile includes the following build arguments:
 
-| Argument     | Description                                         | Default Value |
-| ------------ | --------------------------------------------------- | ------------- |
-| DEVUSER_NAME | Username for the non-root user inside the container | dev           |
-| TARGETARCH   | Architecture of the Docker image (amd64 or arm64)   | Auto-detected |
+| Argument      | Description                                             | Default Value |
+| ------------- | ------------------------------------------------------- | ------------- |
+| DEVUSER_NAME  | Username for the non-root user inside the container     | dev           |
+| GITHUB_BRANCH | Branch install.sh downloads from if a module is missing | master        |
 
 These arguments can be passed during the build process using the --build-arg flag.
 
@@ -90,9 +90,10 @@ docker-compose exec nvim-dev nvim
 
 ### Option 2: Direct Docker Usage
 
-Build the image:
+Build the image. The Dockerfile runs the repo's `install.sh`, so copy it and `.install/` into this directory first (CI does the same):
 
 ```bash
+cp -r ../install.sh ../.install .
 docker build -t astronvim-env .
 ```
 
@@ -234,15 +235,13 @@ docker run --rm -it astronvim-env setup
 
 ## Local Installation (Alternative)
 
-If you wish to install this on your local machine rather than run it as a Docker container, you can use the bash scripts:
+To set up the same tools on your own machine instead of in a container, use the repo's `install.sh`. It installs the same components this image uses:
 
 ```bash
-# System-wide installation (requires sudo)
-curl -fsSL https://raw.githubusercontent.com/jabez007/docker-kitchen/master/astro-nvim/install.sh | sudo bash
-
-# User-level configuration
-curl -fsSL https://raw.githubusercontent.com/jabez007/docker-kitchen/master/astro-nvim/setup.sh | bash
+curl -fsSL https://raw.githubusercontent.com/jabez007/docker-kitchen/master/install.sh | bash -s -- base go node editor config
 ```
+
+See the [root README](../README.md) for all components and options.
 
 ## Contributing
 

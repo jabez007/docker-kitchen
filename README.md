@@ -15,8 +15,9 @@ This repo also includes a comprehensive setup script for building and configurin
 
 ### Modular Installation Script
 
-The install.sh script is a powerful, modular tool that can set up complete development environments or install specific components as needed.
-It automatically detects your system (regular Linux, Docker container, or root environment) and adapts accordingly.
+`install.sh` sets up a development environment one component at a time.
+It picks the package manager it finds, uses `sudo` only when it isn't already root, and writes user configs to the invoking user's home even under `sudo`.
+When piped from `curl`, it downloads the modules it needs from this repo into a temp directory.
 
 #### Quick Start
 
@@ -36,13 +37,16 @@ curl -fsSL https://raw.githubusercontent.com/jabez007/docker-kitchen/master/inst
 | Component | Description |
 |-----------|-------------|
 | `base` | Base dependencies (curl, git, build tools, ripgrep, etc.) |
+| `shell` | Shell stack (Fish shell, Tmux, Starship prompt) |
 | `go` | Go programming language (latest version) |
 | `node` | Node.js stack (NVM, Node.js LTS, Deno) |
+| `python` | pyenv plus the headers needed to build Python |
 | `editor` | Editor stack (Neovim, LazyGit, Bottom system monitor) |
-| `config` | User configurations (AstroNvim configuration) |
-| `shell` | Shell stack (Fish shell, Tmux, Starship prompt) |
 | `docker` | Docker and Docker Compose |
+| `config` | User configurations (Git settings, AstroNvim configuration) |
 | `all` | Install all components |
+
+Components always run in the order above, whatever order you list them in, so `config` sees the Neovim that `editor` installed.
 
 #### Usage Examples
 
@@ -93,25 +97,33 @@ curl -fsSL https://raw.githubusercontent.com/jabez007/docker-kitchen/master/inst
 
 # Use custom AstroNvim configuration
 ./install.sh --astronvim-repo "https://github.com/your-user/astronvim-config.git" config
+
+# Set git identity (only applied if not already configured)
+./install.sh --git-name "Your Name" --git-email "you@example.com" config
+
+# Reinstall/upgrade tools that are already present
+./install.sh --upgrade go editor
 ```
 
 #### Configuration File
 
-The script supports configuration files for consistent setups across multiple environments:
+`install.sh` reads `setup.conf` from its own directory (or the current directory when piped from `curl`).
+`--save-config` writes the defaults plus any other options on the same command line:
 
 ```bash
-# Create a configuration file
-./install.sh --save-config
+./install.sh --starship-preset pure-preset --git-name "Your Name" --save-config
 ```
+
+Supported keys: `SYSTEM_WIDE`, `UPGRADE`, `KEEP_GIT`, `TMUX_SESSION`, `STARSHIP_PRESET`, `ASTRONVIM_REPO`, `GIT_USER_NAME`, `GIT_USER_EMAIL`, `LOG_LEVEL`.
 
 #### Key Features
 
-- **Environment Detection**: Automatically detects Docker containers, root environments, and regular user setups
-- **User Preservation**: When run with sudo, installs user configs to the original user's home directory
-- **Package Manager Agnostic**: Supports apt, dnf, yum, brew, and pacman
-- **Modular Design**: Install only what you need
-- **Comprehensive Logging**: Detailed logs saved to `setup.log`
-- **Fish Shell Integration**: Automatic NVM setup, tmux integration, and Starship prompt
+- Runs as a normal user (using `sudo` where needed) or as root
+- Under `sudo`, user configs go to the original user's home and are owned by them
+- Supports apt, dnf, yum, brew, and pacman
+- Stops at the first failed command and reports the file and line
+- Logs to `setup.log`
+- Fish gets NVM (via bass), pyenv, tmux auto-attach, and Starship
 
 #### What Gets Installed
 
@@ -135,6 +147,11 @@ The script supports configuration files for consistent setups across multiple en
 - Deno runtime
 - Fish shell NVM integration
 
+##### Python Component
+
+- pyenv, configured for Bash and Fish
+- Build dependencies for compiling Python (run `pyenv install 3` afterwards)
+
 ##### Editor Component
 
 - Neovim (latest stable)
@@ -143,7 +160,8 @@ The script supports configuration files for consistent setups across multiple en
 
 ##### Config Component
 
-- AstroNvim configuration
+- Git defaults and aliases, plus `user.name`/`user.email` from `--git-name`/`--git-email`
+- AstroNvim configuration (skipped if Neovim isn't installed)
 - Customizable via `--astronvim-repo` option
 
 ##### Shell Component
@@ -169,7 +187,8 @@ The script is designed to work seamlessly in Docker containers:
 FROM ubuntu:22.04
 
 # Install development environment
-RUN curl -fsSL https://raw.githubusercontent.com/jabez007/docker-kitchen/master/install.sh | bash -s -- base go editor config
+RUN apt-get update && apt-get install -y curl && \
+  curl -fsSL https://raw.githubusercontent.com/jabez007/docker-kitchen/master/install.sh | bash -s -- base shell go editor config
 
 # Set Fish as default shell
 SHELL ["fish", "-c"]
@@ -180,7 +199,7 @@ SHELL ["fish", "-c"]
 - All operations are logged to `setup.log` in the script directory
 - Use `--debug` flag for verbose output
 - Each component can be installed independently for troubleshooting
-- The script is idempotent - safe to run multiple times
+- Re-running skips tools that are already installed (use `--upgrade` to reinstall them)
 
 #### System Requirements
 
