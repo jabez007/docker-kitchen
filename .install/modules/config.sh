@@ -14,8 +14,9 @@ install_user_configs() {
   setup_git_config
 
   if command_exists nvim; then
-    # Install AstroNvim config
     install_astronvim_config
+  else
+    info "Neovim not installed, skipping AstroNvim config (install the 'editor' component first)"
   fi
 
   info "User configurations installed successfully"
@@ -25,10 +26,7 @@ setup_git_config() {
   info "Setting up git configuration with best practices..."
 
   # Always operate as the actual (non-root) user
-  local git_cfg=(git config --global)
-  if [[ "$IS_ROOT" == "true" ]]; then
-    git_cfg=(run_as_user git config --global)
-  fi
+  local git_cfg=(run_as_user git config --global)
 
   # Core settings
   "${git_cfg[@]}" init.defaultBranch main
@@ -48,7 +46,6 @@ setup_git_config() {
   "${git_cfg[@]}" transfer.fsckobjects true
   "${git_cfg[@]}" fetch.fsckobjects true
   "${git_cfg[@]}" receive.fsckObjects true
-  "${git_cfg[@]}" gc.auto 1
 
   # Better output formatting
   "${git_cfg[@]}" color.ui auto
@@ -71,7 +68,7 @@ setup_git_config() {
       "${git_cfg[@]}" user.name "${CONFIG[GIT_USER_NAME]}"
       info "Git user.name set to: ${CONFIG[GIT_USER_NAME]}"
     else
-      warn "Git user.name not configured - set CONFIG[GIT_USER_NAME] or run 'git config --global user.name \"Your Name\"'"
+      warn "Git user.name not configured - use --git-name, set GIT_USER_NAME in setup.conf, or run 'git config --global user.name \"Your Name\"'"
     fi
   fi
 
@@ -80,7 +77,7 @@ setup_git_config() {
       "${git_cfg[@]}" user.email "${CONFIG[GIT_USER_EMAIL]}"
       info "Git user.email set to: ${CONFIG[GIT_USER_EMAIL]}"
     else
-      warn "Git user.email not configured - set CONFIG[GIT_USER_EMAIL] or run 'git config --global user.email \"you@example.com\"'"
+      warn "Git user.email not configured - use --git-email, set GIT_USER_EMAIL in setup.conf, or run 'git config --global user.email \"you@example.com\"'"
     fi
   fi
 
@@ -103,11 +100,11 @@ install_astronvim_config() {
   [[ -n "${CONFIG[ASTRONVIM_REPO]:-}" ]] ||
     die "CONFIG[ASTRONVIM_REPO] is empty – specify --astronvim-repo URL"
 
-  git clone --depth 1 "${CONFIG[ASTRONVIM_REPO]}" "$config_dir" ||
+  run_as_user git clone --depth 1 "${CONFIG[ASTRONVIM_REPO]}" "$config_dir" ||
     die "Failed to clone AstroNvim config"
 
   if [[ "${CONFIG[KEEP_GIT]}" != "true" ]]; then
-    rm -rf "${config_dir}/.git"
+    run_as_user rm -rf "${config_dir}/.git"
   fi
 
   info "AstroNvim configuration installed"

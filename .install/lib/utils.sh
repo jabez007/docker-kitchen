@@ -10,14 +10,14 @@ log() {
   local level="$1"
   shift
   local message="$*"
-  local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+  local timestamp
+  timestamp=$(date '+%Y-%m-%d %H:%M:%S')
 
-  local current="${CONFIG["LOG_LEVEL"]:-INFO}"
-  # Basic priority map
+  # Skip messages below the configured level (unknown levels count as INFO)
   local -A prio=([ERROR]=0 [WARN]=1 [INFO]=2 [DEBUG]=3)
-  
-  if (( prio["${level:-INFO}"] > prio["${current:-INFO}"] )); then
-    return
+  local current="${CONFIG["LOG_LEVEL"]:-INFO}"
+  if ((${prio[$level]:-2} > ${prio[${current^^}]:-2})); then
+    return 0
   fi
 
   case "$level" in
@@ -27,10 +27,9 @@ log() {
   DEBUG) echo -e "\033[36m[DEBUG]\033[0m $message" ;;
   esac
 
-  # Also log to file
+  # Also log to file; an unwritable log (e.g. read-only mount) is not an error
   if [[ -n "${LOG_FILE:-}" ]]; then
-    mkdir -p "$(dirname "$LOG_FILE")" 2>/dev/null || true
-    echo "[$timestamp] [$level] $message" >>"$LOG_FILE"
+    echo "[$timestamp] [$level] $message" 2>/dev/null >>"$LOG_FILE" || true
   fi
 }
 
@@ -42,7 +41,6 @@ debug() { log DEBUG "$@"; }
 # Exit with error
 die() {
   error "$@"
-  echo "CRITICAL ERROR: $*" >&2
   exit 1
 }
 

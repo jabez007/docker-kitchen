@@ -4,11 +4,12 @@
 install_node_stack() {
   info "Installing Node.js stack (NVM, Node, Deno)..."
 
-  local user_home
+  local user_home nvm_sh
   user_home=$(get_user_home)
+  nvm_sh="${user_home}/.nvm/nvm.sh"
 
   # Install NVM
-  if [[ ! -s "$user_home/.nvm/nvm.sh" ]]; then
+  if [[ ! -s "$nvm_sh" ]]; then
     info "Installing NVM..."
     local nvm_version
     if command_exists jq; then
@@ -23,36 +24,26 @@ install_node_stack() {
     fi
 
     run_as_user bash -c \
-      "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/${nvm_version}/install.sh | bash" ||
+      "curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/${nvm_version}/install.sh | bash" ||
       die "NVM installation failed"
-
-    export NVM_DIR="${user_home}/.nvm"
-    # shellcheck disable=SC1091
-    [[ -s "$NVM_DIR/nvm.sh" ]] && source "$NVM_DIR/nvm.sh"
-    # shellcheck disable=SC1091
-    [ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
   else
     info "NVM already installed"
-    export NVM_DIR="${user_home}/.nvm"
-    # shellcheck disable=SC1091
-    [[ -s "$NVM_DIR/nvm.sh" ]] && source "$NVM_DIR/nvm.sh"
-    # shellcheck disable=SC1091
-    [ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
   fi
 
-  # Install latest LTS Node.js
-  if ! run_as_user command_exists node; then
+  # nvm is a shell function, so check for and install Node in a bash that sources it
+  if ! run_as_user bash -c "source '$nvm_sh' && command -v node" >/dev/null 2>&1; then
     info "Installing Node.js LTS..."
-    run_as_user bash -c \
-      "source $user_home/.nvm/nvm.sh && nvm install --lts" ||
+    run_as_user bash -c "source '$nvm_sh' && nvm install --lts" ||
       die "Node.js installation failed"
+  else
+    info "Node.js already installed"
   fi
 
   # Install Deno
   if ! command_exists unzip; then
     install_packages unzip
   fi
-  if ! command_exists deno; then
+  if [[ ! -x "${user_home}/.deno/bin/deno" ]] && ! command_exists deno; then
     info "Installing Deno..."
     run_as_user bash -c \
       "curl -fsSL https://deno.land/install.sh | sh -s -- -y" ||
@@ -77,25 +68,23 @@ configure_fish_nvm() {
   # Install Fisher if not present
   if ! run_as_user fish -c "functions -q fisher" 2>/dev/null; then
     info "Installing Fisher..."
-    run_as_user fish -c "curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher install jorgebucaran/fisher" ||
+    run_as_user fish -c "curl -fsSL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher install jorgebucaran/fisher" ||
       die "Fisher installation failed – aborting Fish/NVM configuration"
   fi
 
   # Install Bass plugin for NVM
-  if command_exists fish; then
-    run_as_user fish -c 'fisher install edc/bass' 2>/dev/null ||
-      warn "Failed to install Bass plugin"
+  run_as_user fish -c 'fisher install edc/bass' 2>/dev/null ||
+    warn "Failed to install Bass plugin"
 
-    # Create NVM function for Fish
-    local nvm_fish_file="$user_home/.config/fish/functions/nvm.fish"
-    if [[ ! -f "$nvm_fish_file" ]]; then
-      run_as_user mkdir -p "$(dirname "$nvm_fish_file")"
-      run_as_user tee "$nvm_fish_file" >/dev/null <<'EOF'
+  # Create NVM function for Fish
+  local nvm_fish_file="$user_home/.config/fish/functions/nvm.fish"
+  if [[ ! -f "$nvm_fish_file" ]]; then
+    run_as_user mkdir -p "$(dirname "$nvm_fish_file")"
+    run_as_user tee "$nvm_fish_file" >/dev/null <<'EOF'
 function nvm
     bass source ~/.nvm/nvm.sh --no-use ';' nvm $argv
 end
 EOF
-      info "NVM configured for Fish shell"
-    fi
+    info "NVM configured for Fish shell"
   fi
 }

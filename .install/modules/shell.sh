@@ -18,10 +18,19 @@ install_shell_stack() {
 
   # Configure shells
   configure_fish_shell
-  configure_fish_nvm
   configure_tmux
   configure_starship
   configure_bash_integration
+
+  # Hook up tools that were installed before Fish existed
+  local user_home
+  user_home=$(get_user_home)
+  if [[ -s "${user_home}/.nvm/nvm.sh" ]]; then
+    configure_fish_nvm
+  fi
+  if [[ -d "${user_home}/.pyenv" ]]; then
+    configure_fish_pyenv
+  fi
 }
 
 configure_fish_shell() {
@@ -33,18 +42,17 @@ configure_fish_shell() {
   local fish_config="${user_home}/.config/fish/config.fish"
   run_as_user mkdir -p "$(dirname "$fish_config")"
 
-  # Add tmux auto-attach if not present
+  # Add tmux auto-attach if not present. The is-interactive guard keeps
+  # `fish -c ...` (used by this script and others) from starting tmux.
   if ! grep -q "tmux attach-session -t ${CONFIG[TMUX_SESSION]}" "$fish_config" 2>/dev/null; then
     run_as_user tee -a "$fish_config" >/dev/null <<EOF
 
 # Automatically attach to or create a tmux session
-if type -q tmux
-    if not set -q TMUX
-        if tmux has-session -t ${CONFIG[TMUX_SESSION]} 2>/dev/null
-            tmux attach-session -t ${CONFIG[TMUX_SESSION]}
-        else
-            tmux new-session -s ${CONFIG[TMUX_SESSION]}
-        end
+if status is-interactive; and type -q tmux; and not set -q TMUX
+    if tmux has-session -t ${CONFIG[TMUX_SESSION]} 2>/dev/null
+        tmux attach-session -t ${CONFIG[TMUX_SESSION]}
+    else
+        tmux new-session -s ${CONFIG[TMUX_SESSION]}
     end
 end
 EOF
@@ -63,7 +71,7 @@ configure_tmux() {
 
   # Install TPM if not present
   if [[ ! -d "$tpm_dir" ]]; then
-    git clone https://github.com/tmux-plugins/tpm "$tpm_dir" ||
+    run_as_user git clone https://github.com/tmux-plugins/tpm "$tpm_dir" ||
       warn "Failed to install TPM"
   fi
 

@@ -1,1 +1,9 @@
 .aider*
+
+# install.sh output
+/setup.log
+/setup.conf
+
+# Copied into the astro-nvim build context by CI
+/astro-nvim/install.sh
+/astro-nvim/.install/
