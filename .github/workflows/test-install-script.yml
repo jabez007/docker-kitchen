@@ -8,6 +8,7 @@ on:
     paths:
       - "install.sh"
       - ".install/**"
+      - ".github/workflows/test-install-script.yml"
   schedule:
     # Run weekly to catch upstream changes
     - cron: "0 2 * * 0"
@@ -19,27 +20,28 @@ jobs:
       fail-fast: false
       matrix:
         os:
+          - ubuntu:26.04
           - ubuntu:24.04
           - ubuntu:22.04
-          - ubuntu:20.04
+          - debian:trixie
           - debian:bookworm
-          - debian:bullseye
-          - fedora:42
-          - fedora:41
+          - fedora:44
+          - fedora:43
           - archlinux:latest
         component:
           - base
+          - shell
           - go
           - node
+          - python
           - editor
+          - docker
           - config
-          - shell
-          # Docker-in-Docker issues
         exclude:
           # Starship install has issues on Fedora without a terminal
-          - os: fedora:42
+          - os: fedora:44
             component: shell
-          - os: fedora:41
+          - os: fedora:43
             component: shell
 
     steps:
@@ -103,6 +105,9 @@ jobs:
                   su - testuser -c 'bash -i -c \"command -v node && node --version\"'
                   su - testuser -c 'command -v deno && deno --version'
                   ;;
+                python)
+                  su - testuser -c 'bash -i -c \"command -v pyenv && pyenv --version\"'
+                  ;;
                 editor)
                   su - testuser -c 'command -v nvim && command -v lazygit && command -v btm'
                   ;;
@@ -129,7 +134,7 @@ jobs:
           - components: "base shell"
             os: "debian:bookworm"
           - components: "base node editor"
-            os: "fedora:42"
+            os: "fedora:44"
           - components: "all"
             os: "ubuntu:22.04"
 
@@ -291,10 +296,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y shellcheck
 
-      - name: Lint bash script
+      - name: Lint bash scripts
         run: |
-          shellcheck install.sh || true  # Don't fail on warnings initially
+          shellcheck -x -S warning install.sh .install/lib/*.sh .install/modules/*.sh
 
       - name: Check script syntax
         run: |
-          bash -n install.sh
+          for f in install.sh .install/lib/*.sh .install/modules/*.sh; do bash -n "$f"; done
