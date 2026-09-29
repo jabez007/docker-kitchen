@@ -198,8 +198,11 @@ move_fish_launcher_last() {
     return 0
   fi
 
-  # Drop the old block (marked or legacy) along with the blank lines before it
-  rest=$(awk -v begin="$FISH_LAUNCHER_BEGIN" -v end="$FISH_LAUNCHER_END" \
+  # Drop the old block (marked or legacy) along with the blank lines before it.
+  # If the block was edited so its last line (the end marker, or an unindented
+  # `fi`) is gone, awk would skip to the end of the file; fail instead, so the
+  # rest of .bashrc isn't lost.
+  if ! rest=$(awk -v begin="$FISH_LAUNCHER_BEGIN" -v end="$FISH_LAUNCHER_END" \
     -v legacy="$FISH_LAUNCHER_LEGACY" '
     skip == "marked" { if ($0 == end) skip = ""; next }
     skip == "legacy" { if ($0 == "fi") skip = ""; next }
@@ -207,7 +210,12 @@ move_fish_launcher_last() {
     $0 == legacy { skip = "legacy"; held = ""; next }
     /^[[:space:]]*$/ { held = held $0 "\n"; next }
     { printf "%s%s\n", held, $0; held = "" }
-  ' "$bashrc")
+    END { if (skip != "") exit 1 }
+  ' "$bashrc"); then
+    warn "Couldn't find where the Fish launcher ends in $bashrc, so it wasn't moved." \
+      "Move it to the end of the file yourself; anything below it doesn't run."
+    return 0
+  fi
 
   {
     [[ -n "$rest" ]] && printf '%s\n\n' "$rest"
