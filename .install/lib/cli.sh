@@ -35,7 +35,7 @@ EXAMPLES:
     install.sh --git-name "Jane Doe" --save-config   # Save settings to setup.conf
 
 CONFIG:
-    Settings are read from: $CONFIG_FILE
+    Settings are read from: ${CONFIG_FILE:-nowhere (piped run; pass --config FILE)}
 
 LOGS:
     Setup logs are written to: $LOG_FILE

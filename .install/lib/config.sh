@@ -1,7 +1,13 @@
 #!/bin/bash
 # lib/config.sh - Configuration management
 
-CONFIG_FILE="${STATE_DIR}/setup.conf"
+# setup.conf is sourced as shell code. A piped run (curl ... | bash) doesn't
+# look for one in the cwd, which may not be trusted; it needs --config.
+if [[ "$PIPED" == "true" ]]; then
+  CONFIG_FILE=""
+else
+  CONFIG_FILE="${STATE_DIR}/setup.conf"
+fi
 
 # Settings that setup.conf may set and --save-config writes
 readonly CONFIG_KEYS=(
@@ -51,6 +57,11 @@ set_config_file() {
 
 # Load configuration from file
 load_config() {
+  if [[ -z "$CONFIG_FILE" ]]; then
+    debug "Piped run without --config; using defaults"
+    return 0
+  fi
+
   debug "Checking for config file at $CONFIG_FILE"
   if [[ -f "$CONFIG_FILE" ]]; then
     debug "Loading configuration from $CONFIG_FILE"
@@ -70,6 +81,7 @@ load_config() {
 
 # Save configuration to file
 save_config() {
+  [[ -n "$CONFIG_FILE" ]] || die "A piped run needs --config FILE to know where to save"
   info "Saving configuration to $CONFIG_FILE"
   {
     echo "# Development Environment Setup Configuration"

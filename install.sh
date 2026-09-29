@@ -11,16 +11,20 @@ set -Eeuo pipefail
 # ============================================================================
 
 # BASH_SOURCE is unset when the script is piped into bash (curl ... | bash).
-# Then modules are downloaded into a temp dir, and setup.log/setup.conf live in the cwd.
+# Then modules are downloaded into a temp dir, setup.log goes in the cwd, and
+# only a config passed with --config is read.
 if [[ -n "${BASH_SOURCE[0]:-}" ]]; then
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     STATE_DIR="$SCRIPT_DIR"
+    PIPED=false
 else
     SCRIPT_DIR="$(mktemp -d)"
     STATE_DIR="$PWD"
+    PIPED=true
     trap 'rm -rf "$SCRIPT_DIR"' EXIT
 fi
-readonly SCRIPT_DIR STATE_DIR
+# shellcheck disable=SC2034 # PIPED is used by lib/config.sh
+readonly SCRIPT_DIR STATE_DIR PIPED
 readonly LOG_FILE="${STATE_DIR}/setup.log"
 
 # Install order: `all`, and any set of components given on the command line, run in this order

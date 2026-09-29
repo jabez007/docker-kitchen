@@ -33,6 +33,15 @@ curl -fsSL https://raw.githubusercontent.com/jabez007/docker-kitchen/master/inst
 curl -fsSL https://raw.githubusercontent.com/jabez007/docker-kitchen/master/install.sh | bash -s -- base go editor
 ```
 
+##### Install from another branch
+
+A piped `install.sh` can't tell which URL it came from, so it downloads its modules from `master` unless `GITHUB_BRANCH` says otherwise.
+Set it to the same branch (or a commit SHA) as the URL:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/jabez007/docker-kitchen/BRANCH/install.sh | GITHUB_BRANCH=BRANCH bash -s -- all
+```
+
 **Available Components**
 | Component | Description |
 |-----------|-------------|
@@ -107,12 +116,20 @@ Components always run in the order above, whatever order you list them in, so `c
 
 #### Configuration File
 
-`install.sh` reads `setup.conf` from its own directory (or the current directory when piped from `curl`).
+`install.sh` reads `setup.conf` from its own directory.
 `--config FILE` reads a different file instead, as the astro-nvim image does with `astro-nvim/setup.conf`.
+
+The file is sourced as shell code, so only use one you trust.
+For that reason, a run piped from `curl` doesn't look for `setup.conf` in the current directory; pass `--config` to use one.
+
 `--save-config` writes the defaults plus any other options on the same command line:
 
 ```bash
 ./install.sh --starship-preset pure-preset --git-name "Your Name" --save-config
+
+# Piped runs need to be told where to save and read it
+curl -fsSL https://raw.githubusercontent.com/jabez007/docker-kitchen/master/install.sh | bash -s -- --config ./setup.conf --save-config
+curl -fsSL https://raw.githubusercontent.com/jabez007/docker-kitchen/master/install.sh | bash -s -- --config ./setup.conf all
 ```
 
 Supported keys: `SYSTEM_WIDE`, `UPGRADE`, `KEEP_GIT`, `TMUX_SESSION`, `STARSHIP_PRESET`, `ASTRONVIM_REPO`, `GIT_USER_NAME`, `GIT_USER_EMAIL`, `LOG_LEVEL`.
