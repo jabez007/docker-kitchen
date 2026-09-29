@@ -118,6 +118,13 @@ update_path() {
     # Start with .profile (shell-agnostic)
     shell_configs=("${user_home}/.profile")
 
+    # A login bash reads .bash_profile instead of .profile when it exists
+    # (Arch and Fedora ship one), and Arch's .bashrc returns early in a
+    # non-interactive shell, so `bash -l -c` would miss the PATH otherwise
+    if [[ -f "${user_home}/.bash_profile" ]]; then
+      shell_configs+=("${user_home}/.bash_profile")
+    fi
+
     # Add shell-specific configs for interactive shells
     if [[ -n "${ZSH_VERSION-}" ]] || command_exists zsh; then
       shell_configs+=("${user_home}/.zshrc")
@@ -187,6 +194,46 @@ github_release_asset_url() {
   path=$(grep -iE "$pattern" <<<"$assets" | sed -n 1p) || return 1
   [[ -n "$path" ]] || return 1
   echo "https://github.com${path}"
+}
+
+# SHA-256 digest GitHub lists for a release asset, from its download URL
+# (https://github.com/<owner>/<repo>/releases/download/<tag>/<file>). GitHub
+# computes it when the asset is uploaded. It catches a corrupted, truncated or
+# altered download, but not an asset someone replaced on GitHub itself.
+#   github_asset_sha256 <download-url>
+github_asset_sha256() {
+  local path repo tag name
+  path="${1#https://github.com/}"
+  repo="${path%%/releases/download/*}"
+  tag="${path#*/releases/download/}"
+  name="${tag#*/}"
+  tag="${tag%%/*}"
+  # The asset list has one copy-to-clipboard button per asset, labelled
+  # "digest for <file>" with the digest on the same line
+  curl -fsSL "https://github.com/$repo/releases/expanded_assets/$tag" |
+    grep -F "digest for ${name}\"" | grep -oE 'sha256:[0-9a-f]{64}' | sed -n '1s/^sha256://p'
+}
+
+# Stop the run unless a downloaded file's SHA-256 matches the one upstream
+# publishes. An empty or malformed expected value also stops it, so a checksum
+# that failed to parse can't pass silently.
+#   verify_sha256 <file> <expected-hex>
+verify_sha256() {
+  local file="$1" expected="${2:-}" actual
+  expected="${expected,,}"
+  [[ "$expected" =~ ^[0-9a-f]{64}$ ]] ||
+    die "No valid SHA-256 to check ${file##*/} against (got '${2:-}')"
+
+  if command_exists sha256sum; then
+    actual=$(sha256sum "$file")
+  else
+    actual=$(shasum -a 256 "$file")
+  fi
+  actual="${actual%% *}"
+
+  [[ "$actual" == "$expected" ]] ||
+    die "Checksum mismatch for ${file##*/}: expected $expected, got $actual"
+  debug "SHA-256 OK for ${file##*/}"
 }
 
 # Decide whether to install a tool: yes if it's missing, or if --upgrade is set

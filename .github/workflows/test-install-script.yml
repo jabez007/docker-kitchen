@@ -39,12 +39,6 @@ jobs:
           - editor
           - docker
           - config
-        exclude:
-          # Starship install has issues on Fedora without a terminal
-          - os: fedora:44
-            component: shell
-          - os: fedora:43
-            component: shell
 
     steps:
       - name: Checkout code
@@ -109,6 +103,8 @@ jobs:
                   ;;
                 python)
                   su - testuser -c 'bash -i -c \"command -v pyenv && pyenv --version\"'
+                  # pyenv is cloned at a release tag, not master
+                  su - testuser -c 'git -C ~/.pyenv describe --tags --exact-match'
                   ;;
                 editor)
                   su - testuser -c 'command -v nvim && command -v lazygit && command -v btm'
@@ -370,3 +366,25 @@ jobs:
       - name: Check script syntax
         run: |
           for f in install.sh .install/lib/*.sh .install/modules/*.sh; do bash -n "$f"; done
+
+      - name: Test verify_sha256
+        shell: bash
+        run: |
+          set -u
+          declare -A CONFIG=()
+          source .install/lib/utils.sh
+          printf 'hello\n' > /tmp/sample
+          good=$(sha256sum /tmp/sample | cut -d' ' -f1)
+          other=$(printf 'bye\n' | sha256sum | cut -d' ' -f1)
+
+          # Matches pass, in either case
+          (verify_sha256 /tmp/sample "$good")
+          (verify_sha256 /tmp/sample "${good^^}")
+
+          # A wrong, empty or malformed checksum stops the run
+          for bad in "$other" "" "not-a-hash" "${good:0:63}"; do
+            if (verify_sha256 /tmp/sample "$bad"); then
+              echo "verify_sha256 accepted '$bad'"
+              exit 1
+            fi
+          done

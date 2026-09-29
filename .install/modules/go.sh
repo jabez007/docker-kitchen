@@ -9,10 +9,17 @@ go_latest_version() {
   curl -fsSL "https://go.dev/VERSION?m=text" | awk 'NR==1'
 }
 
+# SHA-256 of a release file, e.g. go1.27.1.linux-amd64.tar.gz, from the JSON
+# list of current releases. (go.dev/dl/<file>.sha256 returns a web page.)
+go_sha256() {
+  curl -fsSL "https://go.dev/dl/?mode=json" | tr -d ' \n' |
+    grep -o "\"filename\":\"$1\"[^}]*" | sed -n 's/.*"sha256":"\([0-9a-f]*\)".*/\1/p'
+}
+
 install_go() {
   should_install Go go_installed_version go_latest_version || return 0
 
-  local go_ver go_url os arch tmp_dir
+  local go_ver go_file go_url os arch tmp_dir
 
   os=$(uname -s | tr '[:upper:]' '[:lower:]')
   arch=$(uname -m)
@@ -25,12 +32,14 @@ install_go() {
 
   go_ver=$(go_latest_version) || die "Unable to resolve latest Go version"
   [[ -n "$go_ver" ]] || die "Unable to resolve latest Go version"
-  go_url="https://go.dev/dl/${go_ver}.${os}-${arch}.tar.gz"
+  go_file="${go_ver}.${os}-${arch}.tar.gz"
+  go_url="https://go.dev/dl/${go_file}"
 
   debug "Go download URL: $go_url"
 
   tmp_dir=$(mktemp -d)
   curl -fL "$go_url" -o "${tmp_dir}/go.tar.gz" || die "Failed to download Go"
+  verify_sha256 "${tmp_dir}/go.tar.gz" "$(go_sha256 "$go_file" || true)"
   run_as_admin rm -rf /usr/local/go
   run_as_admin tar -C /usr/local -xzf "${tmp_dir}/go.tar.gz" || die "Failed to extract Go"
   rm -rf "$tmp_dir"

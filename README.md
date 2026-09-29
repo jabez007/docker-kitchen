@@ -141,7 +141,10 @@ With it, each component brings its tools up to date:
 
 - Go, Neovim, LazyGit, Bottom, Starship, NVM, Node.js and Deno compare the installed version with the latest release and reinstall only when they differ.
 - Node.js moves to the latest LTS and carries global npm packages over. The old version stays installed; remove it with `nvm uninstall <version>`.
-- pyenv, TPM, Fisher plugins and the AstroNvim config update themselves with `git pull` or their own update command.
+- pyenv and pyenv-virtualenv move to their latest release tags.
+  An older run may have installed the pyenv-update plugin; `pyenv update` fails on a tag, so use `install.sh --upgrade python` instead.
+- Fisher moves to its latest release, and `fisher update` updates the other Fish plugins.
+- TPM and the AstroNvim config update themselves with `git pull`.
   The AstroNvim config only updates if it was cloned with `KEEP_GIT=true`.
 - System packages (base, shell, docker and so on) upgrade through the package manager.
 - An existing `starship.toml` is never overwritten. Delete it to apply a new preset.
@@ -152,6 +155,11 @@ With it, each component brings its tools up to date:
 - Under `sudo`, user configs go to the original user's home and are owned by them
 - Supports apt, dnf, yum, brew, and pacman
 - Stops at the first failed command and reports the file and line
+- Checks each download against a SHA-256 and stops on a mismatch.
+  Go, LazyGit, Starship and Deno publish their own checksums.
+  Neovim and Bottom don't, so the script uses the digest GitHub computes when a release asset is uploaded.
+  That catches a corrupted or altered download, but not a bad file that was uploaded to the release itself.
+- Installs NVM, pyenv and Fisher from their latest release tags, so a change on an upstream default branch doesn't reach you until it's released
 - Logs to `setup.log`
 - Fish gets NVM (via bass), pyenv, tmux auto-attach, and Starship
 
@@ -179,7 +187,7 @@ With it, each component brings its tools up to date:
 
 ##### Python Component
 
-- pyenv, configured for Bash and Fish
+- pyenv and pyenv-virtualenv, configured for Bash and Fish
 - Build dependencies for compiling Python (run `pyenv install 3` afterwards)
 
 ##### Editor Component
