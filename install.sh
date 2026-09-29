@@ -125,6 +125,8 @@ main() {
         info "Installing component: $CURRENT_COMPONENT"
         "${COMPONENTS[$CURRENT_COMPONENT]}"
     done
+    CURRENT_COMPONENT="final .bashrc cleanup"
+    move_fish_launcher_last
 
     info "Setup completed successfully!"
     info "Log file: $LOG_FILE"

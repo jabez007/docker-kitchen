@@ -9,6 +9,7 @@ on:
       - "install.sh"
       - ".install/**"
       - ".github/workflows/test-install-script.yml"
+      - ".github/fixtures/**"
   schedule:
     # Run weekly to catch upstream changes
     - cron: "0 2 * * 0"
@@ -181,6 +182,12 @@ jobs:
               chmod +x /workspace/install.sh
               
               su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --debug ${{ matrix.test-case.components }}'
+
+              # exec fish ends .bashrc, so the Fish launcher must come after
+              # what later components append (issue #35)
+              if grep -q 'install.sh: launch fish' /home/testuser/.bashrc; then
+                test \"\$(tail -n 1 /home/testuser/.bashrc)\" = '# <<< install.sh: launch fish <<<'
+              fi
             "
 
   test-options:
@@ -281,9 +288,30 @@ jobs:
               chown -R testuser:testuser /workspace
               chmod +x /workspace/install.sh
               
+              # Start with the Fish launcher an older install.sh wrote (issue #35)
+              cat .github/fixtures/legacy-fish-launcher.bashrc >> /home/testuser/.bashrc
+
               # Run twice to test idempotency
-              su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --debug base go'
-              su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --debug base go'
+              su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --debug base shell go'
+
+              # The first run replaced the old launcher with one marked copy at the end
+              test \"\$(grep -cxF '# Launch fish shell automatically unless bash was started from fish' /home/testuser/.bashrc)\" = 1
+              test \"\$(tail -n 1 /home/testuser/.bashrc)\" = '# <<< install.sh: launch fish <<<'
+              cp /home/testuser/.bashrc /tmp/bashrc.first
+
+              su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --debug base shell go'
+              cmp /tmp/bashrc.first /home/testuser/.bashrc
+
+              # A line added after the launcher ends up above it on the next run
+              echo 'export ADDED_LATER=1' >> /home/testuser/.bashrc
+              su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --debug base'
+              test \"\$(tail -n 1 /home/testuser/.bashrc)\" = '# <<< install.sh: launch fish <<<'
+              test \"\$(grep -c '^# <<< install.sh: launch fish' /home/testuser/.bashrc)\" = 1
+              grep -qx 'export ADDED_LATER=1' /home/testuser/.bashrc
+
+              # bash -i -c runs its command instead of switching to Fish
+              su - testuser -c 'bash -i -c \"echo still-bash\"' | tee /tmp/bash-i.log
+              grep -qx still-bash /tmp/bash-i.log
             "
 
   test-upgrade:

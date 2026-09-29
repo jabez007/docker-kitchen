@@ -200,7 +200,10 @@ With it, each component brings its tools up to date:
 - Tmux with TPM (Tmux Plugin Manager)
 - Starship prompt with customizable presets
 - Automatic tmux session management
-- Bash-to-Fish integration
+- Bash-to-Fish integration.
+  An interactive Bash switches to Fish at the end of `~/.bashrc`, so nothing below that block runs.
+  Each run of `install.sh` moves the block back to the end, below anything added since.
+  `bash -c` and `bash -i -c` stay in Bash.
 
 ##### Docker Component
 
