@@ -56,19 +56,11 @@ install_editor_stack() {
     local os_name
     os_name=$(uname -s | tr '[:upper:]' '[:lower:]')
 
-    if command_exists jq; then
-      lazygit_url=$(curl -fsSL https://api.github.com/repos/jesseduffield/lazygit/releases/latest |
-        jq -r ".assets[] | select(.name | ascii_downcase | contains(\"$os_name\") and contains(\"$lazygit_arch\") and endswith(\"tar.gz\")) | .browser_download_url" | head -n 1)
-    else
-      lazygit_url=$(curl -fsSL https://api.github.com/repos/jesseduffield/lazygit/releases/latest |
-        grep -i "browser_download_url.*lazygit.*$os_name.*${lazygit_arch}.*tar.gz" |
-        cut -d : -f 2,3 | tr -d \" | tail -n 1)
-    fi
-    lazygit_url=$(trim "$lazygit_url")
+    lazygit_url=$(github_release_asset_url jesseduffield/lazygit \
+      "/lazygit_[^/]*_${os_name}_${lazygit_arch}\.tar\.gz$") ||
+      die "Could not resolve LazyGit download URL"
 
     debug "LazyGit download URL: $lazygit_url"
-
-    [[ -n "$lazygit_url" ]] || die "Could not resolve LazyGit download URL"
 
     tmp_dir=$(mktemp -d)
     curl -fL "$lazygit_url" -o "${tmp_dir}/lazygit.tar.gz" || die "Failed to download LazyGit"
@@ -83,18 +75,10 @@ install_editor_stack() {
     local pm bottom_url tmp_dir
     pm=$(get_package_manager)
 
-    # Release assets include musl builds too; take the glibc one
+    # Release assets include musl builds too (bottom-musl_*); the patterns take the glibc one
     if [[ "$pm" == "apt" ]]; then
-      if command_exists jq; then
-        bottom_url=$(curl -fsSL https://api.github.com/repos/ClementTsang/bottom/releases/latest |
-          jq -r ".assets[] | select(.name | contains(\"$(dpkg --print-architecture)\") and endswith(\"deb\") and (contains(\"musl\") | not)) | .browser_download_url" | head -n 1)
-      else
-        bottom_url=$(curl -fsSL https://api.github.com/repos/ClementTsang/bottom/releases/latest |
-          grep "browser_download_url.*bottom.*$(dpkg --print-architecture).*deb" |
-          grep -v "musl" |
-          cut -d : -f 2,3 | tr -d \" | tail -n 1)
-      fi
-      bottom_url=$(trim "$bottom_url")
+      bottom_url=$(github_release_asset_url ClementTsang/bottom \
+        "/bottom_[^/]*_$(dpkg --print-architecture)\.deb$") || true
 
       debug "Bottom download URL: $bottom_url"
 
@@ -107,16 +91,8 @@ install_editor_stack() {
         warn "Could not install Bottom via deb package"
       fi
     elif [[ "$pm" == "dnf" ]]; then
-      if command_exists jq; then
-        bottom_url=$(curl -fsSL https://api.github.com/repos/ClementTsang/bottom/releases/latest |
-          jq -r ".assets[] | select(.name | contains(\"$(rpm --eval '%{_arch}')\") and endswith(\"rpm\") and (contains(\"musl\") | not)) | .browser_download_url" | head -n 1)
-      else
-        bottom_url=$(curl -fsSL https://api.github.com/repos/ClementTsang/bottom/releases/latest |
-          grep "browser_download_url.*bottom.*$(rpm --eval '%{_arch}').*rpm" |
-          grep -v "musl" |
-          cut -d : -f 2,3 | tr -d \" | tail -n 1)
-      fi
-      bottom_url=$(trim "$bottom_url")
+      bottom_url=$(github_release_asset_url ClementTsang/bottom \
+        "/bottom-[0-9][^/]*\.$(rpm --eval '%{_arch}')\.rpm$") || true
 
       debug "Bottom download URL: $bottom_url"
 

@@ -173,6 +173,22 @@ github_latest_version() {
   echo "${url##*/}"
 }
 
+# Download URL of the first asset in a repo's latest release whose path matches
+# an extended regex (case-insensitive), e.g. '/tool_[^/]*_linux_x86_64\.tar\.gz$'.
+# It reads the asset list the release page loads rather than the REST API,
+# whose 60 requests/hour limit for anonymous clients CI runners hit.
+#   github_release_asset_url <owner/name> <regex>
+github_release_asset_url() {
+  local repo="$1" pattern="$2" tag assets path
+  tag=$(github_latest_version "$repo") || return 1
+  assets=$(curl -fsSL "https://github.com/$repo/releases/expanded_assets/$tag" |
+    grep -o 'href="[^"]*/releases/download/[^"]*"' | sed 's/^href="//; s/"$//') || return 1
+  # sed -n 1p reads all its input, so nothing upstream dies of SIGPIPE under pipefail
+  path=$(grep -iE "$pattern" <<<"$assets" | sed -n 1p) || return 1
+  [[ -n "$path" ]] || return 1
+  echo "https://github.com${path}"
+}
+
 # Decide whether to install a tool: yes if it's missing, or if --upgrade is set
 # and the installed version isn't the latest.
 #   should_install <name> <installed-version-fn> <latest-version-fn> [latest-fn args...]
