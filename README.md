@@ -152,6 +152,7 @@ With it, each component brings its tools up to date:
 - Under `sudo`, user configs go to the original user's home and are owned by them
 - Supports apt, dnf, yum, brew, and pacman
 - Stops at the first failed command and reports the file and line
+- Checks the Go, LazyGit and Starship downloads against the SHA-256 each project publishes, and stops on a mismatch
 - Logs to `setup.log`
 - Fish gets NVM (via bass), pyenv, tmux auto-attach, and Starship
 

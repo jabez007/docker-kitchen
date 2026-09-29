@@ -13,8 +13,7 @@ install_shell_stack() {
 
   # Install Starship
   if should_install Starship starship_installed_version github_latest_version starship/starship; then
-    curl -fsSL https://starship.rs/install.sh | sh -s -- -y ||
-      die "Failed to install Starship"
+    install_starship
   fi
 
   # Configure shells
@@ -38,6 +37,39 @@ install_shell_stack() {
     info "Updating Fish plugins..."
     run_as_user fish -c "fisher update" || warn "Failed to update Fish plugins"
   fi
+}
+
+# Install Starship from its release tarball, checked against the .sha256 file
+# published next to it. The Linux builds are static (musl), so one works on
+# every distro.
+install_starship() {
+  local target tag url tmp_dir sum
+
+  case "$(uname -s)-$(uname -m)" in
+  Linux-x86_64) target="x86_64-unknown-linux-musl" ;;
+  Linux-aarch64 | Linux-arm64) target="aarch64-unknown-linux-musl" ;;
+  Linux-armv6l | Linux-armv7l) target="arm-unknown-linux-musleabihf" ;;
+  Linux-i686 | Linux-i386) target="i686-unknown-linux-musl" ;;
+  Darwin-x86_64) target="x86_64-apple-darwin" ;;
+  Darwin-arm64) target="aarch64-apple-darwin" ;;
+  *) die "Unsupported platform for Starship: $(uname -s) $(uname -m)" ;;
+  esac
+
+  # Pin the tag so the tarball and its checksum come from the same release
+  tag=$(github_latest_version starship/starship) || die "Could not resolve the latest Starship release"
+  url="https://github.com/starship/starship/releases/download/${tag}/starship-${target}.tar.gz"
+  debug "Starship download URL: $url"
+
+  tmp_dir=$(mktemp -d)
+  curl -fL "$url" -o "${tmp_dir}/starship.tar.gz" || die "Failed to download Starship"
+  sum=$(curl -fsSL "${url}.sha256") || die "Failed to download the Starship checksum"
+  verify_sha256 "${tmp_dir}/starship.tar.gz" "${sum%%[[:space:]]*}"
+
+  tar -C "$tmp_dir" -xzf "${tmp_dir}/starship.tar.gz" starship
+  run_as_admin install -m 0755 "${tmp_dir}/starship" /usr/local/bin/starship
+  rm -rf "$tmp_dir"
+
+  verify_installation starship "Starship"
 }
 
 configure_fish_shell() {
