@@ -11,6 +11,8 @@ on:
       - "astro-nvim/**/*.sh"
       - "install.sh"
       - ".install/**"
+      - ".github/shared/docker/**"
+      - ".github/workflows/build-astro-nvim.yml"
 
 env:
   IMAGE_NAME: astro-nvim
@@ -27,40 +29,15 @@ jobs:
         run: ls -alh
         shell: bash
 
-      - name: Copy install script and .install directory to Docker context
-        run: |
-          set -euo pipefail
-          if [[ ! -f ./install.sh ]]; then
-            echo "install.sh not found – build cannot proceed" >&2
-            exit 1
-          fi
-          cp "./install.sh" "./astro-nvim/"
-          
-          if [[ -d ./.install ]]; then
-            echo "Merging .install directory to Docker context..."
-            # Ensure the target directory exists
-            mkdir -p "./astro-nvim/.install"
-            # Copy contents of root .install into astro-nvim/.install, merging them
-            cp -a ./.install/. ./astro-nvim/.install/ || {
-              echo "Failed to merge .install directory" >&2
-              exit 1
-            }
-          else
-            echo "Warning: .install directory not found in repository root"
-          fi
-
-      - name: List Docker context for debugging
-        run: |
-          echo "Listing contents of ./astro-nvim/.install:"
-          ls -R ./astro-nvim/.install
-
-      - uses: jabez007/docker-kitchen/.github/shared/docker@master
+      # The local copy, so changes to the shared action are tested with the PR
+      - uses: ./.github/shared/docker
         with:
           context: ./astro-nvim
+          # install.sh and .install/ come from the repo root
+          build-contexts: |
+            setup=.
           image-name: ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}
           tag: latest
-          build-args: |
-            GITHUB_BRANCH=${{ github.head_ref || github.ref_name }}
           debug: ${{ vars.pipeline_debug }}
 
   test:
@@ -84,9 +61,9 @@ jobs:
           set -euo pipefail
           echo "Testing Go installation..."
           docker run --rm --entrypoint="" ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest /bin/bash -ilc "
-            command -v go && 
-            go version && 
-            echo 'Go version check: PASSED' || 
+            command -v go &&
+            go version &&
+            echo 'Go version check: PASSED' ||
             (echo 'Go version check: FAILED' && exit 1)
           "
 
@@ -119,10 +96,10 @@ jobs:
             command -v nvm &&
             nvm --version &&
             command -v node &&
-            node --version && 
+            node --version &&
             command -v npm &&
-            npm --version && 
-            echo 'Node.js version check: PASSED' || 
+            npm --version &&
+            echo 'Node.js version check: PASSED' ||
             (echo 'Node.js version check: FAILED' && exit 1)
           "
 
@@ -166,6 +143,30 @@ jobs:
             echo 'User environment test: PASSED'
           "
 
+      # The tests above use a login shell. These go through entrypoint.sh,
+      # which is how Neovim and its plugins actually run.
+      - name: Test tools on the entrypoint's PATH
+        id: test-entrypoint-path
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          docker run --rm ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest bash -c '
+            set -e
+            for tool in nvim go node npm deno lazygit btm rg; do command -v "$tool"; done
+          '
+
+      - name: Test plugin and Mason setup
+        id: test-setup
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          docker run --rm --entrypoint bash ${{ vars.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest -c '
+            set -e
+            /usr/local/bin/entrypoint.sh setup
+            echo "Mason tools:"
+            ls ~/.local/share/nvim/mason/bin 2>/dev/null || echo "(none)"
+          '
+
       - name: Check test results
         if: always()
         run: |
@@ -176,13 +177,17 @@ jobs:
           echo "Node.js functionality: ${{ steps.test-node-func.outcome }}"
           echo "Neovim and dev tools: ${{ steps.test-neovim.outcome }}"
           echo "User environment: ${{ steps.test-user-env.outcome }}"
+          echo "Entrypoint PATH: ${{ steps.test-entrypoint-path.outcome }}"
+          echo "Plugin and Mason setup: ${{ steps.test-setup.outcome }}"
 
           if [[ "${{ steps.test-go-install.outcome }}" == "failure" || \
                 "${{ steps.test-go-func.outcome }}" == "failure" || \
                 "${{ steps.test-node-install.outcome }}" == "failure" || \
                 "${{ steps.test-node-func.outcome }}" == "failure" || \
                 "${{ steps.test-neovim.outcome }}" == "failure" || \
-                "${{ steps.test-user-env.outcome }}" == "failure" ]]; then
+                "${{ steps.test-user-env.outcome }}" == "failure" || \
+                "${{ steps.test-entrypoint-path.outcome }}" == "failure" || \
+                "${{ steps.test-setup.outcome }}" == "failure" ]]; then
             echo "One or more tests failed!"
             exit 1
           else

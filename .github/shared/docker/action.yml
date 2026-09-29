@@ -17,6 +17,9 @@ inputs:
   context:
     description: ""
     default: .
+  build-contexts:
+    required: false
+    description: "Extra named build contexts, one name=path per line"
   image-name:
     required: false
     description: ""
@@ -124,6 +127,7 @@ runs:
         platforms: ${{ inputs.platforms }}
         build-args: ${{ inputs.build-args }}
         context: ${{ inputs.context }}
+        build-contexts: ${{ inputs.build-contexts }}
         push: true
         tags: ${{ steps.image_tags.outputs.tags_for_registry }}
         labels: ${{ steps.meta.outputs.labels }}
@@ -135,6 +139,7 @@ runs:
       with:
         build-args: ${{ inputs.build-args }}
         context: ${{ inputs.context }}
+        build-contexts: ${{ inputs.build-contexts }}
         tags: ${{ steps.image_name.outputs.name_of_image }}:${{ steps.image_tags.outputs.tag_for_export }}
         outputs: type=docker,dest=/tmp/${{ steps.image_name.outputs.name_of_export }}.tar
 
