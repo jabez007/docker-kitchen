@@ -64,6 +64,14 @@ install_editor_stack() {
 
     tmp_dir=$(mktemp -d)
     curl -fL "$lazygit_url" -o "${tmp_dir}/lazygit.tar.gz" || die "Failed to download LazyGit"
+
+    # Each release has a checksums.txt with a "<sha256>  <asset name>" line per asset
+    local lazygit_sums
+    lazygit_sums=$(curl -fsSL "${lazygit_url%/*}/checksums.txt") ||
+      die "Failed to download LazyGit checksums"
+    verify_sha256 "${tmp_dir}/lazygit.tar.gz" \
+      "$(awk -v f="${lazygit_url##*/}" '$2 == f {print $1}' <<<"$lazygit_sums")"
+
     run_as_admin tar -C /usr/local/bin -xzf "${tmp_dir}/lazygit.tar.gz" lazygit
     rm -rf "$tmp_dir"
 

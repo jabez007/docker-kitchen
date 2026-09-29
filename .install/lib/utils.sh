@@ -189,6 +189,28 @@ github_release_asset_url() {
   echo "https://github.com${path}"
 }
 
+# Stop the run unless a downloaded file's SHA-256 matches the one upstream
+# publishes. An empty or malformed expected value also stops it, so a checksum
+# that failed to parse can't pass silently.
+#   verify_sha256 <file> <expected-hex>
+verify_sha256() {
+  local file="$1" expected="${2:-}" actual
+  expected="${expected,,}"
+  [[ "$expected" =~ ^[0-9a-f]{64}$ ]] ||
+    die "No valid SHA-256 to check ${file##*/} against (got '${2:-}')"
+
+  if command_exists sha256sum; then
+    actual=$(sha256sum "$file")
+  else
+    actual=$(shasum -a 256 "$file")
+  fi
+  actual="${actual%% *}"
+
+  [[ "$actual" == "$expected" ]] ||
+    die "Checksum mismatch for ${file##*/}: expected $expected, got $actual"
+  debug "SHA-256 OK for ${file##*/}"
+}
+
 # Decide whether to install a tool: yes if it's missing, or if --upgrade is set
 # and the installed version isn't the latest.
 #   should_install <name> <installed-version-fn> <latest-version-fn> [latest-fn args...]
