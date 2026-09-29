@@ -1,1 +1,5 @@
 .aider*
+
+# install.sh output
+/setup.log
+/setup.conf

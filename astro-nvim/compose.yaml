@@ -1,21 +1,19 @@
-version: "3.8"
-
 services:
   nvim-dev:
-    build: .
+    build:
+      context: .
+      # install.sh and .install/ come from the repo root (see the Dockerfile)
+      additional_contexts:
+        setup: ..
     container_name: nvim-dev-container
     volumes:
-      # Persist Neovim configuration and plugins
-      - nvim-config:/home/dev/.config/nvim
+      # Persist plugins, state and cache
       - nvim-share:/home/dev/.local/share/nvim
       - nvim-state:/home/dev/.local/state/nvim
       - nvim-cache:/home/dev/.cache/nvim
 
-      # Mount your project directory
-      - ./project:/home/dev/workspace
-
-      # Optional: persist all of dev home
-      #- dev-home:/home/dev
+      # The project to edit (defaults to this repo)
+      - ${WORKSPACE:-..}:/home/dev/workspace
 
     working_dir: /home/dev/workspace
     stdin_open: true
@@ -28,15 +26,7 @@ services:
     #   - "8080:8080"  # For web development
     #   - "3000:3000"  # For Node.js apps
 
-# Named volumes for persistence
 volumes:
-  nvim-config:
-    driver: local
   nvim-share:
-    driver: local
   nvim-state:
-    driver: local
   nvim-cache:
-    driver: local
-  dev-home:
-    driver: local

@@ -33,7 +33,8 @@ get_user_home() {
   fi
 }
 
-# Execute command as actual user (not root)
+# Execute an external command as the actual user (not root).
+# Shell functions can't cross sudo; wrap them in `bash -c` instead.
 run_as_user() {
   local actual_user user_home
   actual_user=$(get_actual_user)
@@ -65,35 +66,17 @@ run_as_admin() {
 # Environment Detection
 # ============================================================================
 
-# Detect if running in Docker or as root
+# Decide whether admin commands need sudo
 detect_environment() {
-  local is_docker=false
-  local is_root=false
   local use_sudo=true
 
-  # Check if running as root
-  if [[ $EUID -eq 0 ]]; then
-    is_root=true
+  # Root doesn't need sudo, and without sudo installed we can't use it
+  if [[ $EUID -eq 0 ]] || ! command -v sudo >/dev/null 2>&1; then
     use_sudo=false
   fi
 
-  # Check if running in Docker container (set -e safe)
-  if [[ -f /.dockerenv ]]; then
-    is_docker=true
-  elif [[ -f /proc/1/cgroup ]] && grep -qE 'docker|lxc' /proc/1/cgroup 2>/dev/null; then
-    is_docker=true
-  fi
-
-  # Check if `sudo` is available
-  if ! command -v sudo >/dev/null 2>&1; then
-    use_sudo=false
-  fi
-
-  # Export environment variables for use in other functions
-  export IS_DOCKER="$is_docker"
-  export IS_ROOT="$is_root"
   export USE_SUDO="$use_sudo"
 
-  debug "Environment: Docker=$is_docker, Root=$is_root, Use sudo=$use_sudo"
+  debug "Environment: EUID=$EUID, Use sudo=$use_sudo"
   debug "Actual user: $(get_actual_user), User home: $(get_user_home)"
 }

@@ -1,67 +1,51 @@
-# AstroNvim Docker Environment
+# AstroNvim Docker environment
 
-This repository contains a Dockerfile to set up a development environment with AstroNvim and other commonly used tools.
-It uses Docker volumes for persistent storage, ensuring fast startup times and consistent configurations across different machines.
+A Debian image with Neovim, the [AstroNvim config](https://github.com/jabez007/AstroNvim-config), and the language tools it needs.
+Plugins live in Docker volumes, so only the first run installs them.
 
-## Features
+The build-and-push workflow publishes `ghcr.io/jabez007/astro-nvim:latest` for amd64 and arm64.
 
-- **Pre-installed tools** like Neovim, LazyGit, Bottom, and more.
-- **Latest stable version of AstroNvim** configured out of the box.
-- **Support for both** amd64 and arm64 architectures.
-- **Non-root user** setup with bash as the default shell.
-- **Persistent configuration** using Docker volumes for fast container restarts.
-- **Smart plugin management** that installs plugins only on first run.
+## What's in the image
 
-### Included Tools
+The repo's `install.sh` builds it (`base go editor` as root, then `node config` as the `dev` user):
 
-The following tools and packages are installed:
+| Tool                   | Notes                                        |
+| ---------------------- | -------------------------------------------- |
+| Neovim                 | Latest stable release                        |
+| AstroNvim config       | From `ASTRONVIM_REPO` in `setup.conf`        |
+| Go                     | Latest release                               |
+| Node.js and npm        | Latest LTS through nvm                       |
+| Deno                   | Latest release                               |
+| LazyGit, Bottom        | Latest releases                              |
+| git, curl, ripgrep, jq | Debian packages                              |
+| python3, lua           | Debian packages                              |
+| gcc, make              | For Treesitter parsers and native extensions |
 
-| Tool    | Description                     |
-| ------- | ------------------------------- |
-| bash    | Default shell                   |
-| curl    | Command-line file transfer tool |
-| git     | Version control system          |
-| lua     | Lua interpreter                 |
-| nodejs  | JavaScript runtime              |
-| npm     | Node.js package manager         |
-| python3 | Python interpreter              |
-| go      | Go programming language         |
-| ripgrep | Fast search utility             |
-| lazygit | Simple terminal UI for Git      |
-| bottom  | System monitoring tool          |
+Go, Node and Deno are on `PATH` for Neovim and `docker exec` shells, not only for login shells.
 
-## Build Arguments
+## Build arguments
 
-The Dockerfile includes the following build arguments:
-
-| Argument     | Description                                         | Default Value |
-| ------------ | --------------------------------------------------- | ------------- |
-| DEVUSER_NAME | Username for the non-root user inside the container | dev           |
-| TARGETARCH   | Architecture of the Docker image (amd64 or arm64)   | Auto-detected |
-
-These arguments can be passed during the build process using the --build-arg flag.
+| Argument     | Description                              | Default |
+| ------------ | ---------------------------------------- | ------- |
+| DEVUSER_NAME | Name of the non-root user in the image   | dev     |
 
 ## Usage
 
-### Option 1: Docker Compose (Recommended)
+### Docker Compose
 
-Create a `docker-compose.yml` file in your project directory:
+Add a `compose.yaml` to your project:
 
 ```yaml
-version: "3.8"
-
 services:
   nvim-dev:
-    build: .
-    container_name: nvim-dev-container
+    image: ghcr.io/jabez007/astro-nvim:latest
     volumes:
-      # Persist Neovim configuration and plugins
-      - nvim-config:/home/dev/.config/nvim
+      # Persist plugins, state and cache
       - nvim-share:/home/dev/.local/share/nvim
       - nvim-state:/home/dev/.local/state/nvim
       - nvim-cache:/home/dev/.cache/nvim
 
-      # Mount your project directory
+      # Your project
       - ./:/home/dev/workspace
 
     working_dir: /home/dev/workspace
@@ -71,7 +55,6 @@ services:
       - TERM=xterm-256color
 
 volumes:
-  nvim-config:
   nvim-share:
   nvim-state:
   nvim-cache:
@@ -80,174 +63,108 @@ volumes:
 Then run:
 
 ```bash
-# Start the container (first time will install plugins automatically)
-docker-compose run --rm nvim-dev
+# The first run installs plugins and Mason tools
+docker compose run --rm nvim-dev
 
-# Or start in the background and attach
-docker-compose up -d nvim-dev
-docker-compose exec nvim-dev nvim
+# Or start it in the background and attach
+docker compose up -d nvim-dev
+docker compose exec nvim-dev nvim
 ```
 
-### Option 2: Direct Docker Usage
-
-Build the image:
-
-```bash
-docker build -t astronvim-env .
-```
-
-Run with persistent volumes:
+### Docker run
 
 ```bash
 docker run --rm -it \
-  -v nvim-config:/home/dev/.config/nvim \
   -v nvim-share:/home/dev/.local/share/nvim \
   -v nvim-state:/home/dev/.local/state/nvim \
   -v nvim-cache:/home/dev/.cache/nvim \
-  -v $(pwd):/home/dev/workspace \
+  -v "$(pwd)":/home/dev/workspace \
   -w /home/dev/workspace \
-  astronvim-env
+  ghcr.io/jabez007/astro-nvim:latest
 ```
 
-### First Run vs Subsequent Runs
+### Building it yourself
 
-- **First Run**: Takes ~30-60 seconds as plugins are installed automatically
-- **Subsequent Runs**: Instant startup since plugins are cached in volumes
-- **Plugin Updates**: Run `docker run --rm -it astronvim-env setup` to reinstall plugins
-
-### Advanced Usage
-
-#### Different Startup Modes
+The Dockerfile reads `install.sh` and `.install/` from the repo root through a build context named `setup`.
+From this directory:
 
 ```bash
-# Start Neovim normally
-docker run --rm -it astronvim-env
+docker build --build-context setup=.. -t astro-nvim .
 
-# Open a specific file
-docker run --rm -it astronvim-env myfile.txt
-
-# Start bash shell instead of Neovim
-docker run --rm -it astronvim-env bash
-
-# Force plugin setup/reinstall
-docker run --rm -it astronvim-env setup
-
-# Clean plugins and cache
-docker run --rm -it astronvim-env clean
+# or, with this directory's compose.yaml (mounts the repo root, or $WORKSPACE)
+docker compose build
+docker compose run --rm nvim-dev
 ```
 
-#### Custom User Setup
+Pass `--build-arg DEVUSER_NAME=me` for a different user, and change `/home/dev` in the volume paths to match.
 
-Build with a specific non-root user:
+## Startup modes
+
+The entrypoint installs plugins on the first interactive run, then starts Neovim.
 
 ```bash
-docker build --build-arg DEVUSER_NAME=mydevuser -t astronvim-env .
+# Start Neovim
+docker run --rm -it ghcr.io/jabez007/astro-nvim:latest
+
+# Open a file
+docker run --rm -it ghcr.io/jabez007/astro-nvim:latest myfile.txt
+
+# Start bash instead
+docker run --rm -it ghcr.io/jabez007/astro-nvim:latest bash
+
+# Sync plugins and install Mason tools again
+docker run --rm -it ghcr.io/jabez007/astro-nvim:latest setup
+
+# Delete plugins, Mason tools, state and cache
+docker run --rm -it ghcr.io/jabez007/astro-nvim:latest clean
 ```
 
-Then adjust volume paths in your docker-compose.yml or run commands:
+`setup` runs `Lazy! sync`, then `MasonToolsInstallSync` if the config uses mason-tool-installer.
+Add the volume flags from above to `setup` and `clean`, or they act on a throwaway container.
+
+## Volumes
+
+| Volume path           | Holds                          |
+| --------------------- | ------------------------------ |
+| `~/.local/share/nvim` | Plugins (lazy) and Mason tools |
+| `~/.local/state/nvim` | Undo history, shada, logs      |
+| `~/.cache/nvim`       | Caches                         |
+
+`~/.config/nvim` isn't a volume.
+The config comes from the image, so pulling or rebuilding the image updates it.
+If a new config version adds plugins, Lazy installs them on the next start, or run `setup`.
+
+Use separate volume names to keep plugins apart between projects, e.g. `-v nvim-share-project1:/home/dev/.local/share/nvim`.
+
+### Clean up
 
 ```bash
-docker run --rm -it \
-  -v nvim-config:/home/mydevuser/.config/nvim \
-  -v nvim-share:/home/mydevuser/.local/share/nvim \
-  -v $(pwd):/home/mydevuser/workspace \
-  -w /home/mydevuser/workspace \
-  astronvim-env
-```
+# Remove the volumes for a fresh start
+docker volume rm nvim-share nvim-state nvim-cache
 
-#### Multiple Projects
-
-Use different volume sets for different projects:
-
-```bash
-# Project 1
-docker run --rm -it \
-  -v nvim-config-project1:/home/dev/.config/nvim \
-  -v nvim-share-project1:/home/dev/.local/share/nvim \
-  -v $(pwd)/project1:/home/dev/workspace \
-  astronvim-env
-
-# Project 2
-docker run --rm -it \
-  -v nvim-config-project2:/home/dev/.config/nvim \
-  -v nvim-share-project2:/home/dev/.local/share/nvim \
-  -v $(pwd)/project2:/home/dev/workspace \
-  astronvim-env
-```
-
-## Volume Management
-
-The container uses Docker volumes to persist:
-
-- Neovim configuration (`~/.config/nvim`)
-- Installed plugins (`~/.local/share/nvim`)
-- Plugin state (`~/.local/state/nvim`)
-- Cache files (`~/.cache/nvim`)
-
-### Backup and Restore
-
-```bash
-# Backup configuration
-docker run --rm -v nvim-config:/source -v $(pwd):/backup alpine tar czf /backup/nvim-config.tar.gz -C /source .
-
-# Restore configuration
-docker run --rm -v nvim-config:/target -v $(pwd):/backup alpine tar xzf /backup/nvim-config.tar.gz -C /target
-```
-
-### Clean Up
-
-```bash
-# Remove all volumes (fresh start)
-docker volume rm nvim-config nvim-share nvim-state nvim-cache
-
-# Or use docker-compose
-docker-compose down -v
+# Or, with Compose
+docker compose down -v
 ```
 
 ## Troubleshooting
 
-### Plugin Installation Issues
-
-```bash
-# Clean and reinstall plugins
-docker run --rm -it astronvim-env clean
-docker run --rm -it astronvim-env setup
-```
-
-### Performance Issues
+If plugins are broken, run `clean` and then `setup` with your volumes attached.
 
 ```bash
 # Check volume disk usage
 docker system df -v
-
-# Clean unused volumes
-docker volume prune
 ```
 
-### Configuration Updates
+## Installing locally instead
 
-If you update your AstroNvim configuration, run:
+To set up the same tools on your own machine, use the repo's `install.sh` with the same components as this image:
 
 ```bash
-docker run --rm -it astronvim-env setup
+curl -fsSL https://raw.githubusercontent.com/jabez007/docker-kitchen/master/install.sh | bash -s -- base go node editor config
 ```
 
-## Local Installation (Alternative)
-
-If you wish to install this on your local machine rather than run it as a Docker container, you can use the bash scripts:
-
-```bash
-# System-wide installation (requires sudo)
-curl -fsSL https://raw.githubusercontent.com/jabez007/docker-kitchen/master/astro-nvim/install.sh | sudo bash
-
-# User-level configuration
-curl -fsSL https://raw.githubusercontent.com/jabez007/docker-kitchen/master/astro-nvim/setup.sh | bash
-```
-
-## Contributing
-
-Feel free to fork this repository and submit pull requests if you have improvements or suggestions.
+See the [root README](../README.md) for all components and options.
 
 ## License
 
-This project is licensed under the MIT License.
+MIT

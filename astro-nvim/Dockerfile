@@ -1,46 +1,31 @@
-FROM debian:stable-slim
+# syntax=docker/dockerfile:1
 
-# Set target architecture variable
-ARG TARGETARCH
+# install.sh and .install/ come from the repo root through a build context named
+# "setup", which replaces this stage:
+#   docker build --build-context setup=.. -t astro-nvim .
+# compose.yaml and CI pass it. Without it, this stage fails with that hint.
+FROM busybox:1 AS setup
+RUN echo "Missing build context 'setup'. Build with: docker build --build-context setup=.. ." >&2 && exit 1
+
+FROM debian:stable-slim
 
 # Create a non-root user
 ARG DEVUSER_NAME=dev
 RUN useradd -ms /bin/bash ${DEVUSER_NAME}
 
-# Enable the arm64 architecture
-RUN if [ "$TARGETARCH" = "arm64" ]; then \
-  dpkg --add-architecture arm64; \
-  fi
-
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-# Create setup directory and copy setup files
-RUN mkdir -p /opt/dev-setup
-COPY install.sh wrapper.sh setup.conf /opt/dev-setup/
-COPY .install /opt/dev-setup/.install
-
-# Set GitHub branch for script downloads if needed
-ARG GITHUB_BRANCH=master
-ENV GITHUB_BRANCH=${GITHUB_BRANCH}
-
-# Make scripts executable
-RUN chmod +x /opt/dev-setup/install.sh && \
-  chmod +x /opt/dev-setup/wrapper.sh
+# The setup scripts and setup.conf are bind-mounted rather than copied, so they
+# never end up in an image layer.
 
 # Install system-wide development environment
-RUN cd /opt/dev-setup && \
-  ./wrapper.sh base go editor --system-wide --debug && \
+RUN --mount=type=bind,from=setup,target=/opt/dev-setup \
+  --mount=type=bind,source=setup.conf,target=/opt/setup.conf \
+  bash /opt/dev-setup/install.sh --config /opt/setup.conf --system-wide base go editor && \
   apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Clean up setup scripts
-RUN rm -rf /opt/dev-setup/install.sh \
-  /opt/dev-setup/wrapper.sh \
-  /opt/dev-setup/setup.conf \
-  /opt/dev-setup/.install
-
 # Copy the entrypoint script into the container
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
+COPY --chmod=755 entrypoint.sh /usr/local/bin/entrypoint.sh
 
 # Switch to non-root user
 USER ${DEVUSER_NAME}
@@ -50,37 +35,28 @@ WORKDIR /home/${DEVUSER_NAME}
 # Set shell for ToggleTerm and Deno installer
 ENV SHELL="/bin/bash"
 
-# Copy setup scripts for user-level configuration
-COPY --chown=${DEVUSER_NAME} install.sh wrapper.sh setup.conf /home/${DEVUSER_NAME}/
-COPY --chown=${DEVUSER_NAME} .install /home/${DEVUSER_NAME}/.install
+# Set up user-level development environment. ~/.nvm/current links to the
+# default Node so PATH can point at it without loading nvm.
+RUN --mount=type=bind,from=setup,target=/opt/dev-setup \
+  --mount=type=bind,source=setup.conf,target=/opt/setup.conf \
+  bash /opt/dev-setup/install.sh --config /opt/setup.conf node config && \
+  source ~/.nvm/nvm.sh && \
+  ln -sfn ~/.nvm/versions/node/"$(nvm version default)" ~/.nvm/current
 
-# Make user scripts executable
-RUN chmod +x /home/${DEVUSER_NAME}/install.sh && \
-  chmod +x /home/${DEVUSER_NAME}/wrapper.sh
+# install.sh adds these to PATH in shell startup files, which the entrypoint,
+# `docker exec` and Neovim's jobs never read
+ENV PATH="/home/${DEVUSER_NAME}/.nvm/current/bin:/home/${DEVUSER_NAME}/.deno/bin:/usr/local/go/bin:/home/${DEVUSER_NAME}/go/bin:${PATH}"
 
-# Set up user-level development environment
-RUN cd /home/${DEVUSER_NAME} && \
-  ./wrapper.sh node config --debug && \
-  rm -f /home/${DEVUSER_NAME}/setup.log
-
-# Create directories for volume mounts
-RUN mkdir -p /home/${DEVUSER_NAME}/.config/nvim \
-  /home/${DEVUSER_NAME}/.local/share/nvim \
+# Create directories for volume mounts and a default lazygit config
+RUN mkdir -p /home/${DEVUSER_NAME}/.local/share/nvim \
   /home/${DEVUSER_NAME}/.local/state/nvim \
   /home/${DEVUSER_NAME}/.cache/nvim \
-  /home/${DEVUSER_NAME}/.config/lazygit
+  /home/${DEVUSER_NAME}/.config/lazygit && \
+  touch /home/${DEVUSER_NAME}/.config/lazygit/config.yml
 
-# Create a default lazygit config
-RUN touch /home/${DEVUSER_NAME}/.config/lazygit/config.yml
-
-# Clean up setup scripts
-RUN rm -rf /home/${DEVUSER_NAME}/install.sh \
-  /home/${DEVUSER_NAME}/wrapper.sh \
-  /home/${DEVUSER_NAME}/setup.conf \
-  /home/${DEVUSER_NAME}/.install
-
-# Define volumes for persistent storage
-VOLUME ["/home/${DEVUSER_NAME}/.config/nvim", "/home/${DEVUSER_NAME}/.local/share/nvim", "/home/${DEVUSER_NAME}/.local/state/nvim", "/home/${DEVUSER_NAME}/.cache/nvim"]
+# Plugins, state and cache persist in volumes. The config in ~/.config/nvim
+# stays in the image, so rebuilding the image updates it.
+VOLUME ["/home/${DEVUSER_NAME}/.local/share/nvim", "/home/${DEVUSER_NAME}/.local/state/nvim", "/home/${DEVUSER_NAME}/.cache/nvim"]
 
 # Start nvim
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

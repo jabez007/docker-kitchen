@@ -7,13 +7,19 @@ install_python_stack() {
   local user_home
   user_home=$(get_user_home)
 
+  install_python_build_deps
+
   # Install pyenv
   if [[ ! -d "$user_home/.pyenv" ]]; then
     info "Installing pyenv..."
-    # Ensure dependencies for building python are met (handled by base.sh)
-    
     run_as_user bash -c "curl -fsSL https://pyenv.run | bash" ||
       die "pyenv installation failed"
+  elif [[ "${CONFIG[UPGRADE]}" == "true" ]]; then
+    # pyenv is a git checkout; `pyenv update` (from pyenv.run) also updates its plugins
+    info "Updating pyenv..."
+    run_as_user "$user_home/.pyenv/bin/pyenv" update ||
+      run_as_user git -C "$user_home/.pyenv" pull --ff-only ||
+      die "pyenv update failed"
   else
     info "pyenv already installed"
   fi
@@ -24,13 +30,41 @@ install_python_stack() {
     configure_fish_pyenv
   fi
 
-  # Install latest stable Python if not present
-  if run_as_user bash -c "command -v pyenv >/dev/null" && ! run_as_user bash -c "pyenv versions --bare | grep -q '3.'" ; then
-    info "Installing latest stable Python 3..."
-    # This can take a while, so we might want to skip it by default or let the user do it
-    # For now, let's just make sure pyenv is usable
-    info "pyenv is ready. You can install python versions using: pyenv install <version>"
-  fi
+  # Building an interpreter takes minutes, so leave that to the user
+  info "pyenv is ready. Open a new shell and run: pyenv install 3"
+}
+
+# Headers pyenv needs to build a complete CPython (see pyenv's wiki)
+install_python_build_deps() {
+  local pm packages=()
+  pm=$(get_package_manager)
+  case "$pm" in
+  apt)
+    packages=(
+      build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev
+      libsqlite3-dev libncurses-dev xz-utils tk-dev libxml2-dev
+      libxmlsec1-dev libffi-dev liblzma-dev
+    )
+    ;;
+  dnf | yum)
+    packages=(
+      make gcc patch zlib-devel bzip2 bzip2-devel readline-devel
+      sqlite sqlite-devel openssl-devel tk-devel libffi-devel
+      xz-devel libuuid-devel gdbm-devel ncurses-devel
+    )
+    ;;
+  pacman)
+    packages=(base-devel openssl zlib xz tk)
+    ;;
+  brew)
+    packages=(openssl readline sqlite3 xz tcl-tk zlib)
+    ;;
+  *)
+    warn "Unknown package manager '$pm'; install Python build dependencies yourself"
+    return 0
+    ;;
+  esac
+  install_packages "${packages[@]}"
 }
 
 configure_bash_pyenv() {
