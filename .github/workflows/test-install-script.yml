@@ -286,6 +286,44 @@ jobs:
               su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --debug base go'
             "
 
+  test-upgrade:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Test --upgrade
+        run: |
+          docker run --rm -v "$PWD":/workspace -w /workspace \
+            -e GITHUB_BRANCH="${{ github.head_ref || github.ref_name }}" \
+            ubuntu:24.04 \
+            bash -c "
+              set -exo pipefail
+
+              apt update && apt install -y sudo curl git
+              useradd -m -s /bin/bash testuser
+              echo 'testuser ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+              chown -R testuser:testuser /workspace
+              chmod +x /workspace/install.sh
+
+              # Start from an old Go so there is something to upgrade
+              curl -fsSL https://go.dev/dl/go1.22.0.linux-amd64.tar.gz | tar -C /usr/local -xz
+              echo 'export PATH=\$PATH:/usr/local/go/bin' >> /home/testuser/.profile
+
+              # Without --upgrade, the old Go is left alone
+              su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --debug base go node editor' | tee /tmp/install.log
+              grep -q 'Go go1.22.0 already installed' /tmp/install.log
+
+              # With --upgrade, Go moves to the latest release and current tools are skipped
+              su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --debug --upgrade go node editor' | tee /tmp/upgrade.log
+              grep -q 'Upgrading Go from go1.22.0' /tmp/upgrade.log
+              # (set -e ignores a pipeline negated with !, so check explicitly)
+              if su - testuser -c 'go version' | grep -q go1.22.0; then exit 1; fi
+              for tool in Neovim LazyGit Bottom NVM Node.js Deno; do
+                grep -q \"\$tool .* is up to date\" /tmp/upgrade.log
+              done
+            "
+
   lint-script:
     runs-on: ubuntu-latest
     steps:
