@@ -108,6 +108,7 @@ Components always run in the order above, whatever order you list them in, so `c
 #### Configuration File
 
 `install.sh` reads `setup.conf` from its own directory (or the current directory when piped from `curl`).
+`--config FILE` reads a different file instead, as the astro-nvim image does with `astro-nvim/setup.conf`.
 `--save-config` writes the defaults plus any other options on the same command line:
 
 ```bash

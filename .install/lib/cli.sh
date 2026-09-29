@@ -23,6 +23,7 @@ OPTIONS:
     --astronvim-repo URL     AstroNvim config repository
     --git-name NAME          Git user.name, if not already set
     --git-email EMAIL        Git user.email, if not already set
+    --config FILE            Read settings from FILE instead of setup.conf
     --save-config            Save the configuration (including other options given) and exit
     --help, -h               Show this help message
 
@@ -94,6 +95,10 @@ parse_arguments() {
     --git-email)
       [[ $# -ge 2 ]] || die "--git-email requires an email argument"
       CONFIG["GIT_USER_EMAIL"]="$2"
+      shift 2
+      ;;
+    --config)
+      # Already applied by set_config_file
       shift 2
       ;;
     --save-config)

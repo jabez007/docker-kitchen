@@ -1,7 +1,7 @@
 #!/bin/bash
 # lib/config.sh - Configuration management
 
-readonly CONFIG_FILE="${STATE_DIR}/setup.conf"
+CONFIG_FILE="${STATE_DIR}/setup.conf"
 
 # Settings that setup.conf may set and --save-config writes
 readonly CONFIG_KEYS=(
@@ -21,6 +21,33 @@ declare -g -A CONFIG=(
   [LOG_LEVEL]="INFO"
   [UPGRADE]=false
 )
+
+# Pick up --config FILE. load_config runs before parse_arguments, so this scans
+# the arguments on its own; parse_arguments then skips --config.
+set_config_file() {
+  local file="" saving=false
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+    --config)
+      [[ $# -ge 2 ]] || die "--config requires a file argument"
+      file="$2"
+      shift 2
+      ;;
+    --save-config)
+      saving=true
+      shift
+      ;;
+    *) shift ;;
+    esac
+  done
+
+  if [[ -n "$file" ]]; then
+    # --save-config may create the file; anything else needs it to exist
+    [[ -f "$file" || "$saving" == "true" ]] || die "Config file not found: $file"
+    CONFIG_FILE="$file"
+  fi
+  readonly CONFIG_FILE
+}
 
 # Load configuration from file
 load_config() {

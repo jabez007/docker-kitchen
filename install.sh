@@ -104,6 +104,7 @@ debug "All modules sourced successfully"
 # ============================================================================
 
 main() {
+    set_config_file "$@"
     load_config
     parse_arguments "$@"
     debug "Selected components: ${SELECTED_COMPONENTS[*]}"
