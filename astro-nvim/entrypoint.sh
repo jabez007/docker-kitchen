@@ -43,14 +43,20 @@ install_plugins() {
     return 1
   fi
 
-  # Install Mason tools
+  # Install the Mason tools the config lists (mason-tool-installer's ensure_installed)
   print_status "Installing Mason tools..."
-  if nvim --headless +"MasonInstall basedpyright css-lsp debugpy delve deno eslint-lsp goimports gomodifytags gopls gotests html-lsp iferr impl isort json-lsp js-debug-adapter prettierd vtsls vue-language-server" +qa; then
-    print_success "Mason tools installed successfully"
-  else
+  local rc=0
+  nvim --headless \
+    -c 'if exists(":MasonToolsInstallSync") == 2 | execute "MasonToolsInstallSync" | else | cquit 3 | endif' \
+    -c "qa" || rc=$?
+  case "$rc" in
+  0) print_success "Mason tools installed successfully" ;;
+  3) print_status "Config doesn't use mason-tool-installer; skipping Mason tools" ;;
+  *)
     print_error "Failed to install Mason tools"
     return 1
-  fi
+    ;;
+  esac
 }
 
 # Function to handle first-time setup
@@ -58,8 +64,7 @@ first_time_setup() {
   print_status "First-time setup detected. This may take a few minutes..."
 
   # Create necessary directories
-  mkdir -p "$HOME/.config/nvim" \
-    "$HOME/.local/share/nvim" \
+  mkdir -p "$HOME/.local/share/nvim" \
     "$HOME/.local/state/nvim" \
     "$HOME/.cache/nvim" \
     "$HOME/.config/lazygit"
@@ -69,17 +74,9 @@ first_time_setup() {
     print_success "Setup completed successfully!"
   else
     print_error "Setup failed. Neovim will start but some features may not work."
+    return 1
   fi
 }
-
-# Function to handle graceful shutdown
-cleanup() {
-  print_status "Shutting down..."
-  exit 0
-}
-
-# Set up signal handlers
-trap cleanup SIGTERM SIGINT
 
 # Main logic
 main() {
@@ -90,11 +87,12 @@ main() {
   setup)
     print_status "Force setup requested..."
     first_time_setup
-    exit 0
+    exit $?
     ;;
   clean)
     print_status "Cleaning Neovim data..."
     rm -rf "$HOME/.local/share/nvim/lazy" \
+      "$HOME/.local/share/nvim/mason" \
       "$HOME/.local/state/nvim" \
       "$HOME/.cache/nvim"
     print_success "Cleanup completed"
@@ -106,7 +104,8 @@ main() {
   if ! check_plugins; then
     # Only run setup if we're not just executing a command
     if { [ "$#" -eq 0 ] || [[ "$1" != -* ]]; } && [ -t 0 ]; then
-      first_time_setup
+      # Start Neovim even if setup fails
+      first_time_setup || true
     else
       print_status "Non-interactive mode detected, skipping plugin installation"
     fi
