@@ -137,25 +137,81 @@ configure_starship() {
   fi
 }
 
+# The block in ~/.bashrc that starts Fish. `exec fish` replaces Bash, so any
+# line after the block never runs; move_fish_launcher_last keeps it at the end.
+FISH_LAUNCHER_BEGIN="# >>> install.sh: launch fish (keep this block last) >>>"
+FISH_LAUNCHER_END="# <<< install.sh: launch fish <<<"
+# First line of the block as older versions of this script wrote it, without markers
+FISH_LAUNCHER_LEGACY="# Launch fish shell automatically unless bash was started from fish"
+
+# move_fish_launcher_last replaces any block that differs from this one, so
+# changes here reach existing installs on their next run.
+fish_launcher_block() {
+  echo "$FISH_LAUNCHER_BEGIN"
+  echo "$FISH_LAUNCHER_LEGACY"
+  cat <<'EOF'
+# `bash -c` and `bash -i -c` stay in Bash so scripts still work. /proc gives
+# the parent's name without ps, which slim container images don't have.
+if command -v fish &> /dev/null && [[ $- == *i* && -z ${BASH_EXECUTION_STRING:-} ]]; then
+    parent_process=$(cat "/proc/$PPID/comm" 2>/dev/null || ps -o comm= -p "$PPID" 2>/dev/null)
+    if [[ "$parent_process" != "fish" ]]; then
+        if shopt -q login_shell; then
+            exec fish --login
+        fi
+        exec fish
+    fi
+fi
+EOF
+  echo "$FISH_LAUNCHER_END"
+}
+
+has_fish_launcher() {
+  grep -qxF -e "$FISH_LAUNCHER_BEGIN" -e "$FISH_LAUNCHER_LEGACY" "$1" 2>/dev/null
+}
+
 configure_bash_integration() {
   info "Configuring Bash to Fish integration..."
 
-  local user_home
-  user_home=$(get_user_home)
+  local bashrc
+  bashrc="$(get_user_home)/.bashrc"
 
-  local bashrc="${user_home}/.bashrc"
-
-  if ! grep -q "exec fish" "$bashrc" 2>/dev/null; then
+  if ! has_fish_launcher "$bashrc"; then
     {
       echo ""
-      echo "# Launch fish shell automatically unless bash was started from fish"
-      echo 'if command -v fish &> /dev/null && [[ $- == *i* ]]; then'
-      echo '    parent_process=$(ps -o comm= -p $(ps -o ppid= -p $$))'
-      echo '    if [[ "$parent_process" != "fish" ]]; then'
-      echo '        exec fish'
-      echo '    fi'
-      echo 'fi'
+      fish_launcher_block
     } | run_as_user tee -a "$bashrc" >/dev/null
     info "Bash configured to launch Fish automatically"
   fi
+}
+
+# Move the Fish launcher to the end of ~/.bashrc, after whatever other
+# components (and the NVM installer) appended. main runs this after every
+# component, since a later `install.sh node` also appends past it. It does
+# nothing if the launcher isn't there.
+move_fish_launcher_last() {
+  local bashrc block rest
+  bashrc="$(get_user_home)/.bashrc"
+  has_fish_launcher "$bashrc" || return 0
+
+  block=$(fish_launcher_block)
+  if [[ "$(tail -n "$(wc -l <<<"$block")" "$bashrc")" == "$block" ]]; then
+    return 0
+  fi
+
+  # Drop the old block (marked or legacy) along with the blank lines before it
+  rest=$(awk -v begin="$FISH_LAUNCHER_BEGIN" -v end="$FISH_LAUNCHER_END" \
+    -v legacy="$FISH_LAUNCHER_LEGACY" '
+    skip == "marked" { if ($0 == end) skip = ""; next }
+    skip == "legacy" { if ($0 == "fi") skip = ""; next }
+    $0 == begin { skip = "marked"; held = ""; next }
+    $0 == legacy { skip = "legacy"; held = ""; next }
+    /^[[:space:]]*$/ { held = held $0 "\n"; next }
+    { printf "%s%s\n", held, $0; held = "" }
+  ' "$bashrc")
+
+  {
+    [[ -n "$rest" ]] && printf '%s\n\n' "$rest"
+    echo "$block"
+  } | run_as_user tee "$bashrc" >/dev/null
+  info "Moved the Fish launcher to the end of $bashrc"
 }
