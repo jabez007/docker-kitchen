@@ -64,14 +64,12 @@ install_node_stack() {
     nvm_run "nvm alias default 'lts/*'" >/dev/null
   fi
 
-  # Install Deno. Its installer replaces an existing install with the latest release.
+  # Install Deno. A new release replaces the binary in place.
   if ! command_exists unzip; then
     install_packages unzip
   fi
   if should_install Deno deno_installed_version github_latest_version denoland/deno; then
-    run_as_user bash -c \
-      "curl -fsSL https://deno.land/install.sh | sh -s -- -y" ||
-      die "Deno installation failed"
+    install_deno
     update_path "$user_home/.deno/bin" "Deno binaries"
   fi
 
@@ -79,6 +77,38 @@ install_node_stack() {
   if command_exists fish; then
     configure_fish_nvm
   fi
+}
+
+# Install Deno into ~/.deno/bin, where its own installer puts it, from the
+# release zip checked against the .sha256sum file published next to it. The
+# user downloads and unzips it, since under sudo they can't read root's
+# temp dir.
+install_deno() {
+  local target tag url tmp_dir sum deno_bin
+  deno_bin="$(get_user_home)/.deno/bin"
+
+  case "$(uname -s)-$(uname -m)" in
+  Linux-x86_64) target="x86_64-unknown-linux-gnu" ;;
+  Linux-aarch64 | Linux-arm64) target="aarch64-unknown-linux-gnu" ;;
+  Darwin-x86_64) target="x86_64-apple-darwin" ;;
+  Darwin-arm64) target="aarch64-apple-darwin" ;;
+  *) die "Unsupported platform for Deno: $(uname -s) $(uname -m)" ;;
+  esac
+
+  tag=$(github_latest_version denoland/deno) || die "Could not resolve the latest Deno release"
+  url="https://github.com/denoland/deno/releases/download/${tag}/deno-${target}.zip"
+  debug "Deno download URL: $url"
+
+  tmp_dir=$(run_as_user mktemp -d)
+  run_as_user curl -fL "$url" -o "${tmp_dir}/deno.zip" || die "Failed to download Deno"
+  # "<sha256>  deno-<target>.zip"
+  sum=$(curl -fsSL "${url}.sha256sum") || die "Failed to download the Deno checksum"
+  verify_sha256 "${tmp_dir}/deno.zip" "${sum%%[[:space:]]*}"
+
+  run_as_user mkdir -p "$deno_bin"
+  run_as_user unzip -o -q "${tmp_dir}/deno.zip" deno -d "$deno_bin" || die "Failed to extract Deno"
+  run_as_user chmod 0755 "${deno_bin}/deno"
+  rm -rf "$tmp_dir"
 }
 
 configure_fish_nvm() {
@@ -90,8 +120,7 @@ configure_fish_nvm() {
   # Install Fisher if not present
   if ! run_as_user fish -c "functions -q fisher" 2>/dev/null; then
     info "Installing Fisher..."
-    run_as_user fish -c "curl -fsSL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher install jorgebucaran/fisher" ||
-      die "Fisher installation failed – aborting Fish/NVM configuration"
+    install_fisher
   fi
 
   # Install Bass plugin for NVM
@@ -109,4 +138,14 @@ end
 EOF
     info "NVM configured for Fish shell"
   fi
+}
+
+# Install Fisher from its latest release tag. fish_plugins records it as
+# jorgebucaran/fisher@<tag>, so `fisher update` refetches that tag instead of
+# main; pin_fisher_to_latest moves it to a newer one.
+install_fisher() {
+  local tag
+  tag=$(github_latest_version jorgebucaran/fisher) || die "Could not resolve the latest Fisher release"
+  run_as_user fish -c "curl -fsSL https://raw.githubusercontent.com/jorgebucaran/fisher/${tag}/functions/fisher.fish | source && fisher install jorgebucaran/fisher@${tag}" ||
+    die "Fisher installation failed – aborting Fish/NVM configuration"
 }

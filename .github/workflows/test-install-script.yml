@@ -103,6 +103,8 @@ jobs:
                   ;;
                 python)
                   su - testuser -c 'bash -i -c \"command -v pyenv && pyenv --version\"'
+                  # pyenv is cloned at a release tag, not master
+                  su - testuser -c 'git -C ~/.pyenv describe --tags --exact-match'
                   ;;
                 editor)
                   su - testuser -c 'command -v nvim && command -v lazygit && command -v btm'

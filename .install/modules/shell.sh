@@ -35,8 +35,25 @@ install_shell_stack() {
   # Fisher manages the Fish plugins (bass for NVM)
   if [[ "${CONFIG[UPGRADE]}" == "true" ]] && run_as_user fish -c "functions -q fisher" 2>/dev/null; then
     info "Updating Fish plugins..."
+    pin_fisher_to_latest
     run_as_user fish -c "fisher update" || warn "Failed to update Fish plugins"
   fi
+}
+
+# Point Fisher's line in fish_plugins at its latest release tag, so the next
+# `fisher update` moves Fisher to that tag. Installs from before Fisher was
+# pinned have no tag on that line.
+pin_fisher_to_latest() {
+  local fish_plugins tag pinned
+  fish_plugins="$(get_user_home)/.config/fish/fish_plugins"
+  [[ -f "$fish_plugins" ]] || return 0
+
+  if ! tag=$(github_latest_version jorgebucaran/fisher); then
+    warn "Couldn't look up the latest Fisher release; leaving it where it is"
+    return 0
+  fi
+  pinned=$(sed -E "s|^jorgebucaran/fisher(@.*)?\$|jorgebucaran/fisher@${tag}|" "$fish_plugins")
+  printf '%s\n' "$pinned" | run_as_user tee "$fish_plugins" >/dev/null
 }
 
 # Install Starship from its release tarball, checked against the .sha256 file

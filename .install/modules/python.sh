@@ -9,17 +9,13 @@ install_python_stack() {
 
   install_python_build_deps
 
-  # Install pyenv
+  # Install pyenv, or move it to the latest release
   if [[ ! -d "$user_home/.pyenv" ]]; then
     info "Installing pyenv..."
-    run_as_user bash -c "curl -fsSL https://pyenv.run | bash" ||
-      die "pyenv installation failed"
+    install_pyenv
   elif [[ "${CONFIG[UPGRADE]}" == "true" ]]; then
-    # pyenv is a git checkout; `pyenv update` (from pyenv.run) also updates its plugins
     info "Updating pyenv..."
-    run_as_user "$user_home/.pyenv/bin/pyenv" update ||
-      run_as_user git -C "$user_home/.pyenv" pull --ff-only ||
-      die "pyenv update failed"
+    install_pyenv
   else
     info "pyenv already installed"
   fi
@@ -32,6 +28,34 @@ install_python_stack() {
 
   # Building an interpreter takes minutes, so leave that to the user
   info "pyenv is ready. Open a new shell and run: pyenv install 3"
+}
+
+# pyenv.run clones pyenv and its plugins from master. Clone pyenv and
+# pyenv-virtualenv at their latest release tags instead, so a change on master
+# upstream doesn't reach anyone until it's released. pyenv-update is left out,
+# since the `git pull` it runs fails on a tag.
+install_pyenv() {
+  local pyenv_root
+  pyenv_root="$(get_user_home)/.pyenv"
+  pyenv_repo_at_latest_tag pyenv "$pyenv_root"
+  pyenv_repo_at_latest_tag pyenv-virtualenv "${pyenv_root}/plugins/pyenv-virtualenv"
+}
+
+# Clone github.com/pyenv/<repo> into <dir> at its latest release tag, or check
+# that tag out if <dir> is already a clone
+#   pyenv_repo_at_latest_tag <repo> <dir>
+pyenv_repo_at_latest_tag() {
+  local repo="$1" dir="$2" tag
+  tag=$(github_latest_version "pyenv/$repo") || die "Could not resolve the latest $repo release"
+
+  if [[ -d "$dir/.git" ]]; then
+    run_as_user git -C "$dir" fetch --quiet --depth 1 origin tag "$tag" &&
+      run_as_user git -C "$dir" -c advice.detachedHead=false checkout --quiet "$tag"
+  else
+    run_as_user git -c advice.detachedHead=false clone --quiet --depth 1 --branch "$tag" \
+      "https://github.com/pyenv/$repo.git" "$dir"
+  fi || die "Failed to check out $repo $tag in $dir"
+  info "$repo is at $tag"
 }
 
 # Headers pyenv needs to build a complete CPython (see pyenv's wiki)
