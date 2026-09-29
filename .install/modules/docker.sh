@@ -100,7 +100,7 @@ install_docker_stack() {
         run_as_admin dnf config-manager --add-repo "$repo_url"
       fi
     fi
-    run_as_admin dnf -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+    install_packages docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
     ;;
   pacman)
     install_packages docker docker-compose docker-buildx

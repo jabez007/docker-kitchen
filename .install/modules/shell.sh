@@ -1,6 +1,10 @@
 #!/bin/bash
 # modules/shell.sh - Shell stack installation
 
+starship_installed_version() {
+  command_exists starship && starship --version | awk 'NR==1 {print $2}'
+}
+
 install_shell_stack() {
   info "Installing shell stack (Fish, Tmux, Starship)..."
 
@@ -8,12 +12,9 @@ install_shell_stack() {
   install_packages fish tmux
 
   # Install Starship
-  if ! command_exists starship || [[ "${CONFIG[UPGRADE]}" == "true" ]]; then
-    info "Installing Starship..."
+  if should_install Starship starship_installed_version github_latest_version starship/starship; then
     curl -fsSL https://starship.rs/install.sh | sh -s -- -y ||
       die "Failed to install Starship"
-  else
-    info "Starship already installed"
   fi
 
   # Configure shells
@@ -30,6 +31,12 @@ install_shell_stack() {
   fi
   if [[ -d "${user_home}/.pyenv" ]]; then
     configure_fish_pyenv
+  fi
+
+  # Fisher manages the Fish plugins (bass for NVM)
+  if [[ "${CONFIG[UPGRADE]}" == "true" ]] && run_as_user fish -c "functions -q fisher" 2>/dev/null; then
+    info "Updating Fish plugins..."
+    run_as_user fish -c "fisher update" || warn "Failed to update Fish plugins"
   fi
 }
 
@@ -69,10 +76,13 @@ configure_tmux() {
   local tmux_conf="${user_home}/.tmux.conf"
   local tpm_dir="${user_home}/.tmux/plugins/tpm"
 
-  # Install TPM if not present
+  # Install TPM if not present. Its plugins update from inside tmux (prefix + U).
   if [[ ! -d "$tpm_dir" ]]; then
     run_as_user git clone https://github.com/tmux-plugins/tpm "$tpm_dir" ||
       warn "Failed to install TPM"
+  elif [[ "${CONFIG[UPGRADE]}" == "true" ]]; then
+    info "Updating TPM..."
+    run_as_user git -C "$tpm_dir" pull --ff-only || warn "Failed to update TPM"
   fi
 
   # Configure tmux.conf if not already configured
@@ -100,9 +110,13 @@ configure_starship() {
   local starship_config="${user_home}/.config/starship.toml"
   run_as_user mkdir -p "$(dirname "$starship_config")"
 
-  # Apply preset
-  run_as_user starship preset "${CONFIG[STARSHIP_PRESET]}" -o "$starship_config" ||
-    warn "Failed to apply Starship preset: ${CONFIG[STARSHIP_PRESET]}"
+  # Apply the preset only once, so re-runs (including --upgrade) keep your edits
+  if [[ ! -f "$starship_config" ]]; then
+    run_as_user starship preset "${CONFIG[STARSHIP_PRESET]}" -o "$starship_config" ||
+      warn "Failed to apply Starship preset: ${CONFIG[STARSHIP_PRESET]}"
+  else
+    info "Keeping existing $starship_config (delete it to apply the '${CONFIG[STARSHIP_PRESET]}' preset)"
+  fi
 
   # Add to Fish config
   local fish_config="${user_home}/.config/fish/config.fish"

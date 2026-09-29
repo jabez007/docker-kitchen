@@ -1,13 +1,17 @@
 #!/bin/bash
 # modules/go.sh - Go programming language installation
 
-install_go() {
-  if command_exists go && [[ "${CONFIG[UPGRADE]}" != "true" ]]; then
-    info "Go is already installed, skipping..."
-    return 0
-  fi
+go_installed_version() {
+  command_exists go && go version | awk '{print $3}'
+}
 
-  info "Installing Go..."
+go_latest_version() {
+  curl -fsSL "https://go.dev/VERSION?m=text" | awk 'NR==1'
+}
+
+install_go() {
+  should_install Go go_installed_version go_latest_version || return 0
+
   local go_ver go_url os arch tmp_dir
 
   os=$(uname -s | tr '[:upper:]' '[:lower:]')
@@ -19,8 +23,7 @@ install_go() {
   i386 | i686) arch="386" ;;
   esac
 
-  go_ver=$(curl -fsSL "https://go.dev/VERSION?m=text" | head -n1) ||
-    die "Unable to resolve latest Go version"
+  go_ver=$(go_latest_version) || die "Unable to resolve latest Go version"
   [[ -n "$go_ver" ]] || die "Unable to resolve latest Go version"
   go_url="https://go.dev/dl/${go_ver}.${os}-${arch}.tar.gz"
 

@@ -18,7 +18,8 @@ get_package_manager() {
   fi
 }
 
-# Install packages based on package manager
+# Install packages based on package manager. With --upgrade, packages that are
+# already installed are upgraded too (apt-get install and pacman -Syu always do).
 install_packages() {
   local pm packages=("$@")
   pm=$(get_package_manager)
@@ -31,19 +32,24 @@ install_packages() {
     run_as_admin env DEBIAN_FRONTEND=noninteractive \
       apt-get install -y --no-install-recommends "${packages[@]}"
     ;;
-  dnf)
-    local pkg
+  dnf | yum)
+    # `dnf install` leaves installed packages alone, so upgrade those separately
+    local pkg missing=() present=()
     for pkg in "${packages[@]}"; do
-      if ! rpm -q "$pkg" &>/dev/null; then
-        debug "Installing $pkg..."
-        run_as_admin dnf install -y "$pkg"
+      if rpm -q "$pkg" &>/dev/null; then
+        present+=("$pkg")
       else
-        info "$pkg is already installed"
+        missing+=("$pkg")
       fi
     done
-    ;;
-  yum)
-    run_as_admin yum install -y "${packages[@]}"
+    debug "Missing: ${missing[*]:-none}; already installed: ${present[*]:-none}"
+
+    if [[ ${#missing[@]} -gt 0 ]]; then
+      run_as_admin "$pm" install -y "${missing[@]}"
+    fi
+    if [[ "${CONFIG[UPGRADE]}" == "true" && ${#present[@]} -gt 0 ]]; then
+      run_as_admin "$pm" upgrade -y "${present[@]}"
+    fi
     ;;
   brew)
     brew install "${packages[@]}"

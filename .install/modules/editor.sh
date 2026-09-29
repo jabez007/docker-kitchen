@@ -1,12 +1,23 @@
 #!/bin/bash
 # modules/editor.sh - Editor stack installation
 
+nvim_installed_version() {
+  command_exists nvim && nvim --version | awk 'NR==1 {print $2}'
+}
+
+lazygit_installed_version() {
+  command_exists lazygit && lazygit --version | sed -n 's/.*, version=\([^,]*\).*/\1/p'
+}
+
+btm_installed_version() {
+  command_exists btm && btm --version | awk 'NR==1 {print $2}'
+}
+
 install_editor_stack() {
   info "Installing editor stack (Neovim, LazyGit, Bottom)..."
 
   # Install Neovim
-  if ! command_exists nvim || [[ "${CONFIG[UPGRADE]}" == "true" ]]; then
-    info "Installing Neovim..."
+  if should_install Neovim nvim_installed_version github_latest_version neovim/neovim; then
     local arch nvim_tarball tmp_dir
 
     arch=$(uname -m)
@@ -26,13 +37,10 @@ install_editor_stack() {
     rm -rf "$tmp_dir"
 
     verify_installation nvim "Neovim"
-  else
-    info "Neovim already installed"
   fi
 
   # Install LazyGit
-  if ! command_exists lazygit || [[ "${CONFIG[UPGRADE]}" == "true" ]]; then
-    info "Installing LazyGit..."
+  if should_install LazyGit lazygit_installed_version github_latest_version jesseduffield/lazygit; then
     local lazygit_arch lazygit_url tmp_dir
 
     # Map uname -m output to LazyGit architecture naming
@@ -68,13 +76,10 @@ install_editor_stack() {
     rm -rf "$tmp_dir"
 
     verify_installation lazygit "LazyGit"
-  else
-    info "LazyGit already installed"
   fi
 
   # Install Bottom
-  if ! command_exists btm || [[ "${CONFIG[UPGRADE]}" == "true" ]]; then
-    info "Installing Bottom..."
+  if should_install Bottom btm_installed_version github_latest_version ClementTsang/bottom; then
     local pm bottom_url tmp_dir
     pm=$(get_package_manager)
 
@@ -126,15 +131,12 @@ install_editor_stack() {
     else
       # Try package manager
       case "$pm" in
-      brew) brew install bottom ;;
-      pacman) run_as_admin pacman -S --noconfirm bottom ;;
+      brew | pacman) install_packages bottom ;;
       *) warn "Bottom not available via $pm, skipping..." ;;
       esac
     fi
 
     verify_installation btm "Bottom"
-  else
-    info "Bottom already installed"
   fi
 
   info "Editor stack installation complete. Use 'config' component to install AstroNvim configuration."

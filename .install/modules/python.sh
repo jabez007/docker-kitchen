@@ -14,6 +14,12 @@ install_python_stack() {
     info "Installing pyenv..."
     run_as_user bash -c "curl -fsSL https://pyenv.run | bash" ||
       die "pyenv installation failed"
+  elif [[ "${CONFIG[UPGRADE]}" == "true" ]]; then
+    # pyenv is a git checkout; `pyenv update` (from pyenv.run) also updates its plugins
+    info "Updating pyenv..."
+    run_as_user "$user_home/.pyenv/bin/pyenv" update ||
+      run_as_user git -C "$user_home/.pyenv" pull --ff-only ||
+      die "pyenv update failed"
   else
     info "pyenv already installed"
   fi

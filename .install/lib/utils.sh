@@ -161,6 +161,54 @@ update_path() {
 }
 
 # ============================================================================
+# Versions and Upgrades
+# ============================================================================
+
+# Latest release tag of a GitHub repo (owner/name), e.g. v0.12.5. Follows the
+# releases/latest redirect, so it needs neither jq nor an API token.
+github_latest_version() {
+  local url
+  url=$(curl -fsSLI -o /dev/null -w '%{url_effective}' "https://github.com/$1/releases/latest") || return 1
+  [[ "$url" == */releases/tag/* ]] || return 1
+  echo "${url##*/}"
+}
+
+# Decide whether to install a tool: yes if it's missing, or if --upgrade is set
+# and the installed version isn't the latest.
+#   should_install <name> <installed-version-fn> <latest-version-fn> [latest-fn args...]
+# installed-version-fn prints nothing when the tool is missing. Versions are
+# compared with any leading "v" removed.
+should_install() {
+  local name="$1" installed_fn="$2" latest_fn="$3"
+  shift 3
+  local installed latest
+
+  installed=$("$installed_fn" 2>/dev/null || true)
+  if [[ -z "$installed" ]]; then
+    info "Installing $name..."
+    return 0
+  fi
+
+  if [[ "${CONFIG[UPGRADE]}" != "true" ]]; then
+    info "$name $installed already installed"
+    return 1
+  fi
+
+  latest=$("$latest_fn" "$@" 2>/dev/null || true)
+  if [[ -z "$latest" ]]; then
+    warn "Couldn't look up the latest $name version; reinstalling"
+    return 0
+  fi
+  if [[ "${installed#v}" == "${latest#v}" ]]; then
+    info "$name $installed is up to date"
+    return 1
+  fi
+
+  info "Upgrading $name from $installed to $latest..."
+  return 0
+}
+
+# ============================================================================
 # Installation Verification
 # ============================================================================
 

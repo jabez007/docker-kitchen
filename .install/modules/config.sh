@@ -93,7 +93,16 @@ install_astronvim_config() {
   local config_dir="${user_home}/.config/nvim"
 
   if [[ -d "$config_dir" ]]; then
-    warn "Neovim config directory exists, skipping AstroNvim setup"
+    if [[ "${CONFIG[UPGRADE]}" != "true" ]]; then
+      info "Neovim config directory exists, skipping AstroNvim setup"
+    elif [[ -d "${config_dir}/.git" ]]; then
+      # --ff-only leaves local commits or edits alone; fix those by hand
+      info "Updating AstroNvim configuration..."
+      run_as_user git -C "$config_dir" pull --ff-only ||
+        warn "Couldn't fast-forward $config_dir; update it by hand"
+    else
+      warn "$config_dir has no .git (KEEP_GIT=false), so it can't be updated"
+    fi
     return 0
   fi
 
