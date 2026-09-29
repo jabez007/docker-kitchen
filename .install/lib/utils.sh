@@ -118,6 +118,13 @@ update_path() {
     # Start with .profile (shell-agnostic)
     shell_configs=("${user_home}/.profile")
 
+    # A login bash reads .bash_profile instead of .profile when it exists
+    # (Arch and Fedora ship one), and Arch's .bashrc returns early in a
+    # non-interactive shell, so `bash -l -c` would miss the PATH otherwise
+    if [[ -f "${user_home}/.bash_profile" ]]; then
+      shell_configs+=("${user_home}/.bash_profile")
+    fi
+
     # Add shell-specific configs for interactive shells
     if [[ -n "${ZSH_VERSION-}" ]] || command_exists zsh; then
       shell_configs+=("${user_home}/.zshrc")
