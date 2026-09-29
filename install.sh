@@ -49,7 +49,7 @@ declare -A COMPONENT_DESC=(
     [python]="Python stack (pyenv and build dependencies)"
     [editor]="Editor stack (Neovim, LazyGit, Bottom)"
     [config]="User configurations (Git, AstroNvim config)"
-    [shell]="Shell stack (Fish, Tmux, Starship)"
+    [shell]="Shell stack (Fish, Tmux, Starship, Atuin)"
     [docker]="Docker and Docker Compose stack"
 )
 
