@@ -159,7 +159,8 @@ With it, each component brings its tools up to date:
   Go, LazyGit, Starship, Atuin and Deno publish their own checksums.
   Neovim and Bottom don't, so the script uses the digest GitHub computes when a release asset is uploaded.
   That catches a corrupted or altered download, but not a bad file that was uploaded to the release itself.
-- Installs NVM, pyenv and Fisher from their latest release tags, so a change on an upstream default branch doesn't reach you until it's released
+- Installs NVM, pyenv, Fisher and bash-preexec from their latest release tags, so a change on an upstream default branch doesn't reach you until it's released.
+  None of them publish checksums, so a tag that moves after release would go unnoticed.
 - Logs to `setup.log`
 - Fish gets NVM (via bass), pyenv, tmux auto-attach, and Starship
 
