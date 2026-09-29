@@ -189,6 +189,24 @@ github_release_asset_url() {
   echo "https://github.com${path}"
 }
 
+# SHA-256 digest GitHub lists for a release asset, from its download URL
+# (https://github.com/<owner>/<repo>/releases/download/<tag>/<file>). GitHub
+# computes it when the asset is uploaded. It catches a corrupted, truncated or
+# altered download, but not an asset someone replaced on GitHub itself.
+#   github_asset_sha256 <download-url>
+github_asset_sha256() {
+  local path repo tag name
+  path="${1#https://github.com/}"
+  repo="${path%%/releases/download/*}"
+  tag="${path#*/releases/download/}"
+  name="${tag#*/}"
+  tag="${tag%%/*}"
+  # The asset list has one copy-to-clipboard button per asset, labelled
+  # "digest for <file>" with the digest on the same line
+  curl -fsSL "https://github.com/$repo/releases/expanded_assets/$tag" |
+    grep -F "digest for ${name}\"" | grep -oE 'sha256:[0-9a-f]{64}' | sed -n '1s/^sha256://p'
+}
+
 # Stop the run unless a downloaded file's SHA-256 matches the one upstream
 # publishes. An empty or malformed expected value also stops it, so a checksum
 # that failed to parse can't pass silently.

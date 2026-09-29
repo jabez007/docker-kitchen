@@ -152,7 +152,10 @@ With it, each component brings its tools up to date:
 - Under `sudo`, user configs go to the original user's home and are owned by them
 - Supports apt, dnf, yum, brew, and pacman
 - Stops at the first failed command and reports the file and line
-- Checks the Go, LazyGit and Starship downloads against the SHA-256 each project publishes, and stops on a mismatch
+- Checks each download against a SHA-256 and stops on a mismatch.
+  Go, LazyGit and Starship publish their own checksums.
+  Neovim and Bottom don't, so the script uses the digest GitHub computes when a release asset is uploaded.
+  That catches a corrupted or altered download, but not a bad file that was uploaded to the release itself.
 - Logs to `setup.log`
 - Fish gets NVM (via bass), pyenv, tmux auto-attach, and Starship
 

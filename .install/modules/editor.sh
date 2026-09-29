@@ -18,7 +18,7 @@ install_editor_stack() {
 
   # Install Neovim
   if should_install Neovim nvim_installed_version github_latest_version neovim/neovim; then
-    local arch nvim_tarball tmp_dir
+    local arch nvim_tarball nvim_tag nvim_url tmp_dir
 
     arch=$(uname -m)
     case "$arch" in
@@ -27,9 +27,16 @@ install_editor_stack() {
     *) die "Unsupported architecture for Neovim: $arch" ;;
     esac
 
+    # Download from the version tag rather than "stable", so the digest lookup
+    # and the download name the same release
+    nvim_tag=$(github_latest_version neovim/neovim) || die "Could not resolve the latest Neovim release"
+    nvim_url="https://github.com/neovim/neovim/releases/download/${nvim_tag}/${nvim_tarball}.tar.gz"
+    debug "Neovim download URL: $nvim_url"
+
     tmp_dir=$(mktemp -d)
-    curl -fL "https://github.com/neovim/neovim/releases/download/stable/${nvim_tarball}.tar.gz" \
-      -o "${tmp_dir}/nvim.tar.gz" || die "Failed to download Neovim"
+    curl -fL "$nvim_url" -o "${tmp_dir}/nvim.tar.gz" || die "Failed to download Neovim"
+    # Neovim publishes no checksum file, so use the digest GitHub lists
+    verify_sha256 "${tmp_dir}/nvim.tar.gz" "$(github_asset_sha256 "$nvim_url" || true)"
 
     run_as_admin rm -rf "/opt/${nvim_tarball}"
     run_as_admin tar -C /opt -xzf "${tmp_dir}/nvim.tar.gz" || die "Failed to extract Neovim"
@@ -84,6 +91,8 @@ install_editor_stack() {
     pm=$(get_package_manager)
 
     # Release assets include musl builds too (bottom-musl_*); the patterns take the glibc one
+    # Bottom publishes no checksum file, so the packages are checked against the
+    # digest GitHub lists for each release asset
     if [[ "$pm" == "apt" ]]; then
       bottom_url=$(github_release_asset_url ClementTsang/bottom \
         "/bottom_[^/]*_$(dpkg --print-architecture)\.deb$") || true
@@ -92,7 +101,8 @@ install_editor_stack() {
 
       if [[ -n "$bottom_url" ]]; then
         tmp_dir=$(mktemp -d)
-        curl -fL "$bottom_url" -o "${tmp_dir}/bottom.deb"
+        curl -fL "$bottom_url" -o "${tmp_dir}/bottom.deb" || die "Failed to download Bottom"
+        verify_sha256 "${tmp_dir}/bottom.deb" "$(github_asset_sha256 "$bottom_url" || true)"
         run_as_admin apt-get install -y "${tmp_dir}/bottom.deb"
         rm -rf "$tmp_dir"
       else
@@ -106,7 +116,8 @@ install_editor_stack() {
 
       if [[ -n "$bottom_url" ]]; then
         tmp_dir=$(mktemp -d)
-        curl -fL "$bottom_url" -o "${tmp_dir}/bottom.rpm"
+        curl -fL "$bottom_url" -o "${tmp_dir}/bottom.rpm" || die "Failed to download Bottom"
+        verify_sha256 "${tmp_dir}/bottom.rpm" "$(github_asset_sha256 "$bottom_url" || true)"
         run_as_admin dnf install -y "${tmp_dir}/bottom.rpm"
         rm -rf "$tmp_dir"
       else
