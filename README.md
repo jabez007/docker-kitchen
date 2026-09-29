@@ -101,8 +101,8 @@ Components always run in the order above, whatever order you list them in, so `c
 # Set git identity (only applied if not already configured)
 ./install.sh --git-name "Your Name" --git-email "you@example.com" config
 
-# Reinstall/upgrade tools that are already present
-./install.sh --upgrade go editor
+# Upgrade tools that are already installed
+./install.sh --upgrade go node editor
 ```
 
 #### Configuration File
@@ -115,6 +115,18 @@ Components always run in the order above, whatever order you list them in, so `c
 ```
 
 Supported keys: `SYSTEM_WIDE`, `UPGRADE`, `KEEP_GIT`, `TMUX_SESSION`, `STARSHIP_PRESET`, `ASTRONVIM_REPO`, `GIT_USER_NAME`, `GIT_USER_EMAIL`, `LOG_LEVEL`.
+
+#### Upgrading
+
+Without `--upgrade`, a re-run skips anything that is already installed.
+With it, each component brings its tools up to date:
+
+- Go, Neovim, LazyGit, Bottom, Starship, NVM, Node.js and Deno compare the installed version with the latest release and reinstall only when they differ.
+- Node.js moves to the latest LTS and carries global npm packages over. The old version stays installed; remove it with `nvm uninstall <version>`.
+- pyenv, TPM, Fisher plugins and the AstroNvim config update themselves with `git pull` or their own update command.
+  The AstroNvim config only updates if it was cloned with `KEEP_GIT=true`.
+- System packages (base, shell, docker and so on) upgrade through the package manager.
+- An existing `starship.toml` is never overwritten. Delete it to apply a new preset.
 
 #### Key Features
 
@@ -199,7 +211,7 @@ SHELL ["fish", "-c"]
 - All operations are logged to `setup.log` in the script directory
 - Use `--debug` flag for verbose output
 - Each component can be installed independently for troubleshooting
-- Re-running skips tools that are already installed (use `--upgrade` to reinstall them)
+- Re-running skips tools that are already installed (use `--upgrade` to update them)
 
 #### System Requirements
 
