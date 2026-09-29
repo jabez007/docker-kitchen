@@ -5,8 +5,12 @@ starship_installed_version() {
   command_exists starship && starship --version | awk 'NR==1 {print $2}'
 }
 
+atuin_installed_version() {
+  command_exists atuin && atuin --version | awk 'NR==1 {print $2}'
+}
+
 install_shell_stack() {
-  info "Installing shell stack (Fish, Tmux, Starship)..."
+  info "Installing shell stack (Fish, Tmux, Starship, Atuin)..."
 
   # Install Fish and Tmux
   install_packages fish tmux
@@ -16,11 +20,25 @@ install_shell_stack() {
     install_starship
   fi
 
+  # Install Atuin
+  local atuin_before
+  atuin_before=$(atuin_installed_version 2>/dev/null || true)
+  if should_install Atuin atuin_installed_version github_latest_version atuinsh/atuin; then
+    install_atuin
+  fi
+
   # Configure shells
   configure_fish_shell
   configure_tmux
   configure_starship
+  configure_bash_atuin
+  configure_fish_atuin
   configure_bash_integration
+
+  # Bring in the history Bash and Fish already have, only on Atuin's first install
+  if [[ -z "$atuin_before" ]]; then
+    import_atuin_history
+  fi
 
   # Hook up tools that were installed before Fish existed
   local user_home
@@ -87,6 +105,102 @@ install_starship() {
   rm -rf "$tmp_dir"
 
   verify_installation starship "Starship"
+}
+
+# Install Atuin from its release tarball, checked against the .sha256 file
+# published next to it. Like Starship, the Linux builds are static (musl).
+install_atuin() {
+  local target tag url tmp_dir sum
+
+  case "$(uname -s)-$(uname -m)" in
+  Linux-x86_64) target="x86_64-unknown-linux-musl" ;;
+  Linux-aarch64 | Linux-arm64) target="aarch64-unknown-linux-musl" ;;
+  Darwin-x86_64) target="x86_64-apple-darwin" ;;
+  Darwin-arm64) target="aarch64-apple-darwin" ;;
+  *) die "Unsupported platform for Atuin: $(uname -s) $(uname -m)" ;;
+  esac
+
+  tag=$(github_latest_version atuinsh/atuin) || die "Could not resolve the latest Atuin release"
+  url="https://github.com/atuinsh/atuin/releases/download/${tag}/atuin-${target}.tar.gz"
+  debug "Atuin download URL: $url"
+
+  tmp_dir=$(mktemp -d)
+  curl -fL "$url" -o "${tmp_dir}/atuin.tar.gz" || die "Failed to download Atuin"
+  # "<sha256> *atuin-<target>.tar.gz"
+  sum=$(curl -fsSL "${url}.sha256") || die "Failed to download the Atuin checksum"
+  verify_sha256 "${tmp_dir}/atuin.tar.gz" "${sum%%[[:space:]]*}"
+
+  tar -C "$tmp_dir" -xzf "${tmp_dir}/atuin.tar.gz" "atuin-${target}/atuin"
+  run_as_admin install -m 0755 "${tmp_dir}/atuin-${target}/atuin" /usr/local/bin/atuin
+  rm -rf "$tmp_dir"
+
+  verify_installation atuin "Atuin"
+}
+
+# Bash has no preexec hook of its own, so Atuin needs bash-preexec
+configure_bash_atuin() {
+  info "Configuring Bash for Atuin..."
+  local user_home bashrc preexec tag script
+  user_home=$(get_user_home)
+  bashrc="${user_home}/.bashrc"
+  preexec="${user_home}/.bash-preexec.sh"
+
+  # bash-preexec has no release assets or checksums; take the script from the
+  # latest tag
+  if [[ ! -f "$preexec" || "${CONFIG[UPGRADE]}" == "true" ]]; then
+    tag=$(github_latest_version rcaloras/bash-preexec) ||
+      die "Could not resolve the latest bash-preexec release"
+    # Download before writing, so a failed download doesn't leave an empty file
+    script=$(curl -fsSL "https://raw.githubusercontent.com/rcaloras/bash-preexec/${tag}/bash-preexec.sh") ||
+      die "Failed to download bash-preexec"
+    printf '%s\n' "$script" | run_as_user tee "$preexec" >/dev/null
+    debug "bash-preexec $tag saved to $preexec"
+  fi
+
+  if ! grep -q 'atuin init bash' "$bashrc" 2>/dev/null; then
+    run_as_user tee -a "$bashrc" >/dev/null <<'EOF'
+
+# Atuin shell history (Ctrl+R and the up arrow). bash-preexec gives it the
+# hooks Bash lacks.
+if [[ $- == *i* ]] && command -v atuin &> /dev/null; then
+    [[ -f ~/.bash-preexec.sh ]] && source ~/.bash-preexec.sh
+    eval "$(atuin init bash)"
+fi
+EOF
+    info "Atuin configured in Bash"
+  fi
+}
+
+configure_fish_atuin() {
+  info "Configuring Fish for Atuin..."
+  local user_home fish_config
+  user_home=$(get_user_home)
+  fish_config="${user_home}/.config/fish/config.fish"
+
+  if ! grep -q 'atuin init fish' "$fish_config" 2>/dev/null; then
+    run_as_user mkdir -p "$(dirname "$fish_config")"
+    run_as_user tee -a "$fish_config" >/dev/null <<'EOF'
+
+# Atuin shell history (Ctrl+R and the up arrow)
+if status is-interactive; and type -q atuin
+    atuin init fish | source
+end
+EOF
+    info "Atuin configured in Fish"
+  fi
+}
+
+# Import each shell's existing history. A shell with no history file yet is
+# skipped.
+import_atuin_history() {
+  local shell
+  for shell in bash fish; do
+    if run_as_user atuin import "$shell" >/dev/null 2>&1; then
+      info "Imported $shell history into Atuin"
+    else
+      debug "No $shell history for Atuin to import"
+    fi
+  done
 }
 
 configure_fish_shell() {

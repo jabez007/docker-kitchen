@@ -46,7 +46,7 @@ curl -fsSL https://raw.githubusercontent.com/jabez007/docker-kitchen/BRANCH/inst
 | Component | Description |
 |-----------|-------------|
 | `base` | Base dependencies (curl, git, build tools, ripgrep, etc.) |
-| `shell` | Shell stack (Fish shell, Tmux, Starship prompt) |
+| `shell` | Shell stack (Fish shell, Tmux, Starship prompt, Atuin shell history) |
 | `go` | Go programming language (latest version) |
 | `node` | Node.js stack (NVM, Node.js LTS, Deno) |
 | `python` | pyenv plus the headers needed to build Python |
@@ -139,7 +139,7 @@ Supported keys: `SYSTEM_WIDE`, `UPGRADE`, `KEEP_GIT`, `TMUX_SESSION`, `STARSHIP_
 Without `--upgrade`, a re-run skips anything that is already installed.
 With it, each component brings its tools up to date:
 
-- Go, Neovim, LazyGit, Bottom, Starship, NVM, Node.js and Deno compare the installed version with the latest release and reinstall only when they differ.
+- Go, Neovim, LazyGit, Bottom, Starship, Atuin, NVM, Node.js and Deno compare the installed version with the latest release and reinstall only when they differ.
 - Node.js moves to the latest LTS and carries global npm packages over. The old version stays installed; remove it with `nvm uninstall <version>`.
 - pyenv and pyenv-virtualenv move to their latest release tags.
   An older run may have installed the pyenv-update plugin; `pyenv update` fails on a tag, so use `install.sh --upgrade python` instead.
@@ -156,7 +156,7 @@ With it, each component brings its tools up to date:
 - Supports apt, dnf, yum, brew, and pacman
 - Stops at the first failed command and reports the file and line
 - Checks each download against a SHA-256 and stops on a mismatch.
-  Go, LazyGit, Starship and Deno publish their own checksums.
+  Go, LazyGit, Starship, Atuin and Deno publish their own checksums.
   Neovim and Bottom don't, so the script uses the digest GitHub computes when a release asset is uploaded.
   That catches a corrupted or altered download, but not a bad file that was uploaded to the release itself.
 - Installs NVM, pyenv and Fisher from their latest release tags, so a change on an upstream default branch doesn't reach you until it's released
@@ -208,6 +208,11 @@ With it, each component brings its tools up to date:
 - Tmux with TPM (Tmux Plugin Manager)
 - Starship prompt with customizable presets
 - Automatic tmux session management
+- [Atuin](https://atuin.sh) shell history for Fish and Bash.
+  It keeps each command's directory, exit code and duration, and Ctrl+R and the up arrow open its full-screen search.
+  Bash gets the hooks Atuin needs from [bash-preexec](https://github.com/rcaloras/bash-preexec), saved as `~/.bash-preexec.sh`.
+  The first install imports your existing Bash and Fish history.
+  The script never logs in for sync. Run `atuin register` or `atuin login` yourself if you want it.
 - Bash-to-Fish integration.
   An interactive Bash switches to Fish at the end of `~/.bashrc`, so nothing below that block runs.
   Each run of `install.sh` moves the block back to the end, below anything added since.

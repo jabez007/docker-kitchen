@@ -113,7 +113,10 @@ jobs:
                   su - testuser -c 'git config --global --list'
                   ;;
                 shell)
-                  su - testuser -c 'command -v fish && command -v tmux && command -v starship'
+                  su - testuser -c 'command -v fish && command -v tmux && command -v starship && command -v atuin'
+                  # Atuin's hooks load in Bash and are set up for Fish
+                  su - testuser -c 'bash -i -c \"declare -F __atuin_history\"'
+                  grep -q 'atuin init fish' /home/testuser/.config/fish/config.fish
                   ;;
                 docker)
                   command -v docker && docker --version
