@@ -231,7 +231,9 @@ With it, each component brings its tools up to date:
 - The font goes in `~/.local/share/fonts/<name>`, or `/usr/local/share/fonts/<name>` with `--system-wide`, and `fc-cache` picks it up.
   The script installs `fontconfig` if `fc-cache` is missing.
 - On macOS it installs the Homebrew cask `font-<name>-nerd-font` instead.
+  A few fonts have a different cask name, such as `font-caskaydia-cove-nerd-font` for CascadiaCode. Install those with `brew install --cask` yourself.
 - Afterwards, pick the font in your terminal's settings. For Mononoki it's called "Mononoki Nerd Font".
+- If you followed this README's old manual step, a copy of Mononoki is also in `~/.fonts`. Delete it with `rm ~/.fonts/MononokiNerdFont*` and run `fc-cache -f`.
 
 ##### Docker Component
 
