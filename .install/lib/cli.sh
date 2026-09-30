@@ -11,7 +11,7 @@ A modular Linux development environment setup script.
 
 COMPONENTS (always installed in this order):
 $(for comp in "${COMPONENT_ORDER[@]}"; do printf "    %-8s - %s\n" "$comp" "${COMPONENT_DESC[$comp]:-No description available}"; done)
-    all      - Install all components
+    all      - Install all components except font
 
 OPTIONS:
     --debug, -d              Enable debug output
@@ -23,6 +23,7 @@ OPTIONS:
     --astronvim-repo URL     AstroNvim config repository
     --git-name NAME          Git user.name, if not already set
     --git-email EMAIL        Git user.email, if not already set
+    --nerd-font NAME         Nerd Font for the font component (default: ${CONFIG["NERD_FONT"]})
     --config FILE            Read settings from FILE instead of setup.conf
     --save-config            Save the configuration (including other options given) and exit
     --help, -h               Show this help message
@@ -43,6 +44,7 @@ LOGS:
 NOTES:
     - 'editor' installs system-wide tools (Neovim, LazyGit, Bottom)
     - 'config' installs user-specific configurations (AstroNvim config)
+    - 'font' goes on the machine that runs your terminal, not one you SSH into
     - When running as root or with sudo, configs are installed to the original user's home
 EOF
 }
@@ -97,6 +99,11 @@ parse_arguments() {
       CONFIG["GIT_USER_EMAIL"]="$2"
       shift 2
       ;;
+    --nerd-font)
+      [[ $# -ge 2 ]] || die "--nerd-font requires a font name argument"
+      CONFIG["NERD_FONT"]="$2"
+      shift 2
+      ;;
     --config)
       # Already applied by set_config_file
       shift 2
@@ -110,7 +117,11 @@ parse_arguments() {
       exit 0
       ;;
     all)
-      for comp in "${COMPONENT_ORDER[@]}"; do selected[$comp]=1; done
+      # A font only helps where the terminal runs, which often isn't the
+      # machine this sets up, so font has to be named
+      for comp in "${COMPONENT_ORDER[@]}"; do
+        [[ "$comp" == font ]] || selected[$comp]=1
+      done
       shift
       ;;
     *)

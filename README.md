@@ -53,9 +53,11 @@ curl -fsSL https://raw.githubusercontent.com/jabez007/docker-kitchen/BRANCH/inst
 | `editor` | Editor stack (Neovim, LazyGit, Bottom system monitor) |
 | `docker` | Docker and Docker Compose |
 | `config` | User configurations (Git settings, AstroNvim configuration) |
-| `all` | Install all components |
+| `font` | A Nerd Font for your terminal (Mononoki unless you pick another) |
+| `all` | Install all components except `font` |
 
 Components always run in the order above, whatever order you list them in, so `config` sees the Neovim that `editor` installed.
+`all` leaves out `font`, because a font only helps on the machine that runs your terminal. Over SSH or in a container, that's a different machine.
 
 #### Usage Examples
 
@@ -107,6 +109,9 @@ Components always run in the order above, whatever order you list them in, so `c
 # Use custom AstroNvim configuration
 ./install.sh --astronvim-repo "https://github.com/your-user/astronvim-config.git" config
 
+# Install a different Nerd Font (names as on https://www.nerdfonts.com/font-downloads)
+./install.sh --nerd-font JetBrainsMono font
+
 # Set git identity (only applied if not already configured)
 ./install.sh --git-name "Your Name" --git-email "you@example.com" config
 
@@ -132,14 +137,14 @@ curl -fsSL https://raw.githubusercontent.com/jabez007/docker-kitchen/master/inst
 curl -fsSL https://raw.githubusercontent.com/jabez007/docker-kitchen/master/install.sh | bash -s -- --config ./setup.conf all
 ```
 
-Supported keys: `SYSTEM_WIDE`, `UPGRADE`, `KEEP_GIT`, `TMUX_SESSION`, `STARSHIP_PRESET`, `ASTRONVIM_REPO`, `GIT_USER_NAME`, `GIT_USER_EMAIL`, `LOG_LEVEL`.
+Supported keys: `SYSTEM_WIDE`, `UPGRADE`, `KEEP_GIT`, `TMUX_SESSION`, `STARSHIP_PRESET`, `ASTRONVIM_REPO`, `GIT_USER_NAME`, `GIT_USER_EMAIL`, `NERD_FONT`, `LOG_LEVEL`.
 
 #### Upgrading
 
 Without `--upgrade`, a re-run skips anything that is already installed.
 With it, each component brings its tools up to date:
 
-- Go, Neovim, LazyGit, Bottom, Starship, Atuin, NVM, Node.js and Deno compare the installed version with the latest release and reinstall only when they differ.
+- Go, Neovim, LazyGit, Bottom, Starship, Atuin, NVM, Node.js, Deno and the Nerd Font compare the installed version with the latest release and reinstall only when they differ.
 - Node.js moves to the latest LTS and carries global npm packages over. The old version stays installed; remove it with `nvm uninstall <version>`.
 - pyenv and pyenv-virtualenv move to their latest release tags.
   An older run may have installed the pyenv-update plugin; `pyenv update` fails on a tag, so use `install.sh --upgrade python` instead.
@@ -156,7 +161,7 @@ With it, each component brings its tools up to date:
 - Supports apt, dnf, yum, brew, and pacman
 - Stops at the first failed command and reports the file and line
 - Checks each download against a SHA-256 and stops on a mismatch.
-  Go, LazyGit, Starship, Atuin and Deno publish their own checksums.
+  Go, LazyGit, Starship, Atuin, Deno and Nerd Fonts publish their own checksums.
   Neovim and Bottom don't, so the script uses the digest GitHub computes when a release asset is uploaded.
   That catches a corrupted or altered download, but not a bad file that was uploaded to the release itself.
 - Installs NVM, pyenv, Fisher and bash-preexec from their latest release tags, so a change on an upstream default branch doesn't reach you until it's released.
@@ -219,6 +224,15 @@ With it, each component brings its tools up to date:
   Each run of `install.sh` moves the block back to the end, below anything added since.
   `bash -c` and `bash -i -c` stay in Bash.
 
+##### Font Component
+
+- A [Nerd Font](https://www.nerdfonts.com), which AstroNvim and the Starship presets need for their icons.
+  Without one, the prompt and the Neovim file tree show empty boxes.
+- The font goes in `~/.local/share/fonts/<name>`, or `/usr/local/share/fonts/<name>` with `--system-wide`, and `fc-cache` picks it up.
+  The script installs `fontconfig` if `fc-cache` is missing.
+- On macOS it installs the Homebrew cask `font-<name>-nerd-font` instead.
+- Afterwards, pick the font in your terminal's settings. For Mononoki it's called "Mononoki Nerd Font".
+
 ##### Docker Component
 
 - Docker CE and Docker Compose
@@ -255,14 +269,12 @@ SHELL ["fish", "-c"]
 - Bash 4.0+ or compatible shell
 - Internet connection for downloading packages
 
-### Install NerdFont for AstroNvim and Starship
+### Install a Nerd Font for AstroNvim and Starship
 
-You can download and install a NerdFont zip file from the repository using the following command:
+Run the `font` component on the machine that runs your terminal:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/jabez007/docker-kitchen/master/astro-nvim/Mononoki.zip -o Mononoki.zip && \
-unzip Mononoki.zip -d ~/.fonts && \
-fc-cache -fv
+curl -fsSL https://raw.githubusercontent.com/jabez007/docker-kitchen/master/install.sh | bash -s -- font
 ```
 
 ## Contributing

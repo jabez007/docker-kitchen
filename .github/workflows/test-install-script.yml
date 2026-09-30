@@ -39,6 +39,7 @@ jobs:
           - editor
           - docker
           - config
+          - font
 
     steps:
       - name: Checkout code
@@ -121,6 +122,12 @@ jobs:
                 docker)
                   command -v docker && docker --version
                   ;;
+                font)
+                  su - testuser -c 'fc-list : family' | grep -i 'mononoki nerd font'
+                  # A second run leaves it alone
+                  su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh font' | tee /tmp/font-again.log
+                  grep -q 'Mononoki Nerd Font v.* already installed' /tmp/font-again.log
+                  ;;
               esac
             "
 
@@ -187,6 +194,9 @@ jobs:
               if grep -q 'install.sh: launch fish' /home/testuser/.bashrc; then
                 test \"\$(tail -n 1 /home/testuser/.bashrc)\" = '# <<< install.sh: launch fish <<<'
               fi
+
+              # all leaves out font
+              test ! -e /home/testuser/.local/share/fonts/Mononoki
             "
 
   test-options:
@@ -223,6 +233,11 @@ jobs:
               
               # Test custom options
               su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --debug --keep-git --tmux-session test base'
+
+              # --nerd-font is saved like the other options
+              grep -qx 'NERD_FONT=Mononoki' /workspace/setup.conf
+              su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --nerd-font JetBrainsMono --save-config'
+              grep -qx 'NERD_FONT=JetBrainsMono' /workspace/setup.conf
             "
 
   test-error-handling:
@@ -256,6 +271,9 @@ jobs:
               
               # Test missing argument (expect failure)
               ! su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --tmux-session'
+
+              # Test a Nerd Font that doesn't exist (expect failure)
+              ! su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --nerd-font NoSuchFont font'
               
               # Test no components (expect failure)
               ! su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh'
@@ -338,17 +356,18 @@ jobs:
               echo 'export PATH=\$PATH:/usr/local/go/bin' >> /home/testuser/.profile
 
               # Without --upgrade, the old Go is left alone
-              su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --debug base go node editor' | tee /tmp/install.log
+              su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --debug base go node editor font' | tee /tmp/install.log
               grep -q 'Go go1.22.0 already installed' /tmp/install.log
 
               # With --upgrade, Go moves to the latest release and current tools are skipped
-              su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --debug --upgrade go node editor' | tee /tmp/upgrade.log
+              su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --debug --upgrade go node editor font' | tee /tmp/upgrade.log
               grep -q 'Upgrading Go from go1.22.0' /tmp/upgrade.log
               # (set -e ignores a pipeline negated with !, so check explicitly)
               if su - testuser -c 'go version' | grep -q go1.22.0; then exit 1; fi
               for tool in Neovim LazyGit Bottom NVM Node.js Deno; do
                 grep -q \"\$tool .* is up to date\" /tmp/upgrade.log
               done
+              grep -q 'Mononoki Nerd Font v.* is up to date' /tmp/upgrade.log
             "
 
   lint-script:

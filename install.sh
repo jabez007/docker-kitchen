@@ -1,7 +1,7 @@
 #!/bin/bash
 # install.sh - Modular Linux Development Environment Setup
 # Usage: ./install.sh [OPTIONS] [COMPONENTS...]
-# Components: base, shell, go, node, python, editor, docker, config
+# Components: base, shell, go, node, python, editor, docker, config, font
 # Example: ./install.sh --debug base go editor
 
 set -Eeuo pipefail
@@ -28,7 +28,7 @@ readonly SCRIPT_DIR STATE_DIR PIPED
 readonly LOG_FILE="${STATE_DIR}/setup.log"
 
 # Install order: `all`, and any set of components given on the command line, run in this order
-readonly COMPONENT_ORDER=(base shell go node python editor docker config)
+readonly COMPONENT_ORDER=(base shell go node python editor docker config font)
 
 declare -A COMPONENTS=(
     [base]="install_base_dependencies"
@@ -39,6 +39,7 @@ declare -A COMPONENTS=(
     [config]="install_user_configs"
     [shell]="install_shell_stack"
     [docker]="install_docker_stack"
+    [font]="install_nerd_font"
 )
 
 # shellcheck disable=SC2034 # used by lib/cli.sh
@@ -51,6 +52,7 @@ declare -A COMPONENT_DESC=(
     [config]="User configurations (Git, AstroNvim config)"
     [shell]="Shell stack (Fish, Tmux, Starship, Atuin)"
     [docker]="Docker and Docker Compose stack"
+    [font]="Nerd Font for the terminal (not part of all)"
 )
 
 readonly GITHUB_BRANCH="${GITHUB_BRANCH:-master}"
