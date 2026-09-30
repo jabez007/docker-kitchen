@@ -73,13 +73,14 @@ install_nerd_font() {
   $as rm -rf "$dir"
   $as mkdir -p "$dir"
   $as tar -C "$dir" -xJf "${tmp_dir}/font.tar.xz" || die "Failed to extract the $font Nerd Font"
-  printf '%s\n' "$tag" | $as tee "${dir}/.version" >/dev/null
   rm -rf "$tmp_dir"
 
   $as fc-cache -f "$dir"
   if ! run_as_user fc-list : file | grep -F "${dir}/" >/dev/null; then
     die "fontconfig doesn't list the fonts in $dir"
   fi
+  # Only now, so a failed install isn't skipped on the next run
+  printf '%s\n' "$tag" | $as tee "${dir}/.version" >/dev/null
   info "$font Nerd Font $tag installed in $dir. Pick it in your terminal's font settings."
 }
 

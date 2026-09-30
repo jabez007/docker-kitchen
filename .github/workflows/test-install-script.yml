@@ -266,17 +266,20 @@ jobs:
               chown -R testuser:testuser /workspace
               chmod +x /workspace/install.sh
               
+              # Each of these must fail. set -e ignores a command negated with !,
+              # so check the exit status explicitly
+
               # Test invalid component (expect failure)
-              ! su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh invalid-component'
+              if su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh invalid-component'; then exit 1; fi
               
               # Test missing argument (expect failure)
-              ! su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --tmux-session'
+              if su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --tmux-session'; then exit 1; fi
 
               # Test a Nerd Font that doesn't exist (expect failure)
-              ! su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --nerd-font NoSuchFont font'
+              if su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --nerd-font NoSuchFont font'; then exit 1; fi
               
               # Test no components (expect failure)
-              ! su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh'
+              if su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh'; then exit 1; fi
             "
 
   test-idempotency:
