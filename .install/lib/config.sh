@@ -12,7 +12,7 @@ fi
 # Settings that setup.conf may set and --save-config writes
 readonly CONFIG_KEYS=(
   SYSTEM_WIDE UPGRADE KEEP_GIT TMUX_SESSION STARSHIP_PRESET
-  ASTRONVIM_REPO GIT_USER_NAME GIT_USER_EMAIL LOG_LEVEL
+  ASTRONVIM_REPO GIT_USER_NAME GIT_USER_EMAIL NERD_FONT LOG_LEVEL
 )
 
 # Default configuration
@@ -24,6 +24,7 @@ declare -g -A CONFIG=(
   [ASTRONVIM_REPO]="https://github.com/jabez007/AstroNvim-config.git"
   [GIT_USER_NAME]=""
   [GIT_USER_EMAIL]=""
+  [NERD_FONT]="Mononoki"
   [LOG_LEVEL]="INFO"
   [UPGRADE]=false
 )
