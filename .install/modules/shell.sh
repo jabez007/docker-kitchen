@@ -213,12 +213,13 @@ configure_fish_shell() {
   run_as_user mkdir -p "$(dirname "$fish_config")"
 
   # Add tmux auto-attach if not present. The is-interactive guard keeps
-  # `fish -c ...` (used by this script and others) from starting tmux.
+  # `fish -c ...` (used by this script and others) from starting tmux, and
+  # HERDR_ENV keeps it out of Herdr's panes, which are a multiplexer already.
   if ! grep -q "tmux attach-session -t ${CONFIG[TMUX_SESSION]}" "$fish_config" 2>/dev/null; then
     run_as_user tee -a "$fish_config" >/dev/null <<EOF
 
 # Automatically attach to or create a tmux session
-if status is-interactive; and type -q tmux; and not set -q TMUX
+if status is-interactive; and type -q tmux; and not set -q TMUX; and not set -q HERDR_ENV
     if tmux has-session -t ${CONFIG[TMUX_SESSION]} 2>/dev/null
         tmux attach-session -t ${CONFIG[TMUX_SESSION]}
     else
@@ -227,6 +228,14 @@ if status is-interactive; and type -q tmux; and not set -q TMUX
 end
 EOF
     info "Fish configured for tmux auto-attach"
+  fi
+
+  # A config from before the HERDR_ENV check gets it added
+  local old_guard='if status is-interactive; and type -q tmux; and not set -q TMUX' updated
+  if grep -qxF "$old_guard" "$fish_config" 2>/dev/null; then
+    updated=$(awk -v old="$old_guard" '$0 == old {$0 = old "; and not set -q HERDR_ENV"} {print}' "$fish_config")
+    printf '%s\n' "$updated" | run_as_user tee "$fish_config" >/dev/null
+    info "Fish's tmux auto-attach now skips Herdr panes"
   fi
 }
 

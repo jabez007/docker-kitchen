@@ -1,7 +1,7 @@
 #!/bin/bash
 # install.sh - Modular Linux Development Environment Setup
 # Usage: ./install.sh [OPTIONS] [COMPONENTS...]
-# Components: base, shell, go, node, python, editor, docker, config, font
+# Components: base, shell, go, node, ai, python, editor, docker, config, font
 # Example: ./install.sh --debug base go editor
 
 set -Eeuo pipefail
@@ -28,12 +28,13 @@ readonly SCRIPT_DIR STATE_DIR PIPED
 readonly LOG_FILE="${STATE_DIR}/setup.log"
 
 # Install order: `all`, and any set of components given on the command line, run in this order
-readonly COMPONENT_ORDER=(base shell go node python editor docker config font)
+readonly COMPONENT_ORDER=(base shell go node ai python editor docker config font)
 
 declare -A COMPONENTS=(
     [base]="install_base_dependencies"
     [go]="install_go"
     [node]="install_node_stack"
+    [ai]="install_ai_stack"
     [python]="install_python_stack"
     [editor]="install_editor_stack"
     [config]="install_user_configs"
@@ -47,6 +48,7 @@ declare -A COMPONENT_DESC=(
     [base]="Base dependencies (curl, git, build tools, etc.)"
     [go]="Go programming language and toolchain"
     [node]="Node.js stack (NVM, Node.js, Deno)"
+    [ai]="Coding agents and Herdr (not part of all)"
     [python]="Python stack (pyenv and build dependencies)"
     [editor]="Editor stack (Neovim, LazyGit, Bottom)"
     [config]="User configurations (Git, AstroNvim config)"

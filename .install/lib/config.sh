@@ -12,7 +12,7 @@ fi
 # Settings that setup.conf may set and --save-config writes
 readonly CONFIG_KEYS=(
   SYSTEM_WIDE UPGRADE KEEP_GIT TMUX_SESSION STARSHIP_PRESET
-  ASTRONVIM_REPO GIT_USER_NAME GIT_USER_EMAIL NERD_FONT LOG_LEVEL
+  ASTRONVIM_REPO GIT_USER_NAME GIT_USER_EMAIL NERD_FONT AI_TOOLS LOG_LEVEL
 )
 
 # Default configuration
@@ -25,6 +25,7 @@ declare -g -A CONFIG=(
   [GIT_USER_NAME]=""
   [GIT_USER_EMAIL]=""
   [NERD_FONT]="Mononoki"
+  [AI_TOOLS]="claude,codex,opencode,pi,herdr"
   [LOG_LEVEL]="INFO"
   [UPGRADE]=false
 )

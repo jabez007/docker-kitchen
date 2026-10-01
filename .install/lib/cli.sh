@@ -11,7 +11,7 @@ A modular Linux development environment setup script.
 
 COMPONENTS (always installed in this order):
 $(for comp in "${COMPONENT_ORDER[@]}"; do printf "    %-8s - %s\n" "$comp" "${COMPONENT_DESC[$comp]:-No description available}"; done)
-    all      - Install all components except font
+    all      - Install all components except ai and font
 
 OPTIONS:
     --debug, -d              Enable debug output
@@ -24,6 +24,7 @@ OPTIONS:
     --git-name NAME          Git user.name, if not already set
     --git-email EMAIL        Git user.email, if not already set
     --nerd-font NAME         Nerd Font for the font component (default: ${CONFIG["NERD_FONT"]})
+    --ai-tools LIST          Comma-separated tools for the ai component (default: ${CONFIG["AI_TOOLS"]})
     --config FILE            Read settings from FILE instead of setup.conf
     --save-config            Save the configuration (including other options given) and exit
     --help, -h               Show this help message
@@ -45,6 +46,7 @@ NOTES:
     - 'editor' installs system-wide tools (Neovim, LazyGit, Bottom)
     - 'config' installs user-specific configurations (AstroNvim config)
     - 'font' goes on the machine that runs your terminal, not one you SSH into
+    - 'ai' installs Codex, OpenCode and Pi with npm, so it needs 'node'
     - When running as root or with sudo, configs are installed to the original user's home
 EOF
 }
@@ -104,6 +106,11 @@ parse_arguments() {
       CONFIG["NERD_FONT"]="$2"
       shift 2
       ;;
+    --ai-tools)
+      [[ $# -ge 2 ]] || die "--ai-tools requires a comma-separated list"
+      CONFIG["AI_TOOLS"]="$2"
+      shift 2
+      ;;
     --config)
       # Already applied by set_config_file
       shift 2
@@ -118,9 +125,10 @@ parse_arguments() {
       ;;
     all)
       # A font only helps where the terminal runs, which often isn't the
-      # machine this sets up, so font has to be named
+      # machine this sets up, and the agents need accounts not everyone
+      # has, so font and ai have to be named
       for comp in "${COMPONENT_ORDER[@]}"; do
-        [[ "$comp" == font ]] || selected[$comp]=1
+        [[ "$comp" == font || "$comp" == ai ]] || selected[$comp]=1
       done
       shift
       ;;

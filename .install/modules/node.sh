@@ -11,12 +11,14 @@ nvm_installed_version() {
   nvm_run 'nvm --version'
 }
 
-# The nvm-managed default; prints nothing for "none" or a system Node
+# The nvm-managed default; prints nothing for "N/A" or a system Node. Not
+# `nvm current`, which needs `which` and says "none" without it, as on
+# Fedora's container image.
 node_installed_version() {
-  local current
-  current=$(nvm_run 'nvm current')
-  if [[ "$current" == v* ]]; then
-    echo "$current"
+  local version
+  version=$(nvm_run 'nvm version default')
+  if [[ "$version" == v* ]]; then
+    echo "$version"
   fi
 }
 
@@ -76,7 +78,27 @@ install_node_stack() {
   # Configure Fish for NVM if Fish is available
   if command_exists fish; then
     configure_fish_nvm
+    configure_fish_node_path
   fi
+}
+
+# nvm puts Node on Fish's PATH only after `nvm use`, so a new Fish has no
+# node, npm or global npm commands (codex, opencode, pi). This puts the
+# default Node's bin directory on it from conf.d. The path names the Node
+# version, so each run rewrites it; after `nvm alias default <version>`,
+# run install.sh node again.
+# It sets PATH rather than calling fish_add_path -g, which would leave a
+# global fish_user_paths that hides the universal one update_path adds to.
+configure_fish_node_path() {
+  local node bin conf
+  node=$(nvm_run 'nvm which default' 2>/dev/null) || return 0
+  bin="${node%/node}"
+  conf="$(get_user_home)/.config/fish/conf.d/nvm_default.fish"
+
+  run_as_user mkdir -p "${conf%/*}"
+  printf '# Written by install.sh: the default Node from nvm\ncontains -- %q $PATH; or set -gx PATH %q $PATH\n' "$bin" "$bin" |
+    run_as_user tee "$conf" >/dev/null
+  debug "Fish gets Node from $bin"
 }
 
 # Install Deno into ~/.deno/bin, where its own installer puts it, from the
