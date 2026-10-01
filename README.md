@@ -212,6 +212,16 @@ With it, each component brings its tools up to date:
 - [Herdr](https://herdr.dev), a terminal workspace manager for coding agents, in `~/.local/bin`, where `herdr update` can replace it.
   With `--system-wide` it goes in `/usr/local/bin` instead.
   Fish doesn't start tmux inside a Herdr pane, since Herdr is a multiplexer already.
+- Herdr and tmux both default to `ctrl+b` as the prefix. Fish attaches tmux in every interactive shell, so Herdr usually runs inside tmux, which takes `ctrl+b` first.
+  Press it twice to reach Herdr, or give Herdr its own prefix in `~/.config/herdr/config.toml`:
+
+  ```toml
+  [keys]
+  prefix = "ctrl+a"
+  ```
+
+- `herdr integration install <agent>`, for `claude`, `codex`, `opencode` or `pi`, makes Herdr's working and blocked states more reliable. For Claude Code, Codex and OpenCode it also reopens the same conversation after Herdr's server restarts.
+  It writes hooks into that agent's config directory, so the script leaves it to you.
 - `--ai-tools` or `AI_TOOLS` picks which to install, as a comma-separated list of `claude`, `codex`, `opencode`, `pi` and `herdr`.
 - The script never signs in. Start each agent once to log in.
 - Your agents' settings, skills and instructions aren't part of this. Keep those in your own dotfiles.
