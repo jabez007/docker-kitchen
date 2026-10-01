@@ -11,12 +11,14 @@ nvm_installed_version() {
   nvm_run 'nvm --version'
 }
 
-# The nvm-managed default; prints nothing for "none" or a system Node
+# The nvm-managed default; prints nothing for "N/A" or a system Node. Not
+# `nvm current`, which needs `which` and says "none" without it, as on
+# Fedora's container image.
 node_installed_version() {
-  local current
-  current=$(nvm_run 'nvm current')
-  if [[ "$current" == v* ]]; then
-    echo "$current"
+  local version
+  version=$(nvm_run 'nvm version default')
+  if [[ "$version" == v* ]]; then
+    echo "$version"
   fi
 }
 

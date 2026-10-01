@@ -262,10 +262,11 @@ jobs:
               su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --nerd-font JetBrainsMono --save-config'
               grep -qx 'NERD_FONT=JetBrainsMono' /workspace/setup.conf
 
-              # So is --ai-tools
-              grep -qx 'AI_TOOLS=claude,codex,opencode,pi,herdr' /workspace/setup.conf
+              # So is --ai-tools. printf %q may escape the commas, so read it
+              # back the way install.sh does
+              bash -c '. /workspace/setup.conf && test \"\$AI_TOOLS\" = claude,codex,opencode,pi,herdr'
               su - testuser -c 'cd /workspace && GITHUB_BRANCH=\"${{ github.head_ref || github.ref_name }}\" ./install.sh --ai-tools claude,pi --save-config'
-              grep -qx 'AI_TOOLS=claude,pi' /workspace/setup.conf
+              bash -c '. /workspace/setup.conf && test \"\$AI_TOOLS\" = claude,pi'
             "
 
   test-error-handling:
