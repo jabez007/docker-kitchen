@@ -145,7 +145,13 @@ install_npm_agent() {
   fi
   should_install "$name" npm_global_version npm_latest_version "$npm_package" || return 0
 
-  nvm_run "npm install -g --engine-strict $* '${npm_package}@latest'" ||
+  # Quote each flag for nvm_run's bash -c. Not with no flags, where printf
+  # would still print '' and hand npm an empty argument.
+  local flags=""
+  if [[ $# -gt 0 ]]; then
+    flags=$(printf '%q ' "$@")
+  fi
+  nvm_run "npm install -g --engine-strict ${flags}'${npm_package}@latest'" ||
     die "Failed to install $name. If npm reported EBADENGINE, run install.sh --upgrade node first."
 }
 
