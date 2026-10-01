@@ -49,15 +49,17 @@ curl -fsSL https://raw.githubusercontent.com/jabez007/docker-kitchen/BRANCH/inst
 | `shell` | Shell stack (Fish shell, Tmux, Starship prompt, Atuin shell history) |
 | `go` | Go programming language (latest version) |
 | `node` | Node.js stack (NVM, Node.js LTS, Deno) |
+| `ai` | Coding agents (Claude Code, Codex, OpenCode, Pi) and Herdr to run them in |
 | `python` | pyenv plus the headers needed to build Python |
 | `editor` | Editor stack (Neovim, LazyGit, Bottom system monitor) |
 | `docker` | Docker and Docker Compose |
 | `config` | User configurations (Git settings, AstroNvim configuration) |
 | `font` | A Nerd Font for your terminal (Mononoki unless you pick another) |
-| `all` | Install all components except `font` |
+| `all` | Install all components except `ai` and `font` |
 
 Components always run in the order above, whatever order you list them in, so `config` sees the Neovim that `editor` installed.
 `all` leaves out `font`, because a font only helps on the machine that runs your terminal. Over SSH or in a container, that's a different machine.
+It leaves out `ai` too. Each agent needs its own account, and you may only want one of them.
 
 #### Usage Examples
 
@@ -112,6 +114,9 @@ Components always run in the order above, whatever order you list them in, so `c
 # Install a different Nerd Font (names as on https://www.nerdfonts.com/font-downloads)
 ./install.sh --nerd-font JetBrainsMono font
 
+# Install only some of the AI tools
+./install.sh --ai-tools claude,herdr ai
+
 # Set git identity (only applied if not already configured)
 ./install.sh --git-name "Your Name" --git-email "you@example.com" config
 
@@ -137,14 +142,15 @@ curl -fsSL https://raw.githubusercontent.com/jabez007/docker-kitchen/master/inst
 curl -fsSL https://raw.githubusercontent.com/jabez007/docker-kitchen/master/install.sh | bash -s -- --config ./setup.conf all
 ```
 
-Supported keys: `SYSTEM_WIDE`, `UPGRADE`, `KEEP_GIT`, `TMUX_SESSION`, `STARSHIP_PRESET`, `ASTRONVIM_REPO`, `GIT_USER_NAME`, `GIT_USER_EMAIL`, `NERD_FONT`, `LOG_LEVEL`.
+Supported keys: `SYSTEM_WIDE`, `UPGRADE`, `KEEP_GIT`, `TMUX_SESSION`, `STARSHIP_PRESET`, `ASTRONVIM_REPO`, `GIT_USER_NAME`, `GIT_USER_EMAIL`, `NERD_FONT`, `AI_TOOLS`, `LOG_LEVEL`.
 
 #### Upgrading
 
 Without `--upgrade`, a re-run skips anything that is already installed.
 With it, each component brings its tools up to date:
 
-- Go, Neovim, LazyGit, Bottom, Starship, Atuin, NVM, Node.js, Deno and the Nerd Font compare the installed version with the latest release and reinstall only when they differ.
+- Go, Neovim, LazyGit, Bottom, Starship, Atuin, NVM, Node.js, Deno, the Nerd Font and the AI tools compare the installed version with the latest release and reinstall only when they differ.
+  Claude Code also updates itself in the background, so it's usually current already.
 - Node.js moves to the latest LTS and carries global npm packages over. The old version stays installed; remove it with `nvm uninstall <version>`.
 - pyenv and pyenv-virtualenv move to their latest release tags.
   An older run may have installed the pyenv-update plugin; `pyenv update` fails on a tag, so use `install.sh --upgrade python` instead.
@@ -161,13 +167,14 @@ With it, each component brings its tools up to date:
 - Supports apt, dnf, yum, brew, and pacman
 - Stops at the first failed command and reports the file and line
 - Checks each download against a SHA-256 and stops on a mismatch.
-  Go, LazyGit, Starship, Atuin, Deno and Nerd Fonts publish their own checksums.
-  Neovim and Bottom don't, so the script uses the digest GitHub computes when a release asset is uploaded.
+  Go, LazyGit, Starship, Atuin, Deno, Nerd Fonts and Claude Code publish their own checksums.
+  Neovim, Bottom and Herdr don't, so the script uses the digest GitHub computes when a release asset is uploaded.
   That catches a corrupted or altered download, but not a bad file that was uploaded to the release itself.
 - Installs NVM, pyenv, Fisher and bash-preexec from their latest release tags, so a change on an upstream default branch doesn't reach you until it's released.
   None of them publish checksums, so a tag that moves after release would go unnoticed.
 - Logs to `setup.log`
 - Fish gets NVM (via bass), pyenv, tmux auto-attach, and Starship
+- Codex, OpenCode and Pi come from npm, which checks each package against the registry's integrity hash
 
 #### What Gets Installed
 
@@ -190,6 +197,24 @@ With it, each component brings its tools up to date:
 - Node.js LTS
 - Deno runtime
 - Fish shell NVM integration
+- The default Node's `bin` directory on Fish's PATH, from `~/.config/fish/conf.d/nvm_default.fish`.
+  Without it, a new Fish has no `node`, `npm` or global npm commands until you run `nvm use`.
+  The path names the Node version, so after `nvm alias default` points somewhere else, run `install.sh node` again.
+
+##### AI Component
+
+- [Claude Code](https://code.claude.com), Anthropic's native build, in `~/.local/bin`.
+- [Codex](https://github.com/openai/codex), [OpenCode](https://opencode.ai) and [Pi](https://github.com/earendil-works/pi), installed with npm into the default Node from NVM.
+  Install `node` first, or in the same run: `./install.sh node ai`.
+  Without NVM's Node, the script skips them with a warning.
+  `install.sh --upgrade node` carries them over to the next Node LTS along with your other global packages.
+- Pi needs a recent Node. If npm stops with `EBADENGINE`, run `install.sh --upgrade node` and then `install.sh ai`.
+- [Herdr](https://herdr.dev), a terminal workspace manager for coding agents, in `~/.local/bin`, where `herdr update` can replace it.
+  With `--system-wide` it goes in `/usr/local/bin` instead.
+  Fish doesn't start tmux inside a Herdr pane, since Herdr is a multiplexer already.
+- `--ai-tools` or `AI_TOOLS` picks which to install, as a comma-separated list of `claude`, `codex`, `opencode`, `pi` and `herdr`.
+- The script never signs in. Start each agent once to log in.
+- Your agents' settings, skills and instructions aren't part of this. Keep those in your own dotfiles.
 
 ##### Python Component
 
